@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8" />
+    <title>Web View Example</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div id="centeringScreen">
+        <div id="starting-screen">
+            <button id="play-button">Play</button>
+            <button id="create-category-button">Create Category</button>
+        </div>
+
+        <button id="returnToStartButton">Main Screen</button>
+        <button id="retryButton">Try again</button>
+
+        <!-- Container for top-left text -->
+        <div id="top-left-container">
+            <div id="timeDisplay"></div>
+            <div id="wordCount"></div>
+        </div>
+
+        <!-- List items will be dynamically added -->
+        <div id="categoriesScreen">
+            <div id="categoriesText">Pick a Category</div>
+            <button id="scrollButtonUp">▲</button>
+            <div id="categories">
+                <div class="list-header">
+                    <div class="col-title">Title</div>
+                    <div class="col-created">Created By</div>
+                    <div class="col-played">Played</div>
+                    <div class="col-hs">HS</div>
+                </div>
+                <div id="rows-wrapper">
+                    <!-- Rows will be added dynamically here -->
+                </div>
+            </div>
+
+            <button id="scrollButtonDown">▼</button>
+            <button id="startButton">Start</button>
+        </div>
+
+        <div id="final-score"></div>
+        <div id="highScore"></div>
+
+        <div id="formMessage"></div>
+
+        <div id="keyboard-holder">
+            <div id="output"></div>
+            <div id="keyboard">
+                <!-- First Row -->
+                <button class="key">Q</button>
+                <button class="key">W</button>
+                <button class="key">E</button>
+                <button class="key">R</button>
+                <button class="key">T</button>
+                <button class="key">Y</button>
+                <button class="key">U</button>
+                <button class="key">I</button>
+                <button class="key">O</button>
+                <button class="key">P</button>
+                <button class="key backspace">⌫</button>
+
+                <!-- Second Row -->
+                <button class="key">A</button>
+                <button class="key">S</button>
+                <button class="key">D</button>
+                <button class="key">F</button>
+                <button class="key">G</button>
+                <button class="key">H</button>
+                <button class="key">J</button>
+                <button class="key">K</button>
+                <button class="key">L</button>
+                <space></space>
+
+                <!-- Checkmark Button Spanning Rows -->
+                <button class="key submit">✔</button>
+
+                <!-- Third Row -->
+                <button class="key">Z</button>
+                <button class="key">X</button>
+                <button class="key">C</button>
+                <button class="key">V</button>
+                <button class="key">B</button>
+                <button class="key">N</button>
+                <button class="key">M</button>
+                <button class="key space"></button>
+            </div>
+
+        </div>
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+</html>
