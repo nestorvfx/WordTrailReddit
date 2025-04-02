@@ -8,7 +8,7 @@ class App {
         //SET MAIN SCENE VARIABLES
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xFF4500);
+        scene.background = new THREE.Color(0xEC0B43/* 0xFF4500 #EB5E55 #32fc86 #5EEB5B #04E762*/);
 
         let camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.z = 7;
@@ -34,11 +34,19 @@ class App {
         let categoryTitle = '';
         let categoryNumOfPlays = '';
         let categoryHighScore = '';
-        let categoryHSByWho = '';
-        let categoryWords = 0;
-        let username = '';
+        let categoryHSByUsername = '';
+        let categoryHSByID = '';
+        let categoryPostID = '';
+        let wordsString = '';
 
-        let categoriesList;
+        let username = '';
+        let userID = '';
+        let userAllowedToCreate = false;
+
+        let categoriesList = [];
+
+        let currentCategoriesCursor = 0;
+        let allCategoriesReceived = false;
 
         let currentWords = ['REDDITTESTI', 'NARUTO', 'MIHAJLO'];
 
@@ -450,9 +458,13 @@ class App {
         let gameStarted = false, particlesAreSetup = false;
         let gameFinished = false;
 
+        const centeringScreen = document.getElementById('centeringScreen');
+        const maintenanceOverlay = document.getElementById('maintenanceOverlay');
+
         const startingScreen = document.getElementById('starting-screen');
         const playButton = document.getElementById('play-button');
         const createCategoryButton = document.getElementById('create-category-button');
+        const settingsButton = document.getElementById('settingsButton');
         const startButton = document.getElementById('startButton');
 
         const timeDisplay = document.getElementById('timeDisplay');
@@ -460,6 +472,7 @@ class App {
         const finalScore = document.getElementById('final-score');
         const highScore = document.getElementById('highScore');
         const formMessage = document.getElementById('formMessage');
+        const deleteConfirmationScreen = document.getElementById('deleteConfirmationScreen');
 
         const categoriesScreen = document.getElementById('categoriesScreen');
         const categoriesDisplay = document.getElementById('rows-wrapper');
@@ -467,6 +480,15 @@ class App {
         const scrollButtonDown = document.getElementById('scrollButtonDown');
         const returnToStartButton = document.getElementById('returnToStartButton');
         const retryButton = document.getElementById('retryButton');
+        const deleteCategoryButton = document.getElementById('deleteCategoryButton');
+        const deleteDataButton = document.getElementById('deleteDataButton');
+        const deleteConfirmButton = document.getElementById('confirmButton');
+        const deleteCancelButton = document.getElementById('cancelButton');
+        const deleteText = document.getElementById('deleteText');
+
+        let typeOfConfirm = 'category';
+
+        let cCategories;
 
         categoriesDisplay.innerHTML = '';
 
@@ -495,6 +517,30 @@ class App {
         let currentlyTyped = '';
 
         let selectedCategory = 0;
+
+        let maintenanceTime = false;
+
+        let minutesOffset = isWithin5MinutesOf20thUTC();
+        if (0 < minutesOffset && minutesOffset <= 5) {
+            maintenanceTime = true;
+            const minutesString = Math.round(minutesOffset) == 1 ? ' minute' : ' minutes';
+            displayBarMessage('In ~' + Math.round(minutesOffset).toString() + minutesString + ', app will close for database maintenance for 5 minutes.');
+        } else {
+            setInterval(() => {
+                displayBarMessage('In ~5 minutes, app will close for maintenance for 5 minutes.');
+            }, Math.max(Math.abs((minutesOffset - 5) * 60000) - 0.05, 1000))
+        }
+
+        let diffInMinutes = isWithin5MinutesIn20thUTC();
+        if (-0.1 < diffInMinutes && diffInMinutes <= 5) {
+            centeringScreen.style.display = 'none';
+            maintenanceOverlay.style.display = 'flex';
+        } else if (diffInMinutes < 0) {
+            setInterval(() => {
+                centeringScreen.style.display = 'none';
+                maintenanceOverlay.style.display = 'flex';
+            }, Math.max(-diffInMinutes * 60000 - 0.05, 1000));
+        }
 
         //END SET MAIN LOOP VARIABLES
 
@@ -537,6 +583,23 @@ class App {
 
         //END KEYBOARD SETUP
 
+
+        function isWithin5MinutesOf20thUTC() {
+            const now = new Date();
+            return (Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 20) - Date.now()) / 60000;
+        }
+
+        function isWithin5MinutesIn20thUTC() {
+            const now = new Date();
+            return (Date.now() - Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 20)) / 60000;
+        }
+
+        // TESTING FUNCTION
+        /*function isWithin5MinutesOf20thUTC() {
+            return (new Date().setUTCHours(2, 10, 0, 0) - Date.now()) / 60000; // Convert back to minutes, rounded up
+        }*/
+
+
         // ON MOBILE THIS FUNCTION ASSISTS IN CASES WHERE PARTICLES DO NOT APPEAR / ARE NaN (in position)
         function resetParticles() {
             // Dispose of particle geometries and materials
@@ -554,11 +617,10 @@ class App {
             scene.children = [];
             trails = [];
 
+            if (typeof gc != 'undefined') gc();
+
             initializeParticles();
         }
-
-
-
 
         function clamp(value, min, max) {
             return Math.max(min, Math.min(max, value));
@@ -611,7 +673,10 @@ class App {
                 }
 
                 particles[p].material.opacity = opacity;
-                particles[p].userData.trail = [particles[p].position.clone()];
+                particles[p].userData.trail = [
+                    particles[p].position.clone(),
+                    particles[p].position.clone()
+                ];
                 const positions = particles[p].userData.trail.flatMap(t => [t.x, t.y, t.z]);
                 trails[p].geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
                 trails[p].material.opacity = opacity;
@@ -684,10 +749,10 @@ class App {
                     dashed: false,
                     depthTest: false,
                 });
-
+                particle.userData.trail = [targetPosition.clone(), targetPosition.clone()];
                 const trailGeometry = new LineGeometry();
+                trailGeometry.setFromPoints(particle.userData.trail);
                 const trailLine = new Line2(trailGeometry, trailMaterial);
-                trailGeometry.setFromPoints([targetPosition, targetPosition]);
                 trailLine.computeLineDistances();
                 trailLine.scale.set(1, 1, 1);
 
@@ -746,33 +811,23 @@ class App {
 
         function displayEndScreen(completed) {
             gameFinished = true;
+            gameStarted = false;
             if (!completed && totalTime == gameLength) {
                 timeDisplay.textContent = '1:00';
             } else {
             }
 
-            categoryNumOfPlays = (Number(categoryNumOfPlays) + 1).toString();
-            if (currentWordIndex > Number(categoryHighScore)) {
-                finalScore.textContent = currentWordIndex + "\n is New High Score!";
-                categoryHighScore = currentWordIndex;
-                categoryHSByWho = username;
-            } else {
-                finalScore.textContent = currentWordIndex;
-                highScore.textContent = 'High Score\nby ' + categoryHSByWho + ':\n' + categoryHighScore;
-                highScore.style.display = 'block';
-            }
-
+            //SEND MESSAGE TO UPDATE CATEGORY INFO AND SET NEW HIGH SCORE IF NEEDED
             window.parent.postMessage(
                 {
                     type: 'updateCategoryInfo', data: {
                         categoryCode: categoryCode,
-                        newStats: createdBy + ':' + categoryTitle + ':' + categoryNumOfPlays + ':' + categoryHighScore + ':' + categoryHSByWho
+                        newScore: currentWordIndex,
+                        guessedAll: completed
                     }
                 },
                 '*'
             );
-
-            finalScore.style.display = 'block';
 
             letterScaling = 1.5;
             yOffset = 1.2 * clamp(camera.aspect, 0.9, 1.8);
@@ -780,59 +835,150 @@ class App {
             radiusScaling = 0;
 
             setNewWordParticles('SCORE');
-
-
-            keyboard.style.display = 'none';
-            keyboardOutput.style.display = 'none';
-
-            timeDisplay.style.display = 'none';
-            wordCount.style.display = 'none';
-
-            retryButton.style.display = 'block';
-
-            returnToStartButton.style.top = '70%';
-            returnToStartButton.style.display = 'block';
-
-            //displayRankingForCategory();
-            // option to return to home page
         }
+
+        function displayCategories(categoriesData, sceneType) {
+            if (sceneType == 'userCategoriesRemoveOne') {
+                cCategories.splice(selectedCategory, 1);
+                categoriesList = cCategories;
+                categoriesDisplay.innerHTML = '';
+            }
+            else if (currentCategoriesCursor == 0 || sceneType == 'userCategories') {
+                cCategories = categoriesData.split(';');
+                categoriesList = cCategories;
+                categoriesDisplay.innerHTML = '';
+            } else if (sceneType == 'playCategories') {
+                cCategories = categoriesData.split(';');
+                categoriesList.push(...cCategories);
+            }
+
+            if (!(cCategories == '')) {
+                const currentLength = categoriesDisplay.childElementCount;
+                for (let c = currentLength; c < categoriesList.length; c++) {
+                    const categoryItem = document.createElement("div");
+                    categoryItem.className = "list-row";
+                    const [cCode, cUser, cTitle, cNOP, cHS, cBH, cPI] = categoriesList[c].split(':');
+                    if (c == 0) {
+                        categoryItem.classList.add('selected');
+                        selectedCategory = 0;
+                    }
+                    /* WITH LINK
+                    categoryItem.innerHTML = "<div class=\"col-title\">" + cTitle + "</div>" +
+                        "<div class=\"col-created\">" +
+                        (cUser == '[deleted]' ? '[deleted]' : "<a href=\"https://www.reddit.com/u/" + cUser + "\" target=\"_blank\" class=\"links\")>" + cUser + "</a>") +
+                        "</div>" + "<div class=\"col-played\">" + cNOP + "</div>" +
+                        "<div class=\"col-hs\">" + cHS + "</div>";
+                        */
+                    categoryItem.innerHTML = "<div class=\"col-title\">" + cTitle + "</div>" +
+                        "<div class=\"col-created\">" + cUser + "</div>" +
+                        "<div class=\"col-played\">" + cNOP + "</div>" +
+                        "<div class=\"col-hs\">" + cHS + "</div>";
+
+
+                    categoryItem.addEventListener('click', event => {
+                        categoriesDisplay.children[selectedCategory].classList.remove('selected');
+                        categoryItem.classList.add('selected');
+                        [categoryCode, createdBy, categoryTitle, categoryNumOfPlays, categoryHighScore, categoryHSByUsername, categoryHSByID, categoryPostID] = categoriesList[c].split(':');
+                        selectedCategory = c;
+                    });
+
+
+                    categoriesDisplay.appendChild(categoryItem);
+                }
+                //DISPLAY START BUTTON
+                startButton.style.borderColor = "#ffffff";
+                deleteCategoryButton.style.borderColor = "#ffffff";
+                scrollButtonDown.style.display = 'flex';
+                scrollButtonUp.style.display = 'flex';
+            }
+            else {
+                const categoryItem = document.createElement('li');
+                categoryItem.classList.add('emptyElement');
+                categoryItem.innerHTML = "<span class=\"emptyText\">There are currently no available categories.\n(feel free to create one) </span> ";
+                categoriesDisplay.appendChild(categoryItem);
+
+                startButton.style.borderColor = "#737373";
+                deleteCategoryButton.style.borderColor = "#737373";
+                scrollButtonDown.style.display = 'none';
+                scrollButtonUp.style.display = 'none';
+            }
+            returnToStartButton.style.top = '84%';
+            returnToStartButton.style.display = 'block';
+            categoriesScreen.style.display = 'flex';
+            startingScreen.style.display = 'none';
+            if (sceneType == 'playCategories') {
+                startButton.style.display = 'block';
+            } else if (sceneType.startsWith('userCategories')) {
+                deleteCategoryButton.style.display = 'block';
+            }
+            categoriesDisplay.scrollTop = 0;
+        }
+
 
         // Receive input from blocks with info and setup starting screen
         window.addEventListener('message', (event) => {
-            if (event.data.type === 'devvit-message') {
+            if (event.data.type == 'devvit-message') {
                 const message = event.data.data.message;
                 if (message.type == 'initialData') {
                     const data = message.data;
                     if (data.username != null && data.username != '') {
-                        //categoriesList = data.usersCategories.split(';');
                         username = data.username;
+                        userID = data.userID;
+                        userAllowedToCreate = data.userAllowedToCreate;
 
-                        startingScreen.style.display = 'flex';
                         playButton.addEventListener('click', () => {
-                            startingScreen.style.display = 'none';
-                            startButton.style.display = 'block';
+                            // In order to refresh list when entering categories again
+                            currentCategoriesCursor = 0;
+                            allCategoriesReceived = false;
+                            categoriesList = [];
 
-                            //MESSAGE TO RECEIVE LIST OF CATEGORIES (AND LATTER POTENTIALLY TO RECEIVE IN CHUNKS IF THERE ARE LOT OF THEM)
                             window.parent.postMessage(
-                                { type: 'updateCategories', data: {} },
+                                { type: 'updateCategories', data: { cursor: currentCategoriesCursor } },
                                 '*'
                             );
                         });
 
-                        createCategoryButton.addEventListener('click', () => {
+                        if (userAllowedToCreate) {
+                            createCategoryButton.addEventListener('click', () => {
+                                window.parent.postMessage(
+                                    { type: 'startForm', data: {} },
+                                    '*'
+                                );
+                                document.body.style.pointerEvents = 'none';
+                            });
+                        }
+                        else {
+                            createCategoryButton.style.display = 'none';
+                            settingsButton.style.top = '60%';
+                        }
+
+                        settingsButton.addEventListener('click', () => {
+                            currentCategoriesCursor = 0;
+                            allCategoriesReceived = true;
+                            categoriesList = [];
+
                             window.parent.postMessage(
-                                { type: 'startForm', data: {} },
+                                { type: 'requestUserData', data: {} },
                                 '*'
                             );
-                            document.body.style.pointerEvents = 'none';
                         });
 
                         startButton.addEventListener('click', () => {
-                            [categoryCode, createdBy, categoryTitle, categoryNumOfPlays, categoryHighScore, categoryHSByWho] = categoriesList[selectedCategory].split(':');
-                            window.parent.postMessage(
-                                { type: 'wordsRequest', data: { categoryCode: categoryCode } },
-                                '*'
-                            );
+                            if (scrollButtonDown.style.display != 'none') {
+                                [categoryCode, createdBy, categoryTitle, categoryNumOfPlays, categoryHighScore, categoryHSByUsername, categoryHSByID] = categoriesList[selectedCategory].split(':');
+                                window.parent.postMessage(
+                                    { type: 'wordsRequest', data: { categoryCode: categoryCode } },
+                                    '*'
+                                );
+                            }
+                        });
+
+                        deleteCategoryButton.addEventListener('click', () => {
+                            if (scrollButtonDown.style.display != 'none') {
+                                deleteText.textContent = 'Confirm deleting ' + categoryTitle + '  category?';
+                                typeOfConfirm = 'category';
+                                deleteConfirmationScreen.style.display = 'flex';
+                            }
                         });
 
                         returnToStartButton.addEventListener('click', () => {
@@ -842,6 +988,9 @@ class App {
                             finalScore.style.display = 'none';
                             highScore.style.display = 'none';
                             categoriesScreen.style.display = 'none';
+                            deleteDataButton.style.display = 'none';
+                            deleteCategoryButton.style.display = 'none';
+                            startButton.style.display = 'none';
 
                             xRemapRange = 2;
                             yOffset = 1 * clamp(camera.aspect, 0.9, 1.8);
@@ -851,6 +1000,35 @@ class App {
                             if (currentWord != 'Word Trail') {
                                 setupStartScreen();
                             }
+                        });
+
+                        deleteDataButton.addEventListener('click', () => {
+                            deleteText.textContent = 'Confirm deleting all of your Reddit info within Word Trail Game itself + category posts created?';
+                            typeOfConfirm = 'allData';
+                            deleteConfirmationScreen.style.display = 'flex';
+                        });
+
+                        deleteConfirmButton.addEventListener('click', () => {
+                            if (typeOfConfirm == 'allData') {
+                                window.parent.postMessage(
+                                    { type: 'deleteAllUserData', data: {} },
+                                    '*'
+                                );
+                            }
+                            else if (typeOfConfirm == 'category') {
+                                [categoryCode, createdBy, categoryTitle, categoryNumOfPlays, categoryHighScore, categoryHSByUsername, categoryHSByID] = categoriesList[selectedCategory].split(':');
+                                window.parent.postMessage(
+                                    { type: 'deleteCategory', data: { categoryCode: categoryCode } },
+                                    '*'
+                                );
+                            } else if (typeOfConfirm == 'postHighScore') {
+
+                            }
+                            document.body.style.pointerEvents = 'none';
+                        });
+
+                        deleteCancelButton.addEventListener('click', () => {
+                            deleteConfirmationScreen.style.display = 'none';
                         });
 
                         retryButton.addEventListener('click', () => {
@@ -886,6 +1064,13 @@ class App {
                             const maxScroll = categoriesDisplay.scrollHeight - categoriesDisplay.clientHeight;
                             if (categoriesDisplay.scrollTop >= maxScroll) {
                                 scrollButtonDown.disabled = true;
+
+                                if (!allCategoriesReceived) {
+                                    window.parent.postMessage(
+                                        { type: 'updateCategories', data: { cursor: currentCategoriesCursor } },
+                                        '*'
+                                    );
+                                }
                             } else {
                                 scrollButtonDown.disabled = false;
                             }
@@ -896,59 +1081,40 @@ class App {
                                 scrollButtonUp.disabled = false;
                             }
                         });
+
+                        startingScreen.style.display = 'flex';
+                    }
+                    if (data.postType == 'mainPost') { }
+                    else if (data.postType.startsWith('categoryPost')) {
+                        [, categoryCode, createdBy, categoryTitle, categoryNumOfPlays, categoryHighScore, categoryHSByUsername, categoryHSByID, categoryPostID, wordsString] = data.postType.split(':');
+                        if (categoryCode) {
+                            currentWords = wordsString?.split(',').sort(() => Math.random() - 0.5) || [];
+
+                            startButton.style.display = 'none';
+                            returnToStartButton.style.display = 'none';
+                            categoriesScreen.style.display = 'none';
+                            deleteDataButton.style.display = 'none';
+                            startingScreen.style.display = 'none';
+                            startGuessingGame();
+                            /* else {
+                                 displayBarMessage('There was an error. Try again');
+                             }*/
+                        }
                     }
                 }
                 else if (message.type == 'sendCategories') {
-                    categoriesDisplay.innerHTML = '';
-                    if (!message.data.usersCategories == '') {
-                        categoriesList = message.data.usersCategories.split(';');
-                        for (let c = 0; c < categoriesList.length; c++) {
-                            const categoryItem = document.createElement("div");
-                            categoryItem.className = "list-row";
-                            const [cCode, cUser, cTitle, cNOP, cHS, cBH] = categoriesList[c].split(':');
-                            if (c == 0) {
-                                categoryItem.classList.add('selected');
-                                selectedCategory = 0;
-                            }
-
-                            categoryItem.innerHTML = "<div class=\"col-title\">" + cTitle + "</div>" +
-                                "<div class=\"col-created\">" + cUser + "</div>" +
-                                "<div class=\"col-played\">" + cNOP + "</div>" +
-                                "<div class=\"col-hs\">" + cHS + "</div>";
-
-                            categoryItem.addEventListener('click', () => {
-                                document.querySelectorAll('.list-row').forEach(categoryElement => categoryElement.classList.remove('selected'));
-                                categoryItem.classList.add('selected');
-                                selectedCategory = c;
-                            });
-
-                            categoriesDisplay.appendChild(categoryItem);
-                        }
-                        //DISPLAY START BUTTON
-                        startButton.style.borderColor = "#ffffff";
-                        scrollButtonDown.style.display = 'block';
-                        scrollButtonUp.style.display = 'block';
-                    } else {
-                        const categoryItem = document.createElement('li');
-                        categoryItem.classList.add('emptyElement');
-                        categoryItem.innerHTML = "<span class=\"emptyText\">There are currently no available categories.\n(feel free to create one) </span> ";
-                        categoriesDisplay.appendChild(categoryItem);
-
-                        // DISPLAY RETURN BUTTON
-                        startButton.style.borderColor = "#737373";
-                        scrollButtonDown.style.display = 'none';
-                        scrollButtonUp.style.display = 'none';
+                    displayCategories(message.data.usersCategories, 'playCategories');
+                    currentCategoriesCursor = message.data.cursor;
+                    if (currentCategoriesCursor == 0) {
+                        allCategoriesReceived = true;
                     }
-                    returnToStartButton.style.top = '84%';
-                    returnToStartButton.style.display = 'block';
-                    categoriesScreen.style.display = 'flex';
-
                 }
                 else if (message.type == 'sendCategoryWords') {
                     if (message.data.words != null && message.data.words != 'error') {
                         startButton.style.display = 'none';
                         returnToStartButton.style.display = 'none';
                         categoriesScreen.style.display = 'none';
+                        deleteDataButton.style.display = 'none';
                         currentWords = message.data.words.split(',').sort(() => Math.random() - 0.5);
                         startGuessingGame();
                     }
@@ -956,31 +1122,122 @@ class App {
                         displayBarMessage('There was an error. Try again');
                     }
                 }
+                else if (message.type == 'updateCategoryFeedback') {
+                    if (message.data.information != null && message.data.information != '') {
+                        let previousHSID = '';
+
+                        categoryNumOfPlays = (Number(categoryNumOfPlays) + 1).toString();
+
+                        if (message.data.information == 'NEWHS') {
+                            finalScore.textContent = currentWordIndex + "\n is New High Score!";
+                            categoryHighScore = currentWordIndex;
+                            categoryHSByUsername = username;
+                            if (!(userID == categoryHSByID)) {
+                                previousHSID = categoryHSByID;
+                                categoryHSByID = userID;
+                            }
+                        }
+                        else if (message.data.information == 'NOTHS') {
+                            finalScore.textContent = currentWordIndex;
+                            const [previousHSUser, previousHS] = message.data.categoryInfo.split(':');
+                            /* WITH LINK
+                            highScore.innerHTML = parseInt(previousHS) > 0 ? "High Score<br>" +
+                                (previousHSUser == '[deleted]' ? 'by [deleted]:' : "by <a href=\"https://www.reddit.com/u/" + previousHSUser + "\" target=\"_blank\" class=\"links\">" + previousHSUser + "</a>:") +
+                                "<br>" +
+                                previousHS : 'High Score:<br> 0';*/
+
+                            highScore.innerHTML = parseInt(previousHS) > 0 ? "High Score<br>" + "by " + previousHSUser + ":" + "<br>" + previousHS : 'High Score:<br> 0';
+
+
+                            highScore.style.display = 'block';
+                        }
+                    }
+                    else {
+                        displayBarMessage('There was an error.');
+                    }
+                    finalScore.style.display = 'block';
+
+                    keyboard.style.display = 'none';
+                    keyboardOutput.style.display = 'none';
+
+                    timeDisplay.style.display = 'none';
+                    wordCount.style.display = 'none';
+
+                    retryButton.style.display = 'block';
+
+                    returnToStartButton.style.top = '70%';
+                    returnToStartButton.style.display = 'block';
+                }
+                else if (message.type == 'sendUserData') {
+                    console.log(message.data.createdCategories);
+                    displayCategories(message.data.createdCategories, 'userCategories');
+                    deleteDataButton.style.display = 'block';
+                }
                 else if (message.type == 'formOpened') {
-                    if (!message.data.correctly) {
+                    if (!message.data.correctly || message.data.correctly == 'false') {
                         displayBarMessage('There was an error starting the creation process. Try again');
+                    } else if (message.data.correctly == 'exceeded') {
+                        displayBarMessage('You have currently max of 10 active categories. In Settings you can remove them and create space for new.');
                     }
                     document.body.style.pointerEvents = 'all';
                 }
                 else if (message.type == 'formCorrect') {
-                    displayBarMessage(message.data.categoryTitle + ' has been succesfully created');
+                    if (message.type.categoryTitle == '') {
+                        displayBarMessage('There was an error. Try again.');
+                    }
+                    else {
+                        displayBarMessage(message.data.categoryTitle + ' has been succesfully created');
+                    }
                 }
-                else if (message.type == 'formIncorrect') {
-                    if (!message.data.wordsCorrect && !message.data.titleCorrect) {
-                        displayBarMessage('Both fields have been incorrectly submitted');
+                /* else if (message.type == 'formIncorrect') {
+                     if (!message.data.wordsCorrect && !message.data.titleCorrect) {
+                         displayBarMessage('Both fields have been incorrectly submitted');
+                     }
+                     else if (!message.data.wordsCorrect) { displayBarMessage('Words field has been incorrectly submitted'); }
+                     else if (!message.data.titleCorrect) {
+                         displayBarMessage('Title field has been incorrectly submitted');
+                     }
+                 }*/
+                else if (message.type == 'categoryDeleted') {
+                    if (message.data.deleted) {
+                        displayBarMessage('Category has been deleted.');
+                        displayCategories('', 'userCategoriesRemoveOne');
                     }
-                    else if (!message.data.wordsCorrect) { displayBarMessage('Words field has been incorrectly submitted'); }
-                    else if (!message.data.categoryTitle) {
-                        displayBarMessage('Title field has been incorrectly submitted');
+                    else {
+                        displayBarMessage('There was an error. Try again, or reach r/nestorvfx');
                     }
+                    deleteConfirmationScreen.style.display = 'none';
+                    document.body.style.pointerEvents = 'all';
+                }
+                else if (message.type == 'allDataDeleted') {
+                    if (message.data.deleted) {
+                        displayBarMessage('Data has been deleted.');
+                        displayCategories('', 'userCategories');
+                    }
+                    else {
+                        displayBarMessage('There was an error. Try again, or reach r/nestorvfx');
+                    }
+                    deleteConfirmationScreen.style.display = 'none';
+                    document.body.style.pointerEvents = 'all';
                 }
             }
         });
+
+        // Let blocks now webview started
+        window.parent.postMessage(
+            {
+                type: 'webViewStarted', data: {
+                }
+            },
+            '*'
+        );
 
         function displayBarMessage(message) {
             formMessage.textContent = message;
             formMessage.style.display = 'block';
             formMessage.style.opacity = 0.8;
+
+            maintenanceTime = message.endsWith('5 minutes.');
         }
 
         setupStartScreen();
@@ -992,10 +1249,10 @@ class App {
             requestAnimationFrame(update);
             if (particlesAreSetup) {
 
-                if (guess != '' && gameStarted && currentWordIndex < currentWords.length - 1) {
+                if (guess != '' && gameStarted && currentWordIndex < currentWords.length) {
                     if (guess == currentWord && totalTime < gameLength) {
                         currentWordIndex += 1;
-                        if (currentWordIndex < currentWords.length - 1) {
+                        if (currentWordIndex <= currentWords.length - 1) {
                             setNewWordParticles(currentWords[currentWordIndex]);
                         } else {
                             displayEndScreen(true);
@@ -1020,8 +1277,8 @@ class App {
                     // Clamping to prevent particles going much further than needed if frames glitch for a bit
                     const deltaTime = clamp(totalTimeDeltaTime, 0, 0.03);
 
-                    if (totalTime >= gameLength && radiusScaling == 1) {
-                        displayEndScreen();
+                    if (totalTime >= gameLength && gameStarted) {
+                        displayEndScreen(false);
                     } else if (totalTime < gameLength && !gameFinished) {
                         if (gameStarted) {
                             totalTime += totalTimeDeltaTime;
@@ -1099,10 +1356,14 @@ class App {
                                 particle.userData.trail.shift();
                             }
 
+                            if (trailLine.geometry) {
+                                trailLine.geometry.dispose();
+                            }
                             const trailGeometry = new LineGeometry();
-                            const positions = particle.userData.trail.flatMap(t => [t.x, t.y, t.z]);
                             trailGeometry.setFromPoints(particle.userData.trail);
                             trailLine.geometry = trailGeometry;
+                            //  const positions = trailLine.geometry.attributes.position.array;
+
                             //trailLine.computeLineDistances();
                         }
                         if (i == 0) {
@@ -1117,17 +1378,25 @@ class App {
             }
 
             // Fade out Form Message
-            if (formMessage.style.opacity > 0) {
+            if (formMessage.style.opacity > 0 && !maintenanceTime) {
                 formMessage.style.opacity = clamp(formMessage.style.opacity - clamp((0.802 - formMessage.style.opacity) * 0.02, 0, 0.02), 0, 1);
                 if (formMessage.style.opacity == 0) {
-                    formMessage.style.display = 'none';
+                    minutesOffset = isWithin5MinutesOf20thUTC();
+                    if (0 < minutesOffset && minutesOffset <= 5) {
+                        const minutesString = Math.round(minutesOffset) == 1 ? ' minute' : ' minutes';
+                        displayBarMessage('In ~' + Math.round(minutesOffset).toString() + minutesString + ', app will close for maintenance for 5 minutes.');
+                    } else {
+                        formMessage.style.display = 'none';
+                    }
                 }
+            } else if (maintenanceTime) {
+                minutesOffset = isWithin5MinutesOf20thUTC();
+                const minutesString = Math.round(minutesOffset) == 1 ? ' minute' : ' minutes';
+                displayBarMessage('In ~' + Math.round(minutesOffset).toString() + minutesString + ', app will close for maintenance for 5 minutes.');
             }
 
             renderer.render(scene, camera);
         }
-
-        // update();
     }
 }
 

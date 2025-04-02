@@ -12,10 +12,23 @@
         <div id="starting-screen">
             <button id="play-button">Play</button>
             <button id="create-category-button">Create Category</button>
+            <button id="settingsButton">Settings</button>
         </div>
 
         <button id="returnToStartButton">Main Screen</button>
         <button id="retryButton">Try again</button>
+
+        <button id="deleteDataButton">Remove Data</button>
+
+        <div id="deleteConfirmationScreen">
+            <div id="banner">
+                <h3 id="deleteText">Confirm deleting all of your Reddit data related to Word Trail Game?</h3>
+                <div id="banner-buttons">
+                    <button id="confirmButton">Confirm</button>
+                    <button id="cancelButton">Cancel</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Container for top-left text -->
         <div id="top-left-container">
@@ -41,6 +54,7 @@
 
             <button id="scrollButtonDown">▼</button>
             <button id="startButton">Start</button>
+            <button id="deleteCategoryButton">Delete Category</button>
         </div>
 
         <div id="final-score"></div>
@@ -74,8 +88,8 @@
                 <button class="key">J</button>
                 <button class="key">K</button>
                 <button class="key">L</button>
-                <space></space>
-
+                <img src="Keyboard Image.png" alt="Keyboard Image" class="keyboardImage">
+                <!-- <space></space> -->
                 <!-- Checkmark Button Spanning Rows -->
                 <button class="key submit">✔</button>
 
@@ -91,6 +105,10 @@
             </div>
 
         </div>
+    </div>
+    <div id="maintenanceOverlay">
+        Maintenance in progress.<br>
+        Try again in a few minutes.
     </div>
     <script type="module" src="script.js"></script>
 </body>

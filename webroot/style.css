@@ -39,6 +39,17 @@ body {
     gap: 2vw;
 }
 
+#maintenanceOverlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    padding: 20px;
+    display: none;
+    z-index: 1000; /* Ensure it's above other elements */
+}
+
 #starting-screen {
     position: absolute;
     display: none;
@@ -50,13 +61,10 @@ body {
 }
 
 
-#play-button {
+#play-button, #create-category-button, #settingsButton, #deleteDataButton {
     position: absolute;
     border-radius: 2vw;
     padding: 1.8vw 1.8vw;
-    font-size: 3.7vw;
-    width: 38vw;
-    top: 45%;
     color: white;
     background-color: transparent;
     border: 2px solid white;
@@ -65,19 +73,30 @@ body {
     margin: 10px 0;
 }
 
-#create-category-button {
-    position: absolute;
-    border-radius: 2vw;
-    padding: 1.8vw 1.8vw;
+#play-button, #create-category-button, #settingsButton {
     font-size: 3.7vw;
     width: 38vw;
-    color: white;
+}
+
+#play-button {
+    top: 45%;
+}
+
+#create-category-button {
     top: 60%;
-    background-color: transparent;
-    border: 2px solid white;
-    cursor: pointer;
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
-    margin: 10px 0;
+}
+
+#settingsButton {
+    top: 75%;
+}
+
+#deleteDataButton {
+    font-size: 2vw;
+    width: 20vw;
+    display: none;
+    top: 10%;
+    right: 10%;
+    z-index: 157;
 }
 
 #returnToStartButton {
@@ -112,6 +131,16 @@ body {
     box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
     display: none;
     z-index: 157;
+}
+
+#play-button,
+#create-category-button,
+#settingsButton,
+#deleteDataButton,
+#retryButton,
+#returnToStartButton {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
 }
 
 #formMessage {
@@ -151,7 +180,7 @@ body {
     background-color: transparent;
     text-align: center;
     display: none;
-    pointer-events: none;
+    cursor: default;
     white-space: pre-wrap;
 }
 
@@ -241,8 +270,7 @@ body {
     z-index: 150;
 }
 
-.key {
-    background-color: #FFA726;
+.key, .keyboardImage {
     color: white;
     border: none;
     border-radius: 5px;
@@ -250,47 +278,55 @@ body {
     font-size: 2.6vw;
     width: 8.09vw;
     height: 8.09vw;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-    .key.space {
-        grid-column: 8 / 11;
-        width: 25.67vw;
-        transform: translateX(0vw);
-        background-color: #FFA726;
+.key {
+    cursor: pointer;
+    background-color: #FFA726;
+}
+
+.keyboardImage {
+    background-color: transparent;
+}
+
+.key.space {
+    grid-column: 8 / 11;
+    width: 25.67vw;
+    transform: translateX(0vw);
+    background-color: #FFA726;
+}
+
+.key.submit {
+    background-color: #4CAF50;
+    height: 17.78vw;
+    grid-row: 2 / 4;
+    grid-column: 11 / 12;
+}
+
+    .key.submit span {
+        font-size: 1.5em;
     }
 
-    .key.submit {
-        background-color: #4CAF50;
-        height: 17.78vw;
-        grid-row: 2 / 4;
-        grid-column: 11 / 12;
-    }
+.key.backspace {
+    background-color: #F44336;
+    grid-row: 1 / 2;
+    grid-column: 11 / 12;
+}
 
-        .key.submit span {
-            font-size: 1.5em;
-        }
+.key:active {
+    background-color: #FB8C00;
+}
 
-    .key.backspace {
-        background-color: #F44336;
-        grid-row: 1 / 2;
-        grid-column: 11 / 12;
-    }
+.key.submit:active {
+    background-color: #388E3C;
+}
 
-    .key:active {
-        background-color: #FB8C00;
-    }
-
-    .key.submit:active {
-        background-color: #388E3C;
-    }
-
-    .key.backspace:active {
-        background-color: #D32F2F;
-    }
+.key.backspace:active {
+    background-color: #D32F2F;
+}
 
 
 /* Categories List layout */
@@ -312,6 +348,7 @@ body {
     position: absolute;
     top: 3%;
     background-color: transparent;
+    cursor: default;
     text-align: center;
 }
 
@@ -342,7 +379,7 @@ body {
     top: 77%;
 }
 
-#startButton {
+#startButton, #deleteCategoryButton {
     border-radius: 2vw;
     padding: 1vw 1vw;
     font-size: 3.7vw;
@@ -357,7 +394,7 @@ body {
     cursor: pointer;
     box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
     align-content: center;
-    display: block;
+    display: none;
     z-index: 154;
 }
 
@@ -482,3 +519,80 @@ body {
     line-height: 3vw;
     text-align: center;
 }
+
+/*.links {
+    text-decoration: none;
+    color: inherit;
+}*/
+
+
+/*Data removing screen confirmation*/
+#deleteConfirmationScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.2);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+#banner {
+    background-color: #f3f4f6;
+    color: #374151;
+    border-radius: 2vw;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    width: 80vw;
+    max-width: 500px;
+    height: auto;
+    padding: 1rem;
+    text-align: center;
+    cursor: default;
+}
+
+    #banner h3 {
+        margin-bottom: 2rem;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+#banner-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    gap: 2rem;
+}
+
+    #banner-buttons button {
+        flex: 1;
+        padding: 0.4rem 0.8rem;
+        border: none;
+        border-radius: 1rem;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.2s ease-in-out;
+        white-space: nowrap;
+    }
+
+#confirmButton {
+    background-color: #84aff5;
+    color: white;
+}
+
+    #confirmButton:hover {
+        background-color: #3b82f6;
+    }
+
+#cancelButton {
+    background-color: #6b7280;
+    color: white;
+}
+
+    #cancelButton:hover {
+        background-color: #4b5563;
+    }
