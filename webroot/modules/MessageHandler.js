@@ -1,0 +1,328 @@
+/**
+ * Class that handles communication with the parent window
+ */
+export class MessageHandler {
+    constructor(gameState, uiManager, particleSystem) {
+        this.gameState = gameState;
+        this.uiManager = uiManager;
+        this.particleSystem = particleSystem;
+        this.callbacks = {};
+    }
+
+    /**
+     * Initialize message handler with callbacks
+     * @param {Object} callbacks - Callback functions for message events
+     */
+    initialize(callbacks) {
+        this.callbacks = callbacks || {};
+        this.setupMessageListener();
+        this.notifyWebViewStarted();
+        
+        // Do NOT show the starting screen here; wait for initialData message
+        // this.uiManager.showStartScreen(); 
+    }
+
+    /**
+     * Set up the window message event listener
+     */
+    setupMessageListener() {
+        window.addEventListener('message', (event) => {
+            if (event.data.type == 'devvit-message') {
+                const message = event.data.data.message;
+                this.handleMessage(message);
+            }
+        });
+    }
+
+    /**
+     * Handle incoming messages
+     * @param {Object} message - The received message
+     */
+    handleMessage(message) {
+        switch (message.type) {
+            case 'initialData':
+                this.handleInitialData(message.data);
+                break;
+            
+            case 'sendCategories':
+                this.handleSendCategories(message.data);
+                break;
+            
+            case 'sendCategoryWords':
+                this.handleSendCategoryWords(message.data);
+                break;
+            
+            case 'updateCategoryFeedback':
+                this.handleUpdateCategoryFeedback(message.data);
+                break;
+            
+            case 'sendUserData':
+                this.handleSendUserData(message.data);
+                break;
+            
+            case 'formOpened':
+                this.handleFormOpened(message.data);
+                break;
+            
+            case 'formCorrect':
+                this.handleFormCorrect(message.data);
+                break;
+            
+            case 'categoryDeleted':
+                this.handleCategoryDeleted(message.data);
+                break;
+            
+            case 'allDataDeleted':
+                this.handleAllDataDeleted(message.data);
+                break;
+                
+            default:
+                console.log('Unhandled message type:', message.type);
+        }
+    }
+
+    /**
+     * Handle initial data message
+     * @param {Object} data - Initial data from parent
+     */
+    handleInitialData(data) {
+        if (data.username != null && data.username != '') {
+            const userDataInitialized = this.gameState.initWithUserData(data);
+            
+            if (data.postType == 'mainPost') {
+                // Main post, show the start screen with updated UI based on user permissions
+                this.uiManager.showStartScreen();
+                
+                if (this.callbacks.onInitialDataLoaded) {
+                    this.callbacks.onInitialDataLoaded();
+                }
+            }
+            else if (data.postType.startsWith('categoryPost')) {
+                // Category post, start game directly
+                const parts = data.postType.split(':');
+                this.gameState.categoryCode = parts[1];
+                this.gameState.createdBy = parts[2];
+                this.gameState.categoryTitle = parts[3];
+                this.gameState.categoryNumOfPlays = parts[4];
+                this.gameState.categoryHighScore = parts[5];
+                this.gameState.categoryHSByUsername = parts[6];
+                this.gameState.categoryHSByID = parts[7];
+                this.gameState.categoryPostID = parts[8];
+                
+                if (parts[9]) {
+                    this.gameState.setWordsList(parts[9]);
+                    
+                    this.uiManager.startGameInterface();
+                    
+                    const initialWord = this.gameState.startGuessingGame();
+                    
+                    if (this.callbacks.onGameStart) {
+                        this.callbacks.onGameStart(initialWord);
+                    }
+                } else {
+                    this.uiManager.displayMessage('There was an error. Try again');
+                }
+            }
+        }
+    }
+
+    /**
+     * Handle send categories message
+     * @param {Object} data - Categories data
+     */
+    handleSendCategories(data) {
+        this.uiManager.displayCategories(data.usersCategories, 'playCategories');
+        this.gameState.currentCategoriesCursor = data.cursor;
+        if (this.gameState.currentCategoriesCursor == 0) {
+            this.gameState.allCategoriesReceived = true;
+        }
+    }
+
+    /**
+     * Handle send category words message
+     * @param {Object} data - Category words data
+     */
+    handleSendCategoryWords(data) {
+        if (data.words != null && data.words != 'error') {
+            this.uiManager.startGameInterface();
+            
+            if (this.gameState.setWordsList(data.words)) {
+                const initialWord = this.gameState.startGuessingGame();
+                
+                if (this.callbacks.onGameStart) {
+                    this.callbacks.onGameStart(initialWord);
+                }
+            }
+        }
+        else {
+            this.uiManager.displayMessage('There was an error. Try again');
+        }
+    }
+
+    /**
+     * Handle update category feedback message
+     * @param {Object} data - Category feedback data
+     */
+    handleUpdateCategoryFeedback(data) {
+        const feedbackResult = this.gameState.updateCategoryWithFeedback(data);
+        
+        if (feedbackResult.status === 'error') {
+            this.uiManager.displayMessage('There was an error.');
+            return;
+        }
+        
+        this.uiManager.displayEndScreen(false, feedbackResult);
+    }
+
+    /**
+     * Handle send user data message
+     * @param {Object} data - User data
+     */
+    handleSendUserData(data) {
+        this.uiManager.displayCategories(data.createdCategories, 'userCategories');
+        this.uiManager.elements.deleteDataButton.style.display = 'block';
+    }
+
+    /**
+     * Handle form opened message
+     * @param {Object} data - Form opened data
+     */
+    handleFormOpened(data) {
+        if (!data.correctly || data.correctly == 'false') {
+            this.uiManager.displayMessage('There was an error starting the creation process. Try again');
+        } else if (data.correctly == 'exceeded') {
+            this.uiManager.displayMessage('You have currently max of 10 active categories. In Settings you can remove them and create space for new.');
+        }
+        document.body.style.pointerEvents = 'all';
+    }
+
+    /**
+     * Handle form correct message
+     * @param {Object} data - Form correct data
+     */
+    handleFormCorrect(data) {
+        if (data.categoryTitle == '') {
+            this.uiManager.displayMessage('There was an error. Try again.');
+        }
+        else {
+            this.uiManager.displayMessage(data.categoryTitle + ' has been succesfully created');
+        }
+    }
+
+    /**
+     * Handle category deleted message
+     * @param {Object} data - Category deleted data
+     */
+    handleCategoryDeleted(data) {
+        if (data.deleted) {
+            this.uiManager.displayMessage('Category has been deleted.');
+            this.uiManager.displayCategories('', 'userCategoriesRemoveOne');
+        }
+        else {
+            this.uiManager.displayMessage('There was an error. Try again, or reach r/nestorvfx');
+        }
+        this.uiManager.elements.deleteConfirmationScreen.style.display = 'none';
+        document.body.style.pointerEvents = 'all';
+    }
+
+    /**
+     * Handle all data deleted message
+     * @param {Object} data - All data deleted data
+     */
+    handleAllDataDeleted(data) {
+        if (data.deleted) {
+            this.uiManager.displayMessage('Data has been deleted.');
+            this.uiManager.displayCategories('', 'userCategories');
+        }
+        else {
+            this.uiManager.displayMessage('There was an error. Try again, or reach r/nestorvfx');
+        }
+        this.uiManager.elements.deleteConfirmationScreen.style.display = 'none';
+        document.body.style.pointerEvents = 'all';
+    }
+
+    /**
+     * Notify parent that WebView has started
+     */
+    notifyWebViewStarted() {
+        window.parent.postMessage(
+            { type: 'webViewStarted', data: {} },
+            '*'
+        );
+    }
+
+    /**
+     * Send message to request categories
+     * @param {number} cursor - Cursor position for pagination
+     */
+    requestCategories(cursor) {
+        window.parent.postMessage(
+            { type: 'updateCategories', data: { cursor } },
+            '*'
+        );
+    }
+
+    /**
+     * Send message to request words for a category
+     * @param {string} categoryCode - Category code
+     */
+    requestCategoryWords(categoryCode) {
+        window.parent.postMessage(
+            { type: 'wordsRequest', data: { categoryCode } },
+            '*'
+        );
+    }
+
+    /**
+     * Send message to start form for category creation
+     */
+    startCategoryForm() {
+        console.log("Sending startForm message to parent window");
+        window.parent.postMessage(
+            { type: 'startForm', data: {} },
+            '*'
+        );
+    }
+
+    /**
+     * Send message to request user data
+     */
+    requestUserData() {
+        window.parent.postMessage(
+            { type: 'requestUserData', data: {} },
+            '*'
+        );
+    }
+
+    /**
+     * Send message to delete a category
+     * @param {string} categoryCode - Category code to delete
+     */
+    deleteCategory(categoryCode) {
+        window.parent.postMessage(
+            { type: 'deleteCategory', data: { categoryCode } },
+            '*'
+        );
+    }
+
+    /**
+     * Send message to delete all user data
+     */
+    deleteAllUserData() {
+        window.parent.postMessage(
+            { type: 'deleteAllUserData', data: {} },
+            '*'
+        );
+    }
+
+    /**
+     * Send message to update category information
+     * @param {Object} data - Category update data
+     */
+    updateCategoryInfo(data) {
+        window.parent.postMessage(
+            { type: 'updateCategoryInfo', data },
+            '*'
+        );
+    }
+} 

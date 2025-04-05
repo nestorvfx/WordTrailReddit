@@ -1,4 +1,5 @@
 import { Devvit, SettingScope } from '@devvit/public-api';
+import { LoadingPreview } from './components/LoadingPreview.js';
 
 Devvit.addSettings([
     {
@@ -28,15 +29,16 @@ Devvit.addMenuItem({
                 title: 'Word Trail Game',
                 subredditName: subreddit.name,
                 // The preview appears while the post loads
-                preview: (
-                    <vstack height="100%" width="100%" alignment="middle center">
-                        <text size="large">Loading ...</text>
-                    </vstack>
-                ),
+                preview: LoadingPreview(),
             });
             await context.redis.set('mainPostID', post.id);
             await context.reddit.approve(post.id);
-            await post.sticky();
+            try {
+                await post.sticky();
+            } catch (error) {
+                console.error(`Failed to sticky post: ${error}`);
+                // Continue execution even if stickying fails
+            }
             ui.showToast({ text: 'Created post!' });
             ui.navigateTo(post);
         }

@@ -50,54 +50,67 @@ will have their data removed from Word Trail game in the following manner:
 * And userID/username will be removed from every other part of Word Trail itself/associated database(s)
 posts created alongside those categories and high scores achieved (respective categories will now have HS of 0).
 
-## Project and Database Structure
 
-### Project Structure
-* **Redis**: Used for data storage with 4 main hashes.
-* **WebView**: Utilized for game visualization.
-* **Three.js**: Implements particle system visualization.
-* **Custom Post Types and Menu Items**: Enables integration with Reddit for category creation and gameplay.
+## Technical Documentation
 
-### Database Structure (Redis)
+### Architecture Overview
+Word Trail is built on Reddit's Devvit platform, utilizing a client-server architecture:
+- **Backend**: Node.js with TypeScript, leveraging Devvit's APIs for Reddit integration and Redis for data storage
+- **Frontend**: HTML5/CSS3/JavaScript web application embedded in a Reddit WebView component
 
-#### User Data Storage (`userIDs` hash)
-- **Key**: `userID`
-- **Value**: `username:c:categoryCode1:categoryCode2...:h:categoryCodeH1:categoryCodeH2`
-  - Between `c` and `h` are categories created by user
-  - After `h` are categories where user holds high score
+### Database Structure
+The application uses Redis for data persistence with the following key structures:
 
-#### Latest Category Code (`latestCategoryCode` string)
-- Stores the most recently generated category code
-- Used for referencing and generating new category codes
+#### Global Keys
+- `mainPostID`: ID of the main game post created upon app installation
+- `periodicRemoval`: ID of the periodic removal job for user data cleanup
+- `latestCategoryCode`: Counter/string value used to generate unique codes for new categories
 
-#### Categories Storage (`usersCategories` hash) 
-- **Key**: `categoryCode`
-- **Value**: `creator:categoryTitle:plays:highScore:highScoreUserName:highScoreUserID:postID`
-  - creator: Username who created category
-  - categoryTitle: Display name for category
-  - plays: Number of times played
-  - highScore: Current high score
-  - highScoreUserName: Username holding high score
-  - highScoreUserID: UserID holding high score
-  - postID: Associated Reddit post ID
+#### Hash Tables
+- `userIDs` (Hash)
+   - Key: User's Reddit ID
+   - Value: `username:c:categoryCode1:categoryCode2...:h:categoryCodeH1:categoryCodeH2`
+     - Between `:c:` and `:h:` are categories created by the user
+     - After `:h:` are categories where the user holds the high score
+   
+- `usersCategories` (Hash)
+   - Key: `categoryCode` (unique identifier)
+   - Value: `creator:categoryTitle:plays:highScore:highScoreUserName:highScoreUserID:postID`
+     - Contains metadata about each category including play count and high score info
 
-#### Words Storage (`categoriesWords` hash)
-- **Key**: `categoryCode` 
-- **Value**: Comma-separated words for the category
+- `categoriesWords` (Hash)
+   - Key: `categoryCode`
+   - Value: Comma-separated list of words for the category (the actual game content)
 
-#### Post Categories (`postCategories` hash)
-- **Key**: `postID`
-- **Value**: `categoryCode:authorID`
+- `postCategories` (Hash)
+   - Key: `postID` (Reddit post identifier)
+   - Value: `categoryCode:authorID`
+   - Maps Reddit posts to their corresponding category codes and creators
 
-### Data Operations
-- **Category Creation**: Generates new category code, stores words and metadata
-- **Game Play**: Updates play count and high scores
-- **Data Cleanup**: Monthly process (20th) to handle deleted users:
-  - Retains categories but marks creator as '[deleted]'
-  - Updates high scores to show '[deleted]'
-  - Removes user data from system
+### Application Flow
+1. **Initialization**:
+   - App installation triggers `handleAppInstall` and schedules `initialPost` to create a pinned post
+   - `removeUserDataPeriodically` job runs monthly (on the 20th) to clean up data from deleted users
 
-### Security Features
-- Moderator-only category creation (optional)
-- User data cleanup automation
-- Post verification and approval system
+2. **Main Interface**:
+   - `MainWebView` renders the game interface in a Reddit post
+   - WebView loads HTML/CSS/JS from `webroot/` directory
+   - Communication between WebView and backend handled via typed message passing
+
+3. **Game Lifecycle**:
+   - User selects from Play, Create Category, or Settings
+   - Game creates visual particles representing words to guess
+   - Correct guesses update scores and modify the timer (-8 seconds per correct guess)
+   - End of game posts comments to category posts and updates high scores if applicable
+
+4. **Data Management**:
+   - Categories creation/deletion handled through backend Redis transactions
+   - User data removal (manual or automated) preserves categories but anonymizes creator/high scorer information
+   - Redis transactions with watch/multi/exec ensure data consistency
+
+### Security & Performance Considerations
+- User data is tied to Reddit IDs and cleaned up for deleted accounts
+- Redis transactions prevent race conditions when updating categories
+- WebView messages are typed to ensure proper data structure validation
+- Monthly cleanup job ensures the database doesn't accumulate data from deleted users
+
