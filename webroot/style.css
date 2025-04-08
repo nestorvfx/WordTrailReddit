@@ -466,7 +466,7 @@ body {
     overflow: hidden;
     max-width: 100%;
     text-overflow: clip;
-    font-size: 2.8vw;
+    font-size: 2.6vw;  /* Reduced from 2.8vw */
     display: inline-block;
     vertical-align: middle;
     width: 100%;
@@ -479,7 +479,7 @@ body {
     overflow: hidden;
     max-width: 100%;
     text-overflow: clip;
-    font-size: 2.8vw;
+    font-size: 2.6vw;  /* Reduced from 2.8vw */
     display: inline-block;
     vertical-align: middle;
     width: 100%;
@@ -491,7 +491,7 @@ body {
 }
 
 .col-played, .col-hs {
-    font-size: 2.8vw;
+    font-size: 2.6vw;  /* Reduced from 2.8vw */
     min-width: 0;
     width: 100%;
 }
@@ -503,20 +503,20 @@ body {
     overflow: hidden;
     max-width: 100%;
     text-overflow: ellipsis;
-    font-size: 1.8vw; /* Slightly larger font for readability */
+    font-size: 1.6vw;  /* Slightly smaller than the 1.8vw */
     display: inline-block;
     vertical-align: middle;
     width: 100%;
-    color: white; /* Changed to white for better visibility */
-    font-style: italic; /* Keeping italics for visual distinction */
-    opacity: 0.9; /* Increased opacity */
+    color: white;
+    font-style: italic;
+    opacity: 0.9;
 }
 
 /* Make the header consistent with the table design */
 .list-header .col-timestamp {
     color: inherit;
     font-style: normal;
-    font-size: 1.8vw;
+    font-size: 1.6vw;  /* Reduced from 1.8vw */
     opacity: 1;
 }
 
