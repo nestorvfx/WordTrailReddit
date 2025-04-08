@@ -3,13 +3,20 @@ import { WebViewMessage, CategoryUpdateInfo } from '../types.js';
 import { getNextCode } from '../utils/redis.js';
 
 export async function sendCategories(context: Context, cursor: number, postMessage: (message: WebViewMessage) => void): Promise<void> {
-  // Get categories from Redis
   const categoriesScan = await context.redis.hScan('usersCategories', cursor);
 
-  // Format the categories for the client
-  let result = categoriesScan.fieldValues
-    .map(item => `${item.field}:${item.value}`)
-    .join(';');
+  const processedCategories = categoriesScan.fieldValues.map(item => {
+    const value = item.value;
+    const parts = value.split(':');
+    if (parts.length <= 7) {
+      const now = Math.floor(Date.now() / 1000);
+      return `${item.field}:${value}:${now}`;
+    } else {
+      return `${item.field}:${value}`;
+    }
+  });
+
+  const result = processedCategories.join(';');
 
   postMessage({
     type: 'sendCategories',

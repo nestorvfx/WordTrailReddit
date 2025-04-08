@@ -136,6 +136,57 @@ export class MessageHandler {
         if (this.gameState.currentCategoriesCursor == 0) {
             this.gameState.allCategoriesReceived = true;
         }
+
+        if (data.usersCategories && data.usersCategories !== '') {
+            const categories = data.usersCategories.split(';');
+            const rowsWrapperElement = document.getElementById('rows-wrapper');
+            
+            // Clear existing rows first
+            while (rowsWrapperElement.firstChild) {
+                rowsWrapperElement.removeChild(rowsWrapperElement.firstChild);
+            }
+            
+            categories.forEach((categoryString, index) => {
+                const row = this.createCategoryRow(categoryString, index);
+                rowsWrapperElement.appendChild(row);
+            });
+        }
+    }
+
+    /**
+     * Create a row element for a category
+     * @param {string} categoryString - Category data string
+     * @param {number} index - Index of the category
+     * @returns {HTMLElement} - The created row element
+     */
+    createCategoryRow(categoryString, index) {
+        const parts = categoryString.split(':');
+        const code = parts[0];
+        
+        // Extract timestamp (should be at index 8 since the categoryCode is at index 0)
+        const timestamp = parts.length > 8 ? parts[8] : null;
+        
+        // Format the timestamp
+        const formattedTime = formatRelativeTime(timestamp);
+        
+        const row = document.createElement('div');
+        row.className = 'list-row';
+        row.setAttribute('data-index', index);
+        row.setAttribute('data-code', code);
+        
+        row.innerHTML = `
+            <div class="col-title">${parts[2]}</div>
+            <div class="col-created">${parts[1]}</div>
+            <div class="col-played">${parts[3]}</div>
+            <div class="col-hs">${parts[4]}</div>
+            <div class="col-timestamp">${formattedTime}</div>
+        `;
+        
+        row.addEventListener('click', () => {
+            this.handleRowClick(row);
+        });
+        
+        return row;
     }
 
     /**
@@ -325,4 +376,43 @@ export class MessageHandler {
             '*'
         );
     }
-} 
+}
+
+/**
+ * Utility function to format timestamps
+ * @param {string} timestamp - Timestamp to format
+ * @returns {string} - Formatted relative time
+ */
+function formatRelativeTime(timestamp) {
+    if (!timestamp || isNaN(parseInt(timestamp))) {
+        return '';
+    }
+    
+    try {
+        const now = new Date();
+        const date = new Date(parseInt(timestamp) * 1000);
+        
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            return "Today";
+        } else if (diffDays === 1) {
+            return "1d";  // Changed from "Yesterday" to "1d"
+        } else if (diffDays < 7) {
+            return `${diffDays}d`;
+        } else if (diffDays < 30) {
+            const weeks = Math.floor(diffDays / 7);
+            return `${weeks}w`;
+        } else if (diffDays < 365) {
+            const months = Math.floor(diffDays / 30);
+            return `${months}mo`;
+        } else {
+            const years = Math.floor(diffDays / 365);
+            return `${years}y`;
+        }
+    } catch (e) {
+        console.error("Error formatting timestamp:", e);
+        return '';
+    }
+}

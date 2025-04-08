@@ -280,5 +280,83 @@ class App {
     }
 }
 
+// Clean up formatTimestamp function - remove logs, keep functionality
+function formatRelativeTime(timestamp) {
+    if (!timestamp || isNaN(parseInt(timestamp))) {
+        return '';
+    }
+    
+    try {
+        const now = new Date();
+        const date = new Date(parseInt(timestamp) * 1000);
+        
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            return "Today";
+        } else if (diffDays === 1) {
+            return "1d";
+        } else if (diffDays < 7) {
+            return `${diffDays}d`;
+        } else if (diffDays < 30) {
+            const weeks = Math.floor(diffDays / 7);
+            return `${weeks}w`;
+        } else if (diffDays < 365) {
+            const months = Math.floor(diffDays / 30);
+            return `${months}mo`;
+        } else {
+            const years = Math.floor(diffDays / 365);
+            return `${years}y`;
+        }
+    } catch (e) {
+        return '';
+    }
+}
+
+// Clean up createCategoryRow function - remove logs, keep functionality
+function createCategoryRow(categoryString, index) {
+    const parts = categoryString.split(':');
+    const code = parts[0];
+    
+    // Extract timestamp (should be at index 8)
+    const timestamp = parts.length > 8 ? parts[8] : null;
+    
+    // Format the timestamp
+    const formattedTime = formatRelativeTime(timestamp);
+    
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    row.setAttribute('data-index', index);
+    row.setAttribute('data-code', code);
+    
+    row.innerHTML = `
+        <div class="col-title">${parts[2]}</div>
+        <div class="col-created">${parts[1]}</div>
+        <div class="col-played">${parts[3]}</div>
+        <div class="col-hs">${parts[4]}</div>
+        <div class="col-timestamp">${formattedTime}</div>
+    `;
+    
+    // Event handlers would be added here
+    
+    return row;
+}
+
+// If you have a separate function that processes the sendCategories response, update that too:
+function handleSendCategories(data) {
+    // ...existing code...
+    
+    if (data.usersCategories && data.usersCategories !== '') {
+        const categories = data.usersCategories.split(';');
+        categories.forEach((categoryString, index) => {
+            const row = createCategoryRow(categoryString, index);
+            rowsWrapperElement.appendChild(row);
+        });
+    }
+    
+    // ...existing code...
+}
+
 // Instantiate the application immediately
 new App();

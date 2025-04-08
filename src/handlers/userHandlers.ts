@@ -96,11 +96,15 @@ export async function createCategory(
         // Add timestamp (in seconds since epoch) when the category was created
         const creationTimestamp = Math.floor(Date.now() / 1000);
 
+        // Add timestamp when creating a new category
+        const timestamp = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+        const categoryInfo = `${username}:${values.title}:0:0:::${post.id}:${timestamp}`;
+
         await txn.multi();
         await txn.hSet('postCategories', { [post.id]: newCode + ':' + userID });
         await txn.set('latestCategoryCode', newCode);
         await txn.hSet('usersCategories', {
-          [newCode]: username + ":" + values.title + ":0:0:::" + post.id + ":" + creationTimestamp
+          [newCode]: categoryInfo
         });
         await txn.hSet('categoriesWords', {
           [newCode]: words

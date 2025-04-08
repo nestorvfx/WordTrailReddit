@@ -430,7 +430,7 @@ body {
 
 .list-header, .list-row {
     display: grid;
-    grid-template-columns: 3fr 3fr 1fr 1fr;
+    grid-template-columns: 3fr 2.5fr 1fr 1fr 0.8fr; /* Made timestamp column even narrower */
     align-items: center;
     box-shadow: 0 0.1vw 0.15vw rgba(0, 0, 0, 0.1);
     width: 80vw;
@@ -494,6 +494,30 @@ body {
     font-size: 2.8vw;
     min-width: 0;
     width: 100%;
+}
+
+/* Update timestamp column styling for better visibility */
+.col-timestamp {
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    font-size: 1.8vw; /* Slightly larger font for readability */
+    display: inline-block;
+    vertical-align: middle;
+    width: 100%;
+    color: white; /* Changed to white for better visibility */
+    font-style: italic; /* Keeping italics for visual distinction */
+    opacity: 0.9; /* Increased opacity */
+}
+
+/* Make the header consistent with the table design */
+.list-header .col-timestamp {
+    color: inherit;
+    font-style: normal;
+    font-size: 1.8vw;
+    opacity: 1;
 }
 
 

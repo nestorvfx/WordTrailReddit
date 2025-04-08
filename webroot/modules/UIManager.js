@@ -1,6 +1,45 @@
 import { displayBarMessage } from './utils.js';
 
 /**
+ * Utility function to format timestamps into relative time
+ * @param {number|string} timestamp - Unix timestamp
+ * @returns {string} - Formatted relative time string
+ */
+function formatRelativeTime(timestamp) {
+    if (!timestamp || isNaN(parseInt(timestamp))) {
+        return '';
+    }
+    
+    try {
+        const now = new Date();
+        const date = new Date(parseInt(timestamp) * 1000);
+        
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            return "Today";
+        } else if (diffDays === 1) {
+            return "Yesterday";
+        } else if (diffDays < 7) {
+            return `${diffDays}d ago`;
+        } else if (diffDays < 30) {
+            const weeks = Math.floor(diffDays / 7);
+            return `${weeks}w ago`;
+        } else if (diffDays < 365) {
+            const months = Math.floor(diffDays / 30);
+            return `${months}mo ago`;
+        } else {
+            const years = Math.floor(diffDays / 365);
+            return `${years}y ago`;
+        }
+    } catch (e) {
+        console.error("Error formatting timestamp:", e);
+        return '';
+    }
+}
+
+/**
  * Class that manages the user interface elements and interactions
  */
 export class UIManager {
@@ -295,23 +334,7 @@ export class UIManager {
         if (!(this.gameState.categoriesList == '' || this.gameState.categoriesList[0] == '')) {
             const currentLength = this.elements.categoriesDisplay.childElementCount;
             for (let c = currentLength; c < this.gameState.categoriesList.length; c++) {
-                const categoryItem = document.createElement("div");
-                categoryItem.className = "list-row";
-                categoryItem.dataset.categoryIndex = c; // Add data attribute for event delegation
-                
-                const [cCode, cUser, cTitle, cNOP, cHS, cBH, cPI] = this.gameState.categoriesList[c].split(':');
-                
-                if (c == 0 && currentLength == 0) {
-                    categoryItem.classList.add('selected');
-                    this.gameState.selectedCategory = 0;
-                }
-                
-                categoryItem.innerHTML = 
-                    "<div class=\"col-title\">" + cTitle + "</div>" +
-                    "<div class=\"col-created\">" + cUser + "</div>" +
-                    "<div class=\"col-played\">" + cNOP + "</div>" +
-                    "<div class=\"col-hs\">" + cHS + "</div>";
-
+                const categoryItem = this.createCategoryRow(this.gameState.categoriesList[c], c);
                 this.elements.categoriesDisplay.appendChild(categoryItem);
             }
             
@@ -371,6 +394,38 @@ export class UIManager {
         }
         
         this.elements.categoriesDisplay.scrollTop = 0;
+    }
+
+    /**
+     * Create a category row element
+     * @param {string} categoryString - Category data string
+     * @param {number} index - Index of the category
+     * @returns {HTMLElement} - Category row element
+     */
+    createCategoryRow(categoryString, index) {
+        const parts = categoryString.split(':');
+        const code = parts[0];
+        const creator = parts[1];
+        const title = parts[2];
+        const plays = parts[3];
+        const highScore = parts[4];
+        const timestamp = parts.length > 8 ? parts[8] : null;
+
+        const formattedTime = formatRelativeTime(timestamp);
+
+        const row = document.createElement('div');
+        row.className = 'list-row';
+        row.dataset.categoryIndex = index;
+
+        row.innerHTML = `
+            <div class="col-title">${title}</div>
+            <div class="col-created">${creator}</div>
+            <div class="col-played">${plays}</div>
+            <div class="col-hs">${highScore}</div>
+            <div class="col-timestamp">${formattedTime}</div>
+        `;
+
+        return row;
     }
 
     /**
@@ -499,4 +554,4 @@ export class UIManager {
         
         // DO NOT Ensure buttons are properly positioned here - handled by showStartScreen
     }
-} 
+}
