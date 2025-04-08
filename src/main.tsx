@@ -32,7 +32,7 @@ Devvit.addSchedulerJob({
 });
 
 Devvit.addSchedulerJob({
-            name: 'removeUserDataPeriodically',
+    name: 'removeUserDataPeriodically',
     onRun: removeUserDataPeriodically,
 });
 

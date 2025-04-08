@@ -41,21 +41,50 @@ export function randomPointInCircle(center, r) {
 }
 
 /**
- * Checks if current time is within 5 minutes of 20th of the month (UTC)
- * @returns {number} - Minutes until the maintenance time
+ * Checks if we're within 5 minutes before the 20th day of the month (23:55-23:59 on 19th)
+ * @returns {number} Minutes until midnight of the 20th if in the window (1-5), or 0 if outside window
  */
-export function isWithin5MinutesOf20thUTC() {
+export function isApproachingMaintenance() {
     const now = new Date();
-    return (Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 20) - Date.now()) / 60000;
+    const day = now.getUTCDate();
+    const hour = now.getUTCHours();
+    const minute = now.getUTCMinutes();
+    
+    // Check if it's the 19th day of the month between 23:55 and 23:59
+    if (day === 19 && hour === 23 && minute >= 55 && minute < 60) {
+        // Return minutes until midnight (1-5)
+        return 60 - minute;
+    }
+    return 0;  // Not in the pre-maintenance window
 }
 
 /**
- * Checks if current time is within 5 minutes after 20th of the month (UTC)
- * @returns {number} - Minutes since the maintenance start time
+ * Checks if we're within the first 5 minutes of the 20th day of the month (00:00-00:05)
+ * @returns {number} Minutes since midnight of the 20th if in the window (0-5), or -1 if before, or 6+ if after
  */
-export function isWithin5MinutesIn20thUTC() {
+export function isInMaintenanceWindow() {
     const now = new Date();
-    return (Date.now() - Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 20)) / 60000;
+    const day = now.getUTCDate();
+    const hour = now.getUTCHours();
+    const minute = now.getUTCMinutes();
+    
+    // If it's the 19th day, return negative value (minutes until maintenance)
+    if (day === 19 && hour === 23) {
+        return -((60 - minute) + 0.1); // Adding 0.1 ensures we don't hit exactly 0
+    }
+    
+    // If it's the 20th day at midnight hour (00:xx)
+    if (day === 20 && hour === 0) {
+        // If within first 5 minutes, return minutes since midnight
+        if (minute < 5) {
+            return minute;
+        }
+        // After first 5 minutes but still in the hour
+        return 6; // Past the maintenance window
+    }
+    
+    // If it's the 20th but past 00:05, or any other day
+    return day < 20 ? -1000 : 1000; // Far outside the maintenance window
 }
 
 /**
@@ -69,4 +98,4 @@ export function displayBarMessage(message, formMessage) {
     formMessage.style.display = 'block';
     formMessage.style.opacity = 0.8;
     return message.endsWith('5 minutes.');
-} 
+}

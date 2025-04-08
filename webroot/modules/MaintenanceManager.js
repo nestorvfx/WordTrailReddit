@@ -1,4 +1,4 @@
-import { isWithin5MinutesOf20thUTC, isWithin5MinutesIn20thUTC } from './utils.js';
+import { isApproachingMaintenance, isInMaintenanceWindow } from './utils.js';
 
 /**
  * Class that manages the maintenance state and notifications
@@ -22,24 +22,24 @@ export class MaintenanceManager {
      * Check if we're in a maintenance window
      */
     checkMaintenanceState() {
-        const minutesOffset = isWithin5MinutesOf20thUTC();
+        const minutesBeforeMaintenance = isApproachingMaintenance();
         
-        if (0 < minutesOffset && minutesOffset <= 5) {
+        if (minutesBeforeMaintenance > 0) {
             this.maintenanceTime = true;
-            const minutesString = Math.round(minutesOffset) == 1 ? ' minute' : ' minutes';
-            this.uiManager.displayMessage('In ~' + Math.round(minutesOffset).toString() + 
+            const minutesString = minutesBeforeMaintenance == 1 ? ' minute' : ' minutes';
+            this.uiManager.displayMessage('In ~' + Math.round(minutesBeforeMaintenance).toString() + 
                 minutesString + ', app will close for database maintenance for 5 minutes.');
         }
         
         // Check if we're already in maintenance
-        const diffInMinutes = isWithin5MinutesIn20thUTC();
-        if (-0.1 < diffInMinutes && diffInMinutes <= 5) {
+        const minutesInMaintenance = isInMaintenanceWindow();
+        if (0 <= minutesInMaintenance && minutesInMaintenance <= 5) {
             this.uiManager.showMaintenanceOverlay();
-        } else if (diffInMinutes < 0) {
-            // Schedule maintenance overlay
+        } else if (minutesInMaintenance < 0) {
+            // Schedule maintenance overlay - convert to milliseconds and add small buffer
             setTimeout(() => {
                 this.uiManager.showMaintenanceOverlay();
-            }, Math.max(-diffInMinutes * 60000 - 0.05, 1000));
+            }, Math.max(Math.abs(minutesInMaintenance) * 60000 + 50, 1000));
         }
     }
 
@@ -47,13 +47,31 @@ export class MaintenanceManager {
      * Set up maintenance schedule for future notifications
      */
     setupMaintenanceSchedule() {
-        const minutesOffset = isWithin5MinutesOf20thUTC();
+        const minutesBeforeMaintenance = isApproachingMaintenance();
         
-        if (!(0 < minutesOffset && minutesOffset <= 5)) {
+        // If not already in the 5-minute warning period
+        if (minutesBeforeMaintenance === 0) {
+            // Calculate time until next maintenance warning (19th at 23:55)
+            const now = new Date();
+            const nextWarning = new Date(Date.UTC(
+                now.getUTCFullYear(),
+                now.getUTCMonth(),
+                now.getUTCDate() < 19 ? 19 : (now.getUTCMonth() === 11 ? 19 : 49), // Handle December
+                23, 55, 0, 0
+            ));
+            
+            // If we're past the 19th for this month, move to next month
+            if (now.getUTCDate() > 19 || (now.getUTCDate() === 19 && now.getUTCHours() >= 23 && now.getUTCMinutes() >= 55)) {
+                nextWarning.setUTCMonth(nextWarning.getUTCMonth() + 1);
+            }
+            
+            const timeUntilWarning = nextWarning.getTime() - Date.now();
+            
             // Schedule a maintenance notification for 5 minutes before maintenance
             setTimeout(() => {
+                this.maintenanceTime = true;
                 this.uiManager.displayMessage('In ~5 minutes, app will close for maintenance for 5 minutes.');
-            }, Math.max(Math.abs((minutesOffset - 5) * 60000) - 0.05, 1000));
+            }, timeUntilWarning);
         }
     }
 
@@ -70,10 +88,12 @@ export class MaintenanceManager {
      */
     updateMaintenanceMessage() {
         if (this.maintenanceTime) {
-            const minutesOffset = isWithin5MinutesOf20thUTC();
-            const minutesString = Math.round(minutesOffset) == 1 ? ' minute' : ' minutes';
-            this.uiManager.displayMessage('In ~' + Math.round(minutesOffset).toString() + 
-                minutesString + ', app will close for maintenance for 5 minutes.');
+            const minutesBeforeMaintenance = isApproachingMaintenance();
+            if (minutesBeforeMaintenance > 0) {
+                const minutesString = Math.round(minutesBeforeMaintenance) == 1 ? ' minute' : ' minutes';
+                this.uiManager.displayMessage('In ~' + Math.round(minutesBeforeMaintenance).toString() + 
+                    minutesString + ', app will close for maintenance for 5 minutes.');
+            }
         }
     }
-} 
+}

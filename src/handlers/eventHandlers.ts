@@ -1,4 +1,4 @@
-import { TriggerContext } from '@devvit/public-api';
+import { Devvit, TriggerContext, useState} from '@devvit/public-api';
 
 export async function handlePostDelete(event: any, context: TriggerContext): Promise<void> {
   const retryLimit = 5;
@@ -71,16 +71,263 @@ export async function handlePostDelete(event: any, context: TriggerContext): Pro
   }
 }
 
+/**
+ * Creates test categories in batches with delays between them
+ */
+async function generateTestCategories(context: TriggerContext): Promise<void> {
+  // Schedule the first category creation with a 30-second delay
+  await context.scheduler.runJob({
+    name: 'create_test_category',
+    runAt: new Date(Date.now() + 30000), // 30 seconds from now
+    data: {
+      userIndex: 0,
+      categoryIndex: 0,
+      categoriesCreated: 0
+    }
+  });
+  
+  console.log('Scheduled test categories creation to start in 30 seconds');
+}
+
+/**
+ * Creates additional indexes to improve category lookup performance
+ */
+async function createCategoryIndexes(context: TriggerContext): Promise<void> {
+  try {
+    // Get all category data
+    let cursor = 0;
+    const categoryTitleMap: Record<string, string> = {};
+    
+    do {
+      const scanResult = await context.redis.hScan('usersCategories', cursor);
+      cursor = scanResult.cursor;
+      
+      // Build title-to-code mapping for fast lookups
+      for (const entry of scanResult.fieldValues) {
+        const categoryCode = entry.field;
+        const categoryData = entry.value;
+        const titleParts = categoryData.split(':');
+        if (titleParts.length >= 3) {
+          const title = titleParts[1];
+          categoryTitleMap[title.toLowerCase()] = categoryCode;
+        }
+      }
+    } while (cursor !== 0);
+    
+    // Store the category title index
+    if (Object.keys(categoryTitleMap).length > 0) {
+      await context.redis.hSet('categoryTitleIndex', categoryTitleMap);
+    }
+    
+    console.log(`Created category indexes with ${Object.keys(categoryTitleMap).length} entries`);
+  } catch (error) {
+    console.error('Error creating category indexes:', error);
+  }
+}
+
+// Add a new scheduler job to create test categories one at a time
+Devvit.addSchedulerJob({
+  name: 'create_test_category',
+  onRun: async (event, context) => {
+    try {
+      // Load current progress from event data
+      const { userIndex = 0, categoryIndex = 0, categoriesCreated = 0 } = event.data || {};
+      
+      // Mock users
+      const mockUsers: { id: string; name: string }[] = [
+        { id: 'user1', name: 'WordMaster42' },
+        { id: 'user2', name: 'VocabNinja' },
+        { id: 'user3', name: 'PuzzleWhiz' },
+        { id: 'user4', name: 'LexiconPro' },
+        { id: 'user5', name: 'WordTrailFan' }
+      ];
+      
+      // Word pools to generate random words from
+      const wordPools = {
+        animals: ['dog', 'cat', 'elephant', 'tiger', 'lion', 'giraffe', 'zebra', 'monkey', 'dolphin', 
+          'penguin', 'koala', 'kangaroo', 'panda', 'eagle', 'shark', 'wolf', 'fox', 'bear', 'snake', 'rabbit'],
+        fruits: ['apple', 'banana', 'orange', 'grape', 'strawberry', 'blueberry', 'watermelon', 'kiwi', 
+          'mango', 'pineapple', 'peach', 'pear', 'plum', 'cherry', 'lemon', 'lime', 'coconut', 'avocado', 'fig', 'papaya'],
+        countries: ['usa', 'canada', 'mexico', 'brazil', 'argentina', 'france', 'germany', 'spain', 
+          'italy', 'uk', 'russia', 'china', 'japan', 'india', 'australia', 'egypt', 'kenya', 'nigeria', 'greece', 'sweden'],
+        sports: ['soccer', 'basketball', 'tennis', 'baseball', 'golf', 'hockey', 'volleyball', 
+          'swimming', 'cycling', 'boxing', 'skiing', 'surfing', 'cricket', 'rugby', 'football', 'wrestling', 'gymnastics', 'archery', 'bowling', 'karate'],
+        cities: ['paris', 'london', 'tokyo', 'newyork', 'rome', 'sydney', 'berlin', 'madrid', 
+          'moscow', 'dubai', 'toronto', 'singapore', 'seoul', 'bangkok', 'istanbul', 'cairo', 'stockholm', 'amsterdam', 'delhi', 'beijing'],
+        foods: ['pizza', 'burger', 'pasta', 'sushi', 'taco', 'curry', 'salad', 'steak', 'soup', 
+          'sandwich', 'pancake', 'waffle', 'risotto', 'noodles', 'bread', 'icecream', 'chocolate', 'dumpling', 'kebab', 'croissant'],
+        movies: ['avatar', 'titanic', 'starwars', 'jaws', 'frozen', 'godfather', 'matrix', 'batman', 
+          'avengers', 'jurassic', 'rocky', 'casablanca', 'aliens', 'ghostbusters', 'psycho', 'inception', 'gladiator', 'terminator', 'toy story', 'walle'],
+        jobs: ['doctor', 'teacher', 'engineer', 'lawyer', 'chef', 'artist', 'pilot', 'driver',
+          'journalist', 'firefighter', 'nurse', 'actor', 'police', 'scientist', 'designer', 'farmer', 'programmer', 'carpenter', 'photographer', 'dancer'],
+        colors: ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'brown', 
+          'white', 'black', 'gray', 'cyan', 'magenta', 'gold', 'silver', 'lime', 'navy', 'teal', 'maroon', 'olive'],
+        music: ['rock', 'jazz', 'pop', 'hiphop', 'reggae', 'classical', 'blues', 'metal',
+          'country', 'folk', 'electronic', 'soul', 'funk', 'rap', 'disco', 'opera', 'punk', 'indie', 'salsa', 'techno']
+      };
+      
+      const categoryThemes = Object.keys(wordPools);
+      let latestCategoryCode = await context.redis.get('latestCategoryCode') || '0000000';
+      const subreddit = await context.reddit.getCurrentSubreddit();
+      const subredditName = subreddit?.name || 'test_subreddit';
+      
+      // Exit if we've processed all users
+      if (typeof userIndex === 'number' && userIndex >= mockUsers.length) {
+        console.log(`Completed creating ${categoriesCreated} test categories`);
+        
+        // Create indexes after all categories are created
+        await createCategoryIndexes(context);
+        return;
+      }
+      
+      const user = mockUsers[userIndex as number];
+      
+      // Create user entry if it doesn't exist and retrieve existing data
+      const existingUser = await context.redis.hGet('userIDs', user.id) || user.name;
+      let userInfo = existingUser;
+      let userCategories: string[] = [];
+      
+      // Parse existing user categories if present
+      if (existingUser.includes(':c:')) {
+        const parts = existingUser.split(':c:');
+        const categoriesPart = parts[1].split(':h:')[0];
+        if (categoriesPart) {
+          userCategories = categoriesPart.split(':');
+        }
+      }
+      
+      // Create a single category for this job execution
+      try {
+        // Generate category code
+        const categoryCode = (parseInt(latestCategoryCode) + 1).toString().padStart(7, '0');
+        latestCategoryCode = categoryCode;
+        
+        // Pick a random theme for this category
+        const theme = categoryThemes[Math.floor(Math.random() * categoryThemes.length)];
+        const title = `${user.name}'s ${theme.charAt(0).toUpperCase() + theme.slice(1)}`;
+        
+        // Random metadata
+        const playCount = Math.floor(Math.random() * 50) + 1;
+        
+        // Get words for this category
+        const themeWords = wordPools[theme as keyof typeof wordPools];
+        // Shuffle and take 10-20 words
+        const shuffledWords = [...themeWords].sort(() => 0.5 - Math.random());
+        const wordCount = Math.floor(Math.random() * 11) + 10; // 10-20 words
+        
+        // Process words exactly as in manual category creation (userHandlers.ts)
+        const wordsList = shuffledWords
+          .slice(0, wordCount)
+          .map(word => word.trim())
+          .filter(word => word !== '' && /^[a-zA-Z\s]+$/.test(word) && word.length <= 12);
+        
+        // CRITICAL FIX: Match the exact format from userHandlers.ts - words are joined and UPPERCASE
+        const words = wordsList.join(',').toUpperCase();
+        
+        // Add timestamp (in seconds since epoch) just like manual creation does
+        const creationTimestamp = Math.floor(Date.now() / 1000);
+        
+        // Create post in Reddit
+        const post = await context.reddit.submitPost({
+          title: `Play ${title} category`, // Match exact title format from manual creation
+          subredditName: subredditName,
+          preview: (
+            Devvit.createElement('blocks', { height: 'tall' },
+              Devvit.createElement('vstack', { height: '100%', width: '100%', alignment: 'middle center' },
+                Devvit.createElement('text', { size: 'large' }, 'Loading ...')
+              )
+            )
+          )
+        });
+        
+        // Approve the post to make it visible
+        await context.reddit.approve(post.id);
+        
+        // Create the post-to-category mapping
+        await context.redis.hSet('postCategories', { [post.id]: `${categoryCode}:${user.id}` });
+        
+        // Create category data with post ID and timestamp - CRITICAL: initial high score is 0
+        // The format must exactly match manual category creation in userHandlers.ts
+        const categoryData = `${user.name}:${title}:${playCount}:0:::${post.id}:${creationTimestamp}`;
+        
+        // Store in Redis
+        await context.redis.hSet('usersCategories', { [categoryCode]: categoryData });
+        await context.redis.hSet('categoriesWords', { [categoryCode]: words });
+        
+        // Add to user categories (only in the creator section)
+        userCategories.push(categoryCode);
+        
+        // Update user entry with their created categories only
+        userInfo = `${user.name}:c:${userCategories.join(':')}:h:`;
+        await context.redis.hSet('userIDs', { [user.id]: userInfo });
+        
+        // Update the latest category code
+        await context.redis.set('latestCategoryCode', latestCategoryCode);
+        
+        console.log(`Created category ${title} with ID ${categoryCode} for user ${user.name} (${(typeof categoriesCreated === 'number' ? categoriesCreated : 0) + 1}/30)`);
+      } catch (error) {
+        console.error(`Failed to create category for user ${user.name}:`, error);
+      }
+      
+      // Calculate next user and category index
+      let nextUserIndex: number = typeof userIndex === 'number' ? userIndex : 0;
+      let nextCategoryIndex = (typeof categoryIndex === 'number' ? categoryIndex : 0) + 1;
+      
+      // Move to next user after creating 6 categories
+      if (nextCategoryIndex >= 6) {
+        nextUserIndex += 1;
+        nextCategoryIndex = 0;
+      }
+      
+      // Schedule next category creation with 5 seconds delay using Date approach
+      if (nextUserIndex < mockUsers.length) {
+        await context.scheduler.runJob({
+          name: 'create_test_category',
+          runAt: new Date(Date.now() + 5000), // 5 seconds from now using Date object
+          data: {
+            userIndex: nextUserIndex,
+            categoryIndex: nextCategoryIndex,
+            categoriesCreated: (typeof categoriesCreated === 'number' ? categoriesCreated : 0) + 1
+          }
+        });
+      } else {
+        // All categories have been created, create indexes
+        await createCategoryIndexes(context);
+        console.log(`Completed creating all 30 test categories`);
+      }
+    } catch (error) {
+      console.error('Error in create_test_category job:', error);
+    }
+  }
+});
+
 export async function handleAppInstall(event: any, context: TriggerContext): Promise<void> {
   try {
-    const secondsFive = new Date(Date.now() + 5000);
+    // Set up initial scheduler jobs
     await context.scheduler.runJob({
       name: 'initialPost',
-      data: {},
-      runAt: secondsFive,
+      runAt: new Date(Date.now() + 1000),
     });
-  } catch (e) {
-    console.log('Error during app installation:', e);
-    throw e;
+
+    const now = new Date();
+    const nextMonth = new Date();
+    nextMonth.setUTCDate(20);
+    if (nextMonth.getUTCDate() <= now.getUTCDate()) {
+      nextMonth.setUTCMonth(nextMonth.getUTCMonth() + 1);
+    }
+    nextMonth.setUTCHours(0, 0, 0, 0);
+
+    // Schedule the monthly cleanup job using proper cron syntax
+    await context.scheduler.runJob({
+      name: 'removeUserDataPeriodically',
+      cron: '0 0 20 * *', // Run at midnight (00:00) on the 20th of every month
+    });
+
+    // Start the test category generation process
+    await generateTestCategories(context);
+    
+    console.log('App installed successfully, test categories will be generated with delays');
+  } catch (error) {
+    console.error('Error during app installation:', error);
   }
-} 
+}

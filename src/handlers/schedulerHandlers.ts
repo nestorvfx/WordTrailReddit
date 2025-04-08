@@ -53,7 +53,7 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
             const hCategories = afterH?.split(':') || [];
 
             if (cCategories.length == 0 && hCategories.length == 0) {
-              return;
+              continue;
             }
 
             const promises = [];
@@ -103,9 +103,6 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
                 updatedCategoriesList[categoryCode] = getCategoryInfo.replace(/(:[^:]+:[^:]+)(:[^:]+)$/, ':[deleted]::$2');
               });
             }
-            console.log(updatedCategoriesList);
-            console.log(cCategories);
-            console.log(iuser);
           }
         }
         cursor = scanResponse.cursor;
@@ -132,4 +129,4 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
       retries++;
     }
   }
-} 
+}

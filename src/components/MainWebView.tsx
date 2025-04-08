@@ -5,21 +5,42 @@ import { sendUserData, createCategory } from '../handlers/userHandlers.js';
 import { LoadingPreview } from './LoadingPreview.js';
 
 export const MainWebView = (context: any) => {
-  const isWithin5MinutesIn20thUTC = () => {
+  const isInMaintenanceWindow = () => {
     const now = new Date();
-    return (Date.now() - Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 20)) / 60000;
+    const day = now.getUTCDate();
+    const hour = now.getUTCHours();
+    const minute = now.getUTCMinutes();
+    
+    // If it's the 20th day at midnight hour (00:xx)
+    if (day === 20 && hour === 0) {
+      // If within first 5 minutes, return minutes since midnight
+      if (minute < 5) {
+        return minute;
+      }
+    }
+    
+    // If not in maintenance window, return negative value to indicate time until maintenance
+    // or large positive value to indicate past maintenance
+    if (day === 19 && hour === 23) {
+      return -((60 - minute) + 0.1); // Minutes until maintenance
+    }
+    
+    return day < 20 ? -1000 : 1000; // Far outside the maintenance window
   }
 
-  const [diffInMinutes, setDiffInMinutes] = useState(isWithin5MinutesIn20thUTC());
+  const [diffInMinutes, setDiffInMinutes] = useState(isInMaintenanceWindow());
   const [isItPeriodicRemoval, setIsItPeriodicRemoval] = useState(false);
 
   const periodCheck = () => {
-    if (-0.1 < diffInMinutes && diffInMinutes <= 5) {
+    // Check if we're currently in maintenance window (first 5 minutes of 20th)
+    if (0 <= diffInMinutes && diffInMinutes <= 5) {
       setIsItPeriodicRemoval(true);
-    } else if (diffInMinutes < 0) {
+    } 
+    // Check if we're approaching maintenance (negative minutes)
+    else if (diffInMinutes < 0 && diffInMinutes > -100) { // Only schedule if reasonably close
       useInterval(() => {
         setIsItPeriodicRemoval(true);
-      }, Math.max(-diffInMinutes * 60000 - 0.05, 1000)).start();
+      }, Math.max(Math.abs(diffInMinutes) * 60000 + 50, 1000)).start();
     }
   };
 
@@ -136,8 +157,8 @@ export const MainWebView = (context: any) => {
     url: "page.html",
 
     onMessage: async (message: WebViewMessage) => {
-      setDiffInMinutes(isWithin5MinutesIn20thUTC());
-      setIsItPeriodicRemoval(-0.1 < diffInMinutes && diffInMinutes <= 5);
+      setDiffInMinutes(isInMaintenanceWindow());
+      setIsItPeriodicRemoval(0 <= diffInMinutes && diffInMinutes <= 5);
       if (!isItPeriodicRemoval) {
         switch (message.type) {
           case 'updateCategories':
@@ -228,6 +249,7 @@ export const MainWebView = (context: any) => {
   };
 
   const onShowWebview = () => {
+    // Only show webview if not in maintenance period
     if (!isItPeriodicRemoval) {
       mount();
       setWebviewVisible(true);
@@ -310,4 +332,4 @@ export const MainWebView = (context: any) => {
       </vstack>
     </blocks>
   );
-}; 
+};

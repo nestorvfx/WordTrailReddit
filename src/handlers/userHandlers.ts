@@ -5,7 +5,19 @@ import { LoadingPreview } from '../components/LoadingPreview.js';
 
 export async function sendUserData(context: Context, userID: string, postMessage: (message: WebViewMessage) => void): Promise<void> {
   const userData = (await context.redis.hGet('userIDs', userID)) ?? '';
-
+  
+  // Check if user data contains the created categories marker
+  if (!userData.includes(':c:')) {
+    // No created categories, send empty data immediately
+    postMessage({
+      type: 'sendUserData',
+      data: {
+        createdCategories: ''
+      },
+    });
+    return;
+  }
+  
   const [, , ...categories] = userData.split(':');
   const hIndex = categories.indexOf('h');
 
@@ -81,11 +93,14 @@ export async function createCategory(
 
         const post = await context.reddit.submitPost(postOptions);
 
+        // Add timestamp (in seconds since epoch) when the category was created
+        const creationTimestamp = Math.floor(Date.now() / 1000);
+
         await txn.multi();
         await txn.hSet('postCategories', { [post.id]: newCode + ':' + userID });
         await txn.set('latestCategoryCode', newCode);
         await txn.hSet('usersCategories', {
-          [newCode]: username + ":" + values.title + ":0:0:::" + post.id
+          [newCode]: username + ":" + values.title + ":0:0:::" + post.id + ":" + creationTimestamp
         });
         await txn.hSet('categoriesWords', {
           [newCode]: words
@@ -160,4 +175,4 @@ export async function createCategory(
       }
     }
   }
-} 
+}

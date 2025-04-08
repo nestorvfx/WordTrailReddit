@@ -322,8 +322,20 @@ export async function deleteAllUserData(context: Context, userID: string, postMe
         highScoreCategories.forEach((categoryCode, index) => {
           const categoryData = highScoreCategoryData[index];
           if (categoryData) {
-            const [creator, title, plays, , , , postID] = categoryData.split(':');
-            highScoreUpdates[categoryCode] = `${creator}:${title}:${plays}:0:::${postID}`;
+            // Preserve the timestamp (7th index) if it exists
+            const parts = categoryData.split(':');
+            const timestamp = parts.length > 7 ? parts[7] : '';
+            const postID = parts[6];
+            const creator = parts[0];
+            const title = parts[1];
+            const plays = parts[2];
+            
+            // Include timestamp in updated category data if it exists
+            const updatedValue = timestamp ? 
+              `${creator}:${title}:${plays}:0:::${postID}:${timestamp}` :
+              `${creator}:${title}:${plays}:0:::${postID}`;
+              
+            highScoreUpdates[categoryCode] = updatedValue;
           }
         });
       }
@@ -400,4 +412,4 @@ export async function deleteAllUserData(context: Context, userID: string, postMe
       deleted: deleted
     },
   });
-} 
+}

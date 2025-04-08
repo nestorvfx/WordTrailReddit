@@ -11,7 +11,7 @@ import { UIManager } from './modules/UIManager.js';
 import { MessageHandler } from './modules/MessageHandler.js';
 import { MaintenanceManager } from './modules/MaintenanceManager.js';
 import { lettersPositions, lettersIndices } from './modules/constants.js';
-import { clamp, isWithin5MinutesOf20thUTC } from './modules/utils.js';
+import { clamp, isApproachingMaintenance } from './modules/utils.js';
 
 // Make THREE and related components available globally
 window.THREE = THREE;
@@ -262,8 +262,8 @@ class App {
                     const newOpacity = this.uiManager.updateMessageOpacity(delta);
                     
                     if (newOpacity === 0) {
-                        const minutesOffset = isWithin5MinutesOf20thUTC();
-                        if (0 < minutesOffset && minutesOffset <= 5) {
+                        const minutesOffset = isApproachingMaintenance();
+                        if (minutesOffset > 0) {
                             const minutesString = Math.round(minutesOffset) == 1 ? ' minute' : ' minutes';
                             this.uiManager.displayMessage('In ~' + Math.round(minutesOffset).toString() + 
                                 minutesString + ', app will close for maintenance for 5 minutes.');
