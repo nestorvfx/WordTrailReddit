@@ -47,6 +47,7 @@ export class UIManager {
         this.gameState = gameState;
         this.elements = {};
         this.typeOfConfirm = 'category';
+        this.currentSortMethod = 'time'; // Changed default sort from 'plays' to 'time' (newest first)
         this.initUIElements();
         
         // Clear categories display initially
@@ -98,6 +99,12 @@ export class UIManager {
         this.elements.keyboard = document.getElementById('keyboard');
         this.elements.keyboardOutput = document.getElementById('output');
         this.elements.keys = document.querySelectorAll('.key');
+
+        // Sorting elements
+        this.elements.sortButton = document.getElementById('sortButton');
+        this.elements.sortDropdown = document.getElementById('sortDropdown');
+        this.elements.currentSortText = document.getElementById('currentSort');
+        this.elements.sortOptions = document.querySelectorAll('.sort-option');
     }
 
     /**
@@ -222,25 +229,127 @@ export class UIManager {
 
         // Categories scroll event - needs to remain separate
         this.elements.categoriesDisplay.addEventListener('scroll', () => {
-            const maxScroll = this.elements.categoriesDisplay.scrollHeight - 
-                this.elements.categoriesDisplay.clientHeight;
-                
-            if (this.elements.categoriesDisplay.scrollTop >= maxScroll) {
-                this.elements.scrollButtonDown.disabled = true;
-
-                if (!this.gameState.allCategoriesReceived && callbacks.onCategoriesScrollEnd) {
-                    callbacks.onCategoriesScrollEnd(this.gameState.currentCategoriesCursor);
-                }
-            } else {
-                this.elements.scrollButtonDown.disabled = false;
-            }
-
-            if (this.elements.categoriesDisplay.scrollTop <= 0) {
-                this.elements.scrollButtonUp.disabled = true;
-            } else {
-                this.elements.scrollButtonUp.disabled = false;
+            // Update scroll button states whenever the user scrolls
+            this.updateScrollButtonStates();
+            
+            // Only trigger the callback if bottom reached and more categories to load
+            if (this.elements.scrollButtonDown.disabled && 
+                !this.gameState.allCategoriesReceived && 
+                callbacks.onCategoriesScrollEnd) {
+                callbacks.onCategoriesScrollEnd(this.gameState.currentCategoriesCursor);
             }
         });
+
+        // Add sorting functionality
+        this.setupSortingListeners();
+    }
+
+    /**
+     * Setup listeners for the sorting dropdown
+     */
+    setupSortingListeners() {
+        // Toggle dropdown visibility when sort button is clicked
+        this.elements.sortButton.addEventListener('click', () => {
+            this.elements.sortButton.classList.toggle('active');
+            this.elements.sortDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('#sortContainer')) {
+                this.elements.sortButton.classList.remove('active');
+                this.elements.sortDropdown.classList.remove('show');
+            }
+        });
+
+        // Handle sort option selection
+        this.elements.sortOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                this.currentSortMethod = option.dataset.sort;
+                this.elements.currentSortText.textContent = option.textContent;
+                
+                // Update active class
+                this.elements.sortOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                
+                // Close dropdown
+                this.elements.sortButton.classList.remove('active');
+                this.elements.sortDropdown.classList.remove('show');
+                
+                // Re-sort and display categories
+                if (this.gameState.categoriesList && this.gameState.categoriesList.length > 0) {
+                    this.sortCategories();
+                    this.renderCategoriesList();
+                }
+            });
+        });
+
+        // Set the initial active sort option to match the default sort method
+        this.elements.sortOptions.forEach(opt => {
+            if (opt.dataset.sort === this.currentSortMethod) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
+    }
+
+    /**
+     * Sort the categories based on the current sorting method
+     */
+    sortCategories() {
+        if (!this.gameState.categoriesList || this.gameState.categoriesList.length === 0) {
+            return;
+        }
+        
+        switch (this.currentSortMethod) {
+            case 'time':
+                // Sort by timestamp (newest first)
+                this.gameState.categoriesList.sort((a, b) => {
+                    const partsA = a.split(':');
+                    const partsB = b.split(':');
+                    const timestampA = partsA.length > 8 ? parseInt(partsA[8]) : 0;
+                    const timestampB = partsB.length > 8 ? parseInt(partsB[8]) : 0;
+                    return timestampB - timestampA; // Descending (newest first)
+                });
+                break;
+                
+            case 'plays':
+                // Sort by number of plays (highest first)
+                this.gameState.categoriesList.sort((a, b) => {
+                    const playsA = parseInt(a.split(':')[3]) || 0;
+                    const playsB = parseInt(b.split(':')[3]) || 0;
+                    return playsB - playsA; // Descending
+                });
+                break;
+                
+            case 'score':
+                // Sort by high score (highest first)
+                this.gameState.categoriesList.sort((a, b) => {
+                    const scoreA = parseInt(a.split(':')[4]) || 0;
+                    const scoreB = parseInt(b.split(':')[4]) || 0;
+                    return scoreB - scoreA; // Descending
+                });
+                break;
+        }
+    }
+
+    /**
+     * Render the categories list after sorting
+     */
+    renderCategoriesList() {
+        // Clear current list
+        this.elements.categoriesDisplay.innerHTML = '';
+        
+        // Add sorted categories
+        for (let i = 0; i < this.gameState.categoriesList.length; i++) {
+            const categoryItem = this.createCategoryRow(this.gameState.categoriesList[i], i);
+            this.elements.categoriesDisplay.appendChild(categoryItem);
+        }
+        
+        // Reset scroll position
+        this.elements.categoriesDisplay.scrollTop = 0;
+        this.updateScrollButtonStates();
     }
 
     /**
@@ -318,6 +427,7 @@ export class UIManager {
      * @param {string} sceneType - Type of categories screen to show
      */
     displayCategories(categoriesData, sceneType) {
+        // Process the incoming categories data
         if (sceneType == 'userCategoriesRemoveOne') {
             this.gameState.categoriesList.splice(this.gameState.selectedCategory, 1);
             this.elements.categoriesDisplay.innerHTML = '';
@@ -331,40 +441,68 @@ export class UIManager {
             this.gameState.categoriesList.push(...cCategories);
         }
 
+        // Always sort categories immediately after receiving them
+        // This ensures they're sorted before any rendering happens
+        this.sortCategories();
+
         if (!(this.gameState.categoriesList == '' || this.gameState.categoriesList[0] == '')) {
-            const currentLength = this.elements.categoriesDisplay.childElementCount;
-            for (let c = currentLength; c < this.gameState.categoriesList.length; c++) {
+            // Update the sort button text to reflect the current sort method
+            const sortLabelMap = {
+                'time': 'Newest',
+                'plays': 'Plays',
+                'score': 'High Score'
+            };
+            this.elements.currentSortText.textContent = sortLabelMap[this.currentSortMethod];
+            
+            // Highlight the active sort option in dropdown
+            this.elements.sortOptions.forEach(opt => {
+                if (opt.dataset.sort === this.currentSortMethod) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+            
+            // Clear the display before adding sorted categories
+            // This ensures we start with a clean slate for the sorted items
+            this.elements.categoriesDisplay.innerHTML = '';
+            
+            // Now render the already sorted categories
+            for (let c = 0; c < this.gameState.categoriesList.length; c++) {
                 const categoryItem = this.createCategoryRow(this.gameState.categoriesList[c], c);
                 this.elements.categoriesDisplay.appendChild(categoryItem);
             }
             
             // Add delegated event listener for category items
-            if (currentLength === 0) {
-                this.elements.categoriesDisplay.addEventListener('click', (event) => {
-                    const categoryItem = event.target.closest('.list-row');
-                    if (!categoryItem) return; // Not a category item
-                    
-                    // Remove 'selected' class from the previously selected item
-                    const prevSelected = this.elements.categoriesDisplay.querySelector('.selected');
-                    if (prevSelected) {
-                        prevSelected.classList.remove('selected');
-                    }
-                    
-                    // Add 'selected' class to the clicked item
-                    categoryItem.classList.add('selected');
-                    
-                    // Update the game state with the selected category
-                    const categoryIndex = parseInt(categoryItem.dataset.categoryIndex);
-                    this.gameState.setCategoryFromString(this.gameState.categoriesList[categoryIndex]);
-                    this.gameState.selectedCategory = categoryIndex;
-                });
-            }
+            this.elements.categoriesDisplay.addEventListener('click', (event) => {
+                const categoryItem = event.target.closest('.list-row');
+                if (!categoryItem) return; // Not a category item
+                
+                // Remove 'selected' class from the previously selected item
+                const prevSelected = this.elements.categoriesDisplay.querySelector('.selected');
+                if (prevSelected) {
+                    prevSelected.classList.remove('selected');
+                }
+                
+                // Add 'selected' class to the clicked item
+                categoryItem.classList.add('selected');
+                
+                // Update the game state with the selected category
+                const categoryIndex = parseInt(categoryItem.dataset.categoryIndex);
+                this.gameState.setCategoryFromString(this.gameState.categoriesList[categoryIndex]);
+                this.gameState.selectedCategory = categoryIndex;
+            });
             
             // Enable buttons for category selection
             this.elements.startButton.style.borderColor = "#ffffff";
             this.elements.deleteCategoryButton.style.borderColor = "#ffffff";
             this.elements.scrollButtonDown.style.display = 'flex';
             this.elements.scrollButtonUp.style.display = 'flex';
+            
+            // Reset scroll position and scroll button states
+            this.elements.categoriesDisplay.scrollTop = 0;
+            this.elements.scrollButtonUp.disabled = true; // Top button always starts disabled
+            this.elements.scrollButtonDown.disabled = false; // Bottom button always starts enabled
         }
         else {
             const categoryItem = document.createElement('li');
@@ -394,6 +532,27 @@ export class UIManager {
         }
         
         this.elements.categoriesDisplay.scrollTop = 0;
+
+        // Explicitly update scroll button states after display is updated
+        this.updateScrollButtonStates();
+    }
+
+    /**
+     * Update the scroll button states based on current scroll position
+     */
+    updateScrollButtonStates() {
+        // If there are no categories or buttons aren't displayed, nothing to do
+        if (this.elements.scrollButtonDown.style.display === 'none') return;
+        
+        const containerHeight = this.elements.categoriesDisplay.clientHeight;
+        const scrollHeight = this.elements.categoriesDisplay.scrollHeight;
+        const scrollTop = this.elements.categoriesDisplay.scrollTop;
+        
+        // Update top scroll button state
+        this.elements.scrollButtonUp.disabled = (scrollTop <= 0);
+        
+        // Update bottom scroll button state - enable only if there's more content to scroll to
+        this.elements.scrollButtonDown.disabled = (scrollTop + containerHeight >= scrollHeight - 5); // 5px buffer
     }
 
     /**

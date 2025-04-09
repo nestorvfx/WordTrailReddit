@@ -40,13 +40,24 @@
         <div id="categoriesScreen">
             <div id="categoriesText">Pick a Category</div>
             <button id="scrollButtonUp">▲</button>
+            
+            <!-- Add sorting dropdown container here -->
+            <div id="sortContainer">
+                <button id="sortButton">Sort: <span id="currentSort">Newest</span> <span class="sort-arrow">▼</span></button>
+                <div id="sortDropdown">
+                    <div class="sort-option active" data-sort="time">Newest</div>
+                    <div class="sort-option" data-sort="plays">Plays</div>
+                    <div class="sort-option" data-sort="score">High Score</div>
+                </div>
+            </div>
+            
             <div id="categories">
                 <div class="list-header">
                     <div class="col-title">Title</div>
                     <div class="col-created">Created By</div>
                     <div class="col-played">Played</div>
                     <div class="col-hs">HS</div>
-                    <div class="col-timestamp">Time Created</div> <!-- Changed from "Age" to "Time Created" -->
+                    <div class="col-timestamp">Ago</div> <!-- Changed from "Time Created" to "Ago" -->
                 </div>
                 <div id="rows-wrapper">
                     <!-- Rows will be added dynamically here -->
