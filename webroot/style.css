@@ -95,7 +95,7 @@ body {
     width: 20vw;
     display: none;
     top: 10%;
-    right: 10%;
+    left: 10%;
     z-index: 157;
 }
 
@@ -715,4 +715,78 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+/* Search functionality styling */
+#searchContainer {
+    position: absolute;
+    top: 15%;
+    left: 10%;
+    z-index: 156;
+    width: 40%;
+    max-width: 200px;
+}
+
+.search-inner {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    background-color: rgba(255, 204, 128, 0.8);
+    border-radius: 2vw;
+    height: auto;
+    min-height: 4.5vw;
+    box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    padding-left: 0.8vw; /* Added left padding to create more space */
+}
+
+.search-icon {
+    position: absolute;
+    left: 1.8vw; /* Increased from 1.5vw to 1.8vw for more space */
+    font-size: 1.8vw; /* Slightly reduced from 2vw for a simpler look */
+    color: rgba(255, 255, 255, 0.7); /* Increased opacity for better visibility but still simple */
+    filter: grayscale(0.3) brightness(1.3); /* Makes the colored emoji look simpler */
+    transform: scale(0.9); /* Slightly smaller for a cleaner look */
+}
+
+.search-clear {
+    position: absolute;
+    right: 1vw;
+    font-size: 1.8vw;
+    color: white;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.search-clear.visible {
+    opacity: 0.7;
+}
+
+.search-clear:hover {
+    opacity: 1;
+}
+
+#categorySearch {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0.8vw 3vw 0.8vw 4.5vw; /* Increased left padding from 4vw to 4.5vw to accommodate the icon */
+    font-size: 2vw;
+    color: white;
+    outline: none;
+    box-sizing: border-box;
+}
+
+#categorySearch::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Adjust the categories position to make room for search */
+#categories {
+    width: 100%;
+    height: 51%;
+    top: 23%;
+    /* ...existing code... */
 }

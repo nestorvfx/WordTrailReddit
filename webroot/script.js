@@ -358,5 +358,69 @@ function handleSendCategories(data) {
     // ...existing code...
 }
 
+// Add search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('categorySearch');
+    const clearSearch = document.getElementById('clearSearch');
+    
+    if (searchInput && clearSearch) {
+        searchInput.addEventListener('input', function() {
+            const searchValue = this.value.toLowerCase();
+            filterCategories(searchValue);
+            
+            // Show/hide clear button
+            if (searchValue.length > 0) {
+                clearSearch.classList.add('visible');
+            } else {
+                clearSearch.classList.remove('visible');
+            }
+        });
+        
+        clearSearch.addEventListener('click', function() {
+            searchInput.value = '';
+            filterCategories('');
+            this.classList.remove('visible');
+            searchInput.focus();
+        });
+    }
+});
+
+// Function to filter categories by search term
+function filterCategories(searchTerm) {
+    const categoryRows = document.querySelectorAll('.list-row');
+    let hasVisibleCategory = false;
+    
+    categoryRows.forEach(row => {
+        const title = row.querySelector('.col-title').textContent.toLowerCase();
+        const creator = row.querySelector('.col-created').textContent.toLowerCase();
+        
+        if (title.includes(searchTerm) || creator.includes(searchTerm)) {
+            row.style.display = 'grid';
+            hasVisibleCategory = true;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show message when no results found
+    const existingMessage = document.getElementById('no-results-message');
+    if (!hasVisibleCategory && searchTerm) {
+        if (!existingMessage) {
+            const noResults = document.createElement('div');
+            noResults.id = 'no-results-message';
+            noResults.className = 'emptyElement';
+            noResults.innerHTML = '<span class="emptyText">No matching categories found.</span>';
+            document.getElementById('rows-wrapper').appendChild(noResults);
+        }
+    } else if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Update scroll buttons state
+    if (typeof updateScrollButtonStates === 'function') {
+        updateScrollButtonStates();
+    }
+}
+
 // Instantiate the application immediately
 new App();

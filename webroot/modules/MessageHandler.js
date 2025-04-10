@@ -136,21 +136,6 @@ export class MessageHandler {
         if (this.gameState.currentCategoriesCursor == 0) {
             this.gameState.allCategoriesReceived = true;
         }
-
-        if (data.usersCategories && data.usersCategories !== '') {
-            const categories = data.usersCategories.split(';');
-            const rowsWrapperElement = document.getElementById('rows-wrapper');
-            
-            // Clear existing rows first
-            while (rowsWrapperElement.firstChild) {
-                rowsWrapperElement.removeChild(rowsWrapperElement.firstChild);
-            }
-            
-            categories.forEach((categoryString, index) => {
-                const row = this.createCategoryRow(categoryString, index);
-                rowsWrapperElement.appendChild(row);
-            });
-        }
     }
 
     /**

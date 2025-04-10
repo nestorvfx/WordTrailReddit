@@ -442,7 +442,6 @@ export class UIManager {
         }
 
         // Always sort categories immediately after receiving them
-        // This ensures they're sorted before any rendering happens
         this.sortCategories();
 
         if (!(this.gameState.categoriesList == '' || this.gameState.categoriesList[0] == '')) {
@@ -463,18 +462,18 @@ export class UIManager {
                 }
             });
             
-            // Clear the display before adding sorted categories
-            // This ensures we start with a clean slate for the sorted items
-            this.elements.categoriesDisplay.innerHTML = '';
+            // Instead of directly rendering here, use the dedicated rendering method
+            // This ensures consistent sorting behavior across all code paths
+            this.renderCategoriesList();
             
-            // Now render the already sorted categories
-            for (let c = 0; c < this.gameState.categoriesList.length; c++) {
-                const categoryItem = this.createCategoryRow(this.gameState.categoriesList[c], c);
-                this.elements.categoriesDisplay.appendChild(categoryItem);
+            // Remove any existing click event listeners before adding a new one
+            // This prevents duplicate handlers from firing when clicking categories
+            if (this._categoryClickHandler) {
+                this.elements.categoriesDisplay.removeEventListener('click', this._categoryClickHandler);
             }
             
-            // Add delegated event listener for category items
-            this.elements.categoriesDisplay.addEventListener('click', (event) => {
+            // Create new click handler and store reference
+            this._categoryClickHandler = (event) => {
                 const categoryItem = event.target.closest('.list-row');
                 if (!categoryItem) return; // Not a category item
                 
@@ -491,7 +490,10 @@ export class UIManager {
                 const categoryIndex = parseInt(categoryItem.dataset.categoryIndex);
                 this.gameState.setCategoryFromString(this.gameState.categoriesList[categoryIndex]);
                 this.gameState.selectedCategory = categoryIndex;
-            });
+            };
+            
+            // Add the new handler
+            this.elements.categoriesDisplay.addEventListener('click', this._categoryClickHandler);
             
             // Enable buttons for category selection
             this.elements.startButton.style.borderColor = "#ffffff";
