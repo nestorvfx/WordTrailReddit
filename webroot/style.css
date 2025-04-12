@@ -91,11 +91,12 @@ body {
 }
 
 #deleteDataButton {
-    font-size: 2vw;
+    font-size: 1.6vw;
     width: 20vw;
     display: none;
-    top: 10%;
-    left: 10%;
+    top: 4%;  /* Changed from 10% to position it higher */
+    right: 10%;  /* Changed from left to right alignment */
+    left: auto;  /* Reset the left property */
     z-index: 157;
 }
 
@@ -723,8 +724,8 @@ body {
     top: 15%;
     left: 10%;
     z-index: 156;
-    width: 40%;
-    max-width: 200px;
+    width: 35%;  /* Reduced from 40% to prevent overlap */
+    max-width: 180px;
 }
 
 .search-inner {
@@ -781,6 +782,35 @@ body {
 
 #categorySearch::placeholder {
     color: rgba(255, 255, 255, 0.7);
+}
+
+/* Add media queries for smaller screens */
+@media screen and (max-width: 600px) {
+    #searchContainer {
+        width: 30%;
+        max-width: 140px;
+    }
+    
+    .search-icon {
+        font-size: 1.5vw;
+    }
+    
+    #categorySearch {
+        font-size: 1.8vw;
+        padding: 0.6vw 2vw 0.6vw 4vw;
+    }
+    
+    /* Adjust scroll button position to avoid overlap */
+    #scrollButtonUp {
+        top: 15.5%;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    #searchContainer {
+        width: 25%;
+        max-width: 120px;
+    }
 }
 
 /* Adjust the categories position to make room for search */

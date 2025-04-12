@@ -1,6 +1,6 @@
 import { Context } from '@devvit/public-api';
 import { WebViewMessage } from '../types.js';
-import { getNextCode } from '../utils/redis.js';
+import { getNextCode, getUserInfo, addCategoryToSortedSets } from '../utils/redis.js';
 import { LoadingPreview } from '../components/LoadingPreview.js';
 
 export async function sendUserData(context: Context, userID: string, postMessage: (message: WebViewMessage) => void): Promise<void> {
@@ -40,27 +40,22 @@ export async function sendUserData(context: Context, userID: string, postMessage
   });
 }
 
-export async function createCategory(
-  context: Context, 
-  values: Record<string, string>, 
-  postMessage: (message: WebViewMessage) => void, 
-  username: string,
-  userID: string
-): Promise<void> {
-  const retryLimit = 1;
-
+export async function createCategory(context: Context, userID: string, categoryTitle: string, words: string, postMessage: (message: WebViewMessage) => void): Promise<boolean> {
+  const retryLimit = 5;
   for (let attempt = 1; attempt <= retryLimit; attempt++) {
     try {
       // Check input validity
       const regexWords = /^([a-zA-Z]+(?: [a-zA-Z]+)*)(?:,([a-zA-Z]+(?: [a-zA-Z]+)*))*$/;
       const regexTitle = /^[a-zA-Z0-9-_ ]{1,16}$/;
 
-      const titleCorrect = regexTitle.test(values.title);
+      const titleCorrect = regexTitle.test(categoryTitle);
 
-      const wordsList = values.words.replace(/[\n\r]/g, '').split(',').map(element => element.trim()).filter(element => element != '' && /^[a-zA-Z\s]+$/.test(element) && element.length <= 12);
+      // Fix type error by explicitly declaring type
+      const wordsList: string[] = words.replace(/[\n\r]/g, '').split(',').map(element => element.trim()).filter(element => element != '' && /^[a-zA-Z\s]+$/.test(element) && element.length <= 12);
 
-      const words = wordsList.join(',').toUpperCase();
-      const wordsRegexCorrect = regexWords.test(words);
+      // Fix name collision by using a different variable name
+      const wordsString: string = wordsList.join(',').toUpperCase();
+      const wordsRegexCorrect = regexWords.test(wordsString);
 
       const wordsCorrect = wordsRegexCorrect && wordsList.length >= 10 && wordsList.length <= 100;
 
@@ -86,7 +81,7 @@ export async function createCategory(
 
         // Use the LoadingPreview component for the preview
         const postOptions = {
-          title: 'Play ' + values.title + ' category',
+          title: 'Play ' + categoryTitle + ' category',
           subredditName: context.subredditName ?? '',
           preview: LoadingPreview(),
         };
@@ -94,11 +89,9 @@ export async function createCategory(
         const post = await context.reddit.submitPost(postOptions);
 
         // Add timestamp (in seconds since epoch) when the category was created
-        const creationTimestamp = Math.floor(Date.now() / 1000);
+        const timestamp = Math.floor(Date.now() / 1000);
 
-        // Add timestamp when creating a new category
-        const timestamp = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
-        const categoryInfo = `${username}:${values.title}:0:0:::${post.id}:${timestamp}`;
+        const categoryInfo = `${cUserInfo.split(':')[0]}:${categoryTitle}:0:0:::${post.id}:${timestamp}`;
 
         await txn.multi();
         await txn.hSet('postCategories', { [post.id]: newCode + ':' + userID });
@@ -106,12 +99,32 @@ export async function createCategory(
         await txn.hSet('usersCategories', {
           [newCode]: categoryInfo
         });
+        
         await txn.hSet('categoriesWords', {
-          [newCode]: words
+          [newCode]: wordsString  // Use the correct variable name
         });
         await txn.hSet('userIDs', {
           [userID]: newInfo
         });
+
+        // Use timestamp as score for time-based sorting
+        await txn.zAdd('categoriesByTime', {
+          score: timestamp,
+          member: newCode
+        });
+
+        // Initial plays count is 0
+        await txn.zAdd('categoriesByPlays', {
+          score: 0,
+          member: newCode
+        });
+
+        // Initial high score is 0
+        await txn.zAdd('categoriesByScore', {
+          score: 0,
+          member: newCode
+        });
+
         await txn.exec();
 
         if (post != null) {
@@ -126,9 +139,12 @@ export async function createCategory(
         postMessage({
           type: 'formCorrect',
           data: {
-            categoryTitle: values.title
+            categoryTitle: categoryTitle
           },
         });
+        
+        console.log(`[DEBUG_CATEGORY] Category creation completed for: ${categoryTitle}`);
+        return true; // Validation passed and category created successfully
       }
       else {
         let toastMessage = '';
@@ -147,23 +163,11 @@ export async function createCategory(
           appearance: 'neutral'
         });
 
-        // In the original, it sends the data back to the form to let the user correct it
-        // Since we can't recreate the exact form behavior in decoupled mode,
-        // we'll just log this and let the UI handle it
         console.log(`Form validation failed - title: ${titleCorrect}, words: ${wordsCorrect}`);
-        console.log(`Attempted values - title: ${values.title}, words length: ${wordsList.length}`);
+        console.log(`Attempted values - title: ${categoryTitle}, words length: ${wordsList.length}`);
 
-        // Like in original test.tsx, we don't actually send the formIncorrect message
-        // but it's here for completeness
-        postMessage({
-          type: 'formIncorrect',
-          data: {
-            wordsCorrect: wordsCorrect,
-            titleCorrect: titleCorrect
-          },
-        });
+        return false; // Return false to indicate validation failure
       }
-      break;
     }
     catch (error) {
       console.error(`Attempt ${attempt} failed: ${error}`);
@@ -179,4 +183,5 @@ export async function createCategory(
       }
     }
   }
+  return false; // Default return value if all attempts failed
 }

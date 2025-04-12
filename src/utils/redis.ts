@@ -63,4 +63,85 @@ export async function getLatestCategoryCode(context: Context): Promise<string> {
     }
   }
   return '';
-} 
+}
+
+/**
+ * Adds a category to all sorted sets for efficient indexing
+ */
+export async function addCategoryToSortedSets(
+  context: Context,
+  categoryCode: string,
+  creator: string,
+  title: string,
+  plays: number = 0,
+  highScore: number = 0,
+  timestamp: number = Math.floor(Date.now() / 1000)
+): Promise<void> {
+  try {
+    // Add to time-based sorted set (newest first)
+    await context.redis.zAdd('categoriesByTime', {
+      score: timestamp,
+      member: categoryCode
+    });
+    
+    // Add to plays-based sorted set (most plays first)
+    await context.redis.zAdd('categoriesByPlays', {
+      score: plays,
+      member: categoryCode
+    });
+    
+    // Add to high score-based sorted set (highest score first)
+    await context.redis.zAdd('categoriesByScore', {
+      score: highScore,
+      member: categoryCode
+    });
+  } catch (error) {
+    console.error('Error adding category to sorted sets:', error);
+  }
+}
+
+/**
+ * Removes a category from all sorted sets
+ */
+export async function removeCategoryFromSortedSets(
+  context: Context,
+  categoryCode: string
+): Promise<void> {
+  try {
+    await context.redis.zRem('categoriesByTime', [categoryCode]);
+    await context.redis.zRem('categoriesByPlays', [categoryCode]);
+    await context.redis.zRem('categoriesByScore', [categoryCode]);
+  } catch (error) {
+    console.error('Error removing category from sorted sets:', error);
+  }
+}
+
+/**
+ * Updates a category in the appropriate sorted set when values change
+ */
+export async function updateCategoryInSortedSets(
+  context: Context,
+  categoryCode: string,
+  updates: {
+    plays?: number;
+    highScore?: number;
+  }
+): Promise<void> {
+  try {
+    if (updates.plays !== undefined) {
+      await context.redis.zAdd('categoriesByPlays', {
+        score: updates.plays,
+        member: categoryCode
+      });
+    }
+    
+    if (updates.highScore !== undefined) {
+      await context.redis.zAdd('categoriesByScore', {
+        score: updates.highScore,
+        member: categoryCode
+      });
+    }
+  } catch (error) {
+    console.error('Error updating category in sorted sets:', error);
+  }
+}

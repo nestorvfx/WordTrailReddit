@@ -113,6 +113,11 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
         await txn.multi();
         await txn.hDel('userIDs', userIDsList);
         await txn.hSet('usersCategories', updatedCategoriesList);
+        
+        // If we're modifying categories whose creators are deleted, make sure we don't
+        // need to remove any categories from sorted sets. If removing categories becomes
+        // part of this function in the future, add sorted set removal here.
+        
         const tResult = await txn.exec();
 
         if (tResult == null) {

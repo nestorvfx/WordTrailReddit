@@ -15,23 +15,41 @@ function formatRelativeTime(timestamp) {
         const date = new Date(parseInt(timestamp) * 1000);
         
         const diffMs = now - date;
+        
+        // Less than a minute ago
+        if (diffMs < 60000) {
+            return "now";
+        }
+        
+        // Less than an hour ago
+        if (diffMs < 3600000) {
+            const diffMinutes = Math.floor(diffMs / 60000);
+            return `${diffMinutes}min`;
+        }
+        
+        // Less than a day
+        if (diffMs < 86400000) {
+            const diffHours = Math.floor(diffMs / 3600000);
+            return `${diffHours}h`;
+        }
+        
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         
         if (diffDays === 0) {
             return "Today";
         } else if (diffDays === 1) {
-            return "Yesterday";
+            return "1d";
         } else if (diffDays < 7) {
-            return `${diffDays}d ago`;
+            return `${diffDays}d`;
         } else if (diffDays < 30) {
             const weeks = Math.floor(diffDays / 7);
-            return `${weeks}w ago`;
+            return `${weeks}w`;
         } else if (diffDays < 365) {
             const months = Math.floor(diffDays / 30);
-            return `${months}mo ago`;
+            return `${months}mo`;
         } else {
             const years = Math.floor(diffDays / 365);
-            return `${years}y ago`;
+            return `${years}y`;
         }
     } catch (e) {
         console.error("Error formatting timestamp:", e);
@@ -227,21 +245,87 @@ export class UIManager {
             }
         });
 
-        // Categories scroll event - needs to remain separate
+        // Categories scroll event with debouncing
+        let scrollTimeout = null;
         this.elements.categoriesDisplay.addEventListener('scroll', () => {
             // Update scroll button states whenever the user scrolls
             this.updateScrollButtonStates();
             
+            // Calculate scroll position
+            const scrolled = this.elements.categoriesDisplay.scrollTop + this.elements.categoriesDisplay.clientHeight;
+            const height = this.elements.categoriesDisplay.scrollHeight;
+            
             // Only trigger the callback if bottom reached and more categories to load
-            if (this.elements.scrollButtonDown.disabled && 
-                !this.gameState.allCategoriesReceived && 
-                callbacks.onCategoriesScrollEnd) {
-                callbacks.onCategoriesScrollEnd(this.gameState.currentCategoriesCursor);
+            if (scrolled >= height - 10 && 
+                !this.gameState.allCategoriesReceived) {
+                
+                // Clear any existing timeout to prevent duplicate requests
+                if (scrollTimeout) {
+                    clearTimeout(scrollTimeout);
+                }
+                
+                // Set a new timeout to debounce the scroll event
+                scrollTimeout = setTimeout(() => {
+                    if (callbacks.onCategoriesScrollEnd) {
+                        callbacks.onCategoriesScrollEnd(this.gameState.currentCategoriesCursor, this.currentSortMethod);
+                    }
+                    scrollTimeout = null;
+                }, 300); // 300ms debounce delay
             }
         });
 
         // Add sorting functionality
         this.setupSortingListeners();
+        
+        // For sort options, update to pass the sort method to the backend when selected
+        this.elements.sortOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const sortMethod = option.dataset.sort;
+                
+                // *** KEY FIX: Skip if the selected sort method is already active ***
+                if (sortMethod === this.currentSortMethod) {
+                    // Just close the dropdown without reloading categories
+                    this.elements.sortDropdown.classList.remove('show');
+                    this.elements.sortButton.classList.remove('active');
+                    return;
+                }
+                
+                const prevSortMethod = this.currentSortMethod;
+                this.currentSortMethod = sortMethod;
+                
+                console.log(`[SORT] Sort option clicked - changing from '${prevSortMethod}' to '${sortMethod}'`);
+                console.log(`[STATE] Before sort change - categoriesList.length: ${this.gameState.categoriesList.length}`);
+                
+                // Update UI
+                this.elements.currentSortText.textContent = 
+                    sortMethod === 'time' ? 'Newest' : 
+                    sortMethod === 'plays' ? 'Plays' : 'High Score';
+                
+                // Remove active class from all options
+                this.elements.sortOptions.forEach(o => o.classList.remove('active'));
+                // Add active class to selected option
+                option.classList.add('active');
+                
+                // Hide dropdown
+                this.elements.sortDropdown.classList.remove('show');
+                this.elements.sortButton.classList.remove('active');
+                
+                // Reset categories state and request with new sort method
+                this.gameState.currentCategoriesCursor = 0;
+                this.gameState.allCategoriesReceived = false;
+                this.gameState.categoriesList = [];
+                this.elements.categoriesDisplay.innerHTML = '';
+                
+                console.log(`[SORT] State reset for new sort method - cursor: 0, allCategoriesReceived: false`);
+                console.log(`[SORT] categoriesList cleared, DOM list cleared`);
+                
+                // Request categories with the new sort method
+                if (callbacks.onPlayClick) {
+                    console.log(`[SORT] Requesting categories with new sort method: ${sortMethod}`);
+                    callbacks.onPlayClick(sortMethod);
+                }
+            });
+        });
     }
 
     /**
@@ -250,6 +334,7 @@ export class UIManager {
     setupSortingListeners() {
         // Toggle dropdown visibility when sort button is clicked
         this.elements.sortButton.addEventListener('click', () => {
+            console.log(`[SORT] Sort dropdown toggled`);
             this.elements.sortButton.classList.toggle('active');
             this.elements.sortDropdown.classList.toggle('show');
         });
@@ -262,28 +347,6 @@ export class UIManager {
             }
         });
 
-        // Handle sort option selection
-        this.elements.sortOptions.forEach(option => {
-            option.addEventListener('click', () => {
-                this.currentSortMethod = option.dataset.sort;
-                this.elements.currentSortText.textContent = option.textContent;
-                
-                // Update active class
-                this.elements.sortOptions.forEach(opt => opt.classList.remove('active'));
-                option.classList.add('active');
-                
-                // Close dropdown
-                this.elements.sortButton.classList.remove('active');
-                this.elements.sortDropdown.classList.remove('show');
-                
-                // Re-sort and display categories
-                if (this.gameState.categoriesList && this.gameState.categoriesList.length > 0) {
-                    this.sortCategories();
-                    this.renderCategoriesList();
-                }
-            });
-        });
-
         // Set the initial active sort option to match the default sort method
         this.elements.sortOptions.forEach(opt => {
             if (opt.dataset.sort === this.currentSortMethod) {
@@ -292,6 +355,8 @@ export class UIManager {
                 opt.classList.remove('active');
             }
         });
+        
+        console.log(`[SORT] Initial sort method set to: ${this.currentSortMethod}`);
     }
 
     /**
@@ -338,14 +403,24 @@ export class UIManager {
      * Render the categories list after sorting
      */
     renderCategoriesList() {
+        console.log(`[RENDER] renderCategoriesList called`);
+        
         // Clear current list
+        console.log(`[DOM] Clearing categories display before rendering full list`);
         this.elements.categoriesDisplay.innerHTML = '';
         
         // Add sorted categories
         for (let i = 0; i < this.gameState.categoriesList.length; i++) {
             const categoryItem = this.createCategoryRow(this.gameState.categoriesList[i], i);
+            // Add a visual indicator for debugging that this was from a full render
+            categoryItem.dataset.renderBatch = 'full';
+            categoryItem.dataset.renderIndex = i;
+            categoryItem.title = `Full render index ${i}`;
+            
             this.elements.categoriesDisplay.appendChild(categoryItem);
         }
+        
+        console.log(`[DOM] Rendered ${this.gameState.categoriesList.length} category rows`);
         
         // Reset scroll position
         this.elements.categoriesDisplay.scrollTop = 0;
@@ -422,121 +497,278 @@ export class UIManager {
     }
 
     /**
-     * Show the categories selection screen
+     * Show the categories selection screen with improved structure
      * @param {string} categoriesData - Categories data string
-     * @param {string} sceneType - Type of categories screen to show
+     * @param {string} sceneType - Type of categories screen to show ('initialPlayCategories', 'playCategories', 'userCategories', 'userCategoriesRemoveOne')
      */
     displayCategories(categoriesData, sceneType) {
-        // Process the incoming categories data
-        if (sceneType == 'userCategoriesRemoveOne') {
-            this.gameState.categoriesList.splice(this.gameState.selectedCategory, 1);
-            this.elements.categoriesDisplay.innerHTML = '';
-        }
-        else if (this.gameState.currentCategoriesCursor == 0 || sceneType == 'userCategories') {
-            const cCategories = categoriesData.split(';');
-            this.gameState.categoriesList = cCategories;
-            this.elements.categoriesDisplay.innerHTML = '';
-        } else if (sceneType == 'playCategories') {
-            const cCategories = categoriesData.split(';');
-            this.gameState.categoriesList.push(...cCategories);
+        console.log(`[DISPLAY] displayCategories called - sceneType: ${sceneType}`);
+        console.log(`[STATE] Before display - categoriesList.length: ${this.gameState.categoriesList.length}`);
+        
+        if (categoriesData) {
+            const catCount = categoriesData.split(';').filter(cat => cat !== '').length;
+            console.log(`[DATA] categoriesData contains ${catCount} items`);
+        } else {
+            console.log(`[DATA] categoriesData is empty or null`);
         }
 
-        // Always sort categories immediately after receiving them
-        this.sortCategories();
+        // Step 1: Process incoming data based on scene type (updates gameState.categoriesList)
+        this._processCategoriesData(categoriesData, sceneType);
 
-        if (!(this.gameState.categoriesList == '' || this.gameState.categoriesList[0] == '')) {
-            // Update the sort button text to reflect the current sort method
-            const sortLabelMap = {
-                'time': 'Newest',
-                'plays': 'Plays',
-                'score': 'High Score'
-            };
-            this.elements.currentSortText.textContent = sortLabelMap[this.currentSortMethod];
-            
-            // Highlight the active sort option in dropdown
-            this.elements.sortOptions.forEach(opt => {
-                if (opt.dataset.sort === this.currentSortMethod) {
-                    opt.classList.add('active');
-                } else {
-                    opt.classList.remove('active');
-                }
-            });
-            
-            // Instead of directly rendering here, use the dedicated rendering method
-            // This ensures consistent sorting behavior across all code paths
-            this.renderCategoriesList();
-            
-            // Remove any existing click event listeners before adding a new one
-            // This prevents duplicate handlers from firing when clicking categories
-            if (this._categoryClickHandler) {
-                this.elements.categoriesDisplay.removeEventListener('click', this._categoryClickHandler);
+        // Step 2: If we're appending categories (scroll pagination), handle separately and exit
+        if (sceneType === 'playCategories') {
+            console.log(`[FLOW] Handling as append operation`);
+            this._handleCategoryAppend(categoriesData);
+            console.log(`[STATE] After append - categoriesList.length: ${this.gameState.categoriesList.length}`);
+            return; // Append logic handles its own rendering and UI updates
+        }
+
+        console.log(`[FLOW] Handling as full list operation`);
+        
+        // Step 3: For initial loads or updates (not append), render the full list
+        this._renderCategoryList(); // Sorts and renders the list or empty state
+
+        // Step 4: Set up common UI elements visible in both modes
+        this._setupCommonCategoryUI();
+
+        // Step 5: Configure mode-specific UI elements (Play vs. Settings)
+        if (sceneType.startsWith('play') || sceneType === 'initialPlayCategories') {
+            this._configurePlayModeUI();
+        } else if (sceneType.startsWith('user')) {
+            this._configureSettingsModeUI();
+        }
+
+        // Step 6: Set up interaction handlers and initial scroll state
+        this.setupCategoryClickHandler(); // Ensure click handlers are attached
+        this.updateScrollButtonStates(); // Set initial state of scroll buttons
+        
+        console.log(`[STATE] After display - categoriesList.length: ${this.gameState.categoriesList.length}`);
+    }
+
+    /**
+     * Process categories data based on the scene type, updating gameState.categoriesList.
+     * @private
+     * @param {string} categoriesData - Categories data string
+     * @param {string} sceneType - Scene type to display
+     */
+    _processCategoriesData(categoriesData, sceneType) {
+        console.log(`[PROCESS] _processCategoriesData - sceneType: ${sceneType}`);
+        console.log(`[STATE] Before processing - categoriesList.length: ${this.gameState.categoriesList.length}`);
+        
+        // Only clear display for initial loads or category removal, not for appends
+        if (sceneType !== 'playCategories') {
+            console.log(`[DOM] Clearing category display (not an append operation)`);
+            this.elements.categoriesDisplay.innerHTML = '';
+        }
+
+        if (sceneType === 'userCategoriesRemoveOne') {
+            console.log(`[PROCESS] Removing single category at index: ${this.gameState.selectedCategory}`);
+            // Remove a single category (after deletion)
+            if (this.gameState.selectedCategory >= 0 && this.gameState.selectedCategory < this.gameState.categoriesList.length) {
+                this.gameState.categoriesList.splice(this.gameState.selectedCategory, 1);
+                console.log(`[STATE] Category removed - new categoriesList.length: ${this.gameState.categoriesList.length}`);
             }
+            // Reset selection as the index is now invalid
+            this.gameState.selectedCategory = -1;
+        }
+        else if (sceneType === 'initialPlayCategories' || sceneType === 'userCategories') {
+            console.log(`[PROCESS] Initial load or user categories - REPLACING list`);
+            // Initial load for play or settings view - REPLACE list completely, don't append
+            const categories = categoriesData ? categoriesData.split(';') : [];
+            const validCategories = categories.length > 0 && categories[0] !== '' ? categories : [];
+            console.log(`[DATA] Parsed ${validCategories.length} valid categories from data`);
             
-            // Create new click handler and store reference
-            this._categoryClickHandler = (event) => {
-                const categoryItem = event.target.closest('.list-row');
-                if (!categoryItem) return; // Not a category item
-                
-                // Remove 'selected' class from the previously selected item
-                const prevSelected = this.elements.categoriesDisplay.querySelector('.selected');
-                if (prevSelected) {
-                    prevSelected.classList.remove('selected');
-                }
-                
-                // Add 'selected' class to the clicked item
-                categoryItem.classList.add('selected');
-                
-                // Update the game state with the selected category
-                const categoryIndex = parseInt(categoryItem.dataset.categoryIndex);
-                this.gameState.setCategoryFromString(this.gameState.categoriesList[categoryIndex]);
-                this.gameState.selectedCategory = categoryIndex;
-            };
+            this.gameState.categoriesList = validCategories;
+            console.log(`[STATE] List replaced - new categoriesList.length: ${this.gameState.categoriesList.length}`);
+        }
+        // Note: 'playCategories' (append) case is handled in _handleCategoryAppend
+        
+        console.log(`[STATE] After processing - categoriesList.length: ${this.gameState.categoriesList.length}`);
+    }
+
+    /**
+     * Handle append operation for infinite scrolling in Play mode.
+     * @private
+     * @param {string} categoriesData - New categories data string to append
+     */
+    _handleCategoryAppend(categoriesData) {
+        console.log(`[APPEND] _handleCategoryAppend called`);
+        console.log(`[STATE] Before append - categoriesList.length: ${this.gameState.categoriesList.length}`);
+        
+        const newCategories = categoriesData ? categoriesData.split(';') : [];
+        // Filter out empty strings that might result from splitting
+        const validNewCategories = newCategories.filter(cat => cat !== '');
+        console.log(`[DATA] Found ${validNewCategories.length} valid new categories to append`);
+
+        if (validNewCategories.length === 0) {
+            // No more categories received, mark as all received
+            this.gameState.allCategoriesReceived = true;
+            console.log(`[APPEND] No valid categories to append - marking allCategoriesReceived: true`);
+            this.updateScrollButtonStates(); // Update buttons as we might be at the end
+            return; // No categories to append
+        }
+
+        // Get current category codes for deduplication
+        const existingCodes = this.gameState.categoriesList.map(cat => cat.split(':')[0]);
+        
+        // Filter out any categories that are already in the list
+        const uniqueNewCategories = validNewCategories.filter(cat => {
+            const code = cat.split(':')[0];
+            return !existingCodes.includes(code);
+        });
+        
+        if (uniqueNewCategories.length === 0) {
+            // All categories were duplicates, mark as all received
+            this.gameState.allCategoriesReceived = true;
+            this.updateScrollButtonStates();
+            return;
+        }
+
+        // Get starting index for new items
+        const startIndex = this.gameState.categoriesList.length;
+        console.log(`[APPEND] Starting index for new items: ${startIndex}`);
+
+        // Add new categories to our data array
+        this.gameState.categoriesList.push(...uniqueNewCategories);
+        console.log(`[STATE] After pushing new categories - categoriesList.length: ${this.gameState.categoriesList.length}`);
+
+        // Create and append only the new category rows
+        for (let i = 0; i < uniqueNewCategories.length; i++) {
+            const categoryItem = this.createCategoryRow(uniqueNewCategories[i], startIndex + i);
+            // Add a visual indicator for debugging
+            categoryItem.dataset.appendBatch = this.gameState.currentCategoriesCursor;
+            categoryItem.dataset.appendIndex = i;
+            categoryItem.title = `Appended in batch ${this.gameState.currentCategoriesCursor}, index ${i}`;
             
-            // Add the new handler
-            this.elements.categoriesDisplay.addEventListener('click', this._categoryClickHandler);
-            
-            // Enable buttons for category selection
+            this.elements.categoriesDisplay.appendChild(categoryItem);
+            console.log(`[DOM] Appended row ${i} with internal index ${startIndex + i}`);
+        }
+
+        // Update UI state after appending
+        this.updateScrollButtonStates();
+        console.log(`[STATE] After append complete - categoriesList.length: ${this.gameState.categoriesList.length}`);
+    }
+
+    /**
+     * Sorts and renders the current category list or the empty state message.
+     * @private
+     */
+    _renderCategoryList() {
+        console.log(`[RENDER] _renderCategoryList called with sort method: ${this.currentSortMethod}`);
+        console.log(`[STATE] Before sort - categoriesList.length: ${this.gameState.categoriesList.length}`);
+        
+        // Always sort before rendering
+        this.sortCategories();
+        console.log(`[SORT] Categories sorted by ${this.currentSortMethod}`);
+
+        if (this.gameState.categoriesList.length === 0) {
+            console.log(`[RENDER] Rendering empty state`);
+            this._renderEmptyState();
+        } else {
+            // Render the populated list using the existing method
+            console.log(`[RENDER] Rendering ${this.gameState.categoriesList.length} category items`);
+            this.renderCategoriesList(); // This method clears and adds all rows
+
+            // Ensure buttons are correctly styled for a non-empty list
             this.elements.startButton.style.borderColor = "#ffffff";
             this.elements.deleteCategoryButton.style.borderColor = "#ffffff";
             this.elements.scrollButtonDown.style.display = 'flex';
             this.elements.scrollButtonUp.style.display = 'flex';
-            
-            // Reset scroll position and scroll button states
-            this.elements.categoriesDisplay.scrollTop = 0;
-            this.elements.scrollButtonUp.disabled = true; // Top button always starts disabled
-            this.elements.scrollButtonDown.disabled = false; // Bottom button always starts enabled
         }
-        else {
-            const categoryItem = document.createElement('li');
-            categoryItem.classList.add('emptyElement');
-            categoryItem.innerHTML = 
-                "<span class=\"emptyText\">There are currently no available categories.\n"+
-                "(feel free to create one) </span> ";
-            this.elements.categoriesDisplay.appendChild(categoryItem);
+        
+        console.log(`[STATE] After render - categoriesList.length: ${this.gameState.categoriesList.length}`);
+    }
 
-            // Disable buttons when no categories
-            this.elements.startButton.style.borderColor = "#737373";
-            this.elements.deleteCategoryButton.style.borderColor = "#737373";
-            this.elements.scrollButtonDown.style.display = 'none';
-            this.elements.scrollButtonUp.style.display = 'none';
-        }
+    /**
+     * Renders the empty state message when no categories are available.
+     * @private
+     */
+    _renderEmptyState() {
+        const emptyElement = document.createElement('div');
+        emptyElement.classList.add('emptyElement');
+        emptyElement.innerHTML =
+            "<span class=\"emptyText\">There are currently no available categories.\n" +
+            "(feel free to create one) </span> ";
+        this.elements.categoriesDisplay.appendChild(emptyElement);
 
-        // Show categories screen
+        // Disable/hide buttons appropriately for empty state
+        this.elements.startButton.style.borderColor = "#737373"; // Visually indicate disabled
+        this.elements.deleteCategoryButton.style.borderColor = "#737373"; // Visually indicate disabled
+        this.elements.scrollButtonDown.style.display = 'none';
+        this.elements.scrollButtonUp.style.display = 'none';
+    }
+
+    /**
+     * Sets up common UI elements visible in both Play and Settings category views.
+     * @private
+     */
+    _setupCommonCategoryUI() {
         this.elements.returnToStartButton.style.top = '84%';
         this.elements.returnToStartButton.style.display = 'block';
         this.elements.categoriesScreen.style.display = 'flex';
-        this.elements.startingScreen.style.display = 'none';
-        
-        if (sceneType == 'playCategories') {
-            this.elements.startButton.style.display = 'block';
-        } else if (sceneType.startsWith('userCategories')) {
-            this.elements.deleteCategoryButton.style.display = 'block';
-        }
-        
-        this.elements.categoriesDisplay.scrollTop = 0;
+        this.elements.startingScreen.style.display = 'none'; // Hide start screen
+        // Ensure search and sort are visible
+        // Assuming searchContainer and sortContainer are direct children or handled elsewhere
+    }
 
-        // Explicitly update scroll button states after display is updated
-        this.updateScrollButtonStates();
+    /**
+     * Configures UI elements specifically for the Play mode category view.
+     * @private
+     */
+    _configurePlayModeUI() {
+        this.elements.startButton.style.display = 'block';
+        this.elements.deleteCategoryButton.style.display = 'none';
+        this.elements.deleteDataButton.style.display = 'none'; // Ensure this is hidden in play mode
+    }
+
+    /**
+     * Configures UI elements specifically for the Settings mode category view.
+     * @private
+     */
+    _configureSettingsModeUI() {
+        this.elements.startButton.style.display = 'none';
+        this.elements.deleteCategoryButton.style.display = 'block';
+        this.elements.deleteDataButton.style.display = 'block'; // Ensure this is shown in settings mode
+    }
+
+
+    /**
+     * Sets up the click handler for category items. Ensures only one handler is active.
+     */
+    setupCategoryClickHandler() {
+        // Remove existing handler first to prevent duplicates
+        if (this._categoryClickHandler) {
+            this.elements.categoriesDisplay.removeEventListener('click', this._categoryClickHandler);
+        }
+
+        // Create new click handler and store reference
+        this._categoryClickHandler = (event) => {
+            const categoryItem = event.target.closest('.list-row');
+            if (!categoryItem) return; // Not a category item
+
+            // Remove 'selected' class from the previously selected item
+            const prevSelected = this.elements.categoriesDisplay.querySelector('.selected');
+            if (prevSelected) {
+                prevSelected.classList.remove('selected');
+            }
+
+            // Add 'selected' class to the clicked item
+            categoryItem.classList.add('selected');
+
+            // Update the game state with the selected category index
+            const categoryIndex = parseInt(categoryItem.dataset.categoryIndex);
+            // Ensure the index is valid before setting category string
+            if (categoryIndex >= 0 && categoryIndex < this.gameState.categoriesList.length) {
+                this.gameState.setCategoryFromString(this.gameState.categoriesList[categoryIndex]);
+                this.gameState.selectedCategory = categoryIndex; // Store index
+            } else {
+                console.error("Invalid category index clicked:", categoryIndex);
+                this.gameState.selectedCategory = -1; // Indicate invalid selection
+            }
+        };
+
+        // Add the new handler
+        this.elements.categoriesDisplay.addEventListener('click', this._categoryClickHandler);
     }
 
     /**
@@ -560,10 +792,14 @@ export class UIManager {
     /**
      * Create a category row element
      * @param {string} categoryString - Category data string
-     * @param {number} index - Index of the category
+     * @param {number} index - Index of the category *in the gameState.categoriesList*
      * @returns {HTMLElement} - Category row element
      */
     createCategoryRow(categoryString, index) {
+        // Log the full category string for debugging
+        console.log(`[DEBUG_CATEGORY] Creating row for category string: ${categoryString}`);
+        
+        // ... existing code to parse categoryString ...
         const parts = categoryString.split(':');
         const code = parts[0];
         const creator = parts[1];
@@ -571,11 +807,20 @@ export class UIManager {
         const plays = parts[3];
         const highScore = parts[4];
         const timestamp = parts.length > 8 ? parts[8] : null;
+        
+        console.log(`[DEBUG_CATEGORY] Parsed category parts for row ${index}:`);
+        console.log(`  Code: ${code}`);
+        console.log(`  Creator: ${creator}`);
+        console.log(`  Title: ${title}`);
+        console.log(`  Plays: ${plays}`);
+        console.log(`  HighScore: ${highScore}`);
+        console.log(`  Timestamp: ${timestamp}`);
 
         const formattedTime = formatRelativeTime(timestamp);
 
         const row = document.createElement('div');
         row.className = 'list-row';
+        // Set the data attribute to the correct index within the gameState.categoriesList
         row.dataset.categoryIndex = index;
 
         row.innerHTML = `

@@ -162,7 +162,7 @@ export const MainWebView = (context: any) => {
       if (!isItPeriodicRemoval) {
         switch (message.type) {
           case 'updateCategories':
-            await sendCategories(context, message.data.cursor, postMessage);
+            await sendCategories(context, message.data.cursor, message.data.sortMethod || 'time', postMessage);
             break;
           case 'requestUserData':
             await sendUserData(context, userID, postMessage);
@@ -207,7 +207,7 @@ export const MainWebView = (context: any) => {
             label: 'Category title (e.g. Popular TV Shows)',
             helpText: "How will category be displayed to other users. Using up to 16 from a-Z 0-9 - _ and space characters",
             required: true,
-            defaultValue: data.title
+            defaultValue: data?.title || ''  // Use previous value if available
           },
           {
             type: 'paragraph',
@@ -215,13 +215,26 @@ export const MainWebView = (context: any) => {
             label: 'Words (e.g. word, trail, game, example)',
             helpText: "Write at least 10 (and at most 100) entries separated with (,) Each with no more than 12 characters (a-Z and space)",
             required: true,
-            defaultValue: data.words
+            defaultValue: data?.words || ''  // Use previous value if available
           },
         ],
       } as const;
     },
     async (event) => {
-      await createCategory(context, event, postMessage, username, userID);
+      // The boolean return value indicates whether form validation passed
+      const success = await createCategory(context, userID, event.title, event.words, postMessage);
+      
+      // If validation failed, reopen the form with the previously entered values
+      if (!success) {
+        // Reopen the form with the same values so user can correct them
+        context.ui.showForm(myForm, { 
+          title: event.title, 
+          words: event.words 
+        });
+      } else {
+        // If successful, disable pointer events (as in original code)
+       // document.body.style.pointerEvents = 'none';
+      }
     }
   );
 

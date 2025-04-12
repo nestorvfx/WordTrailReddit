@@ -55,6 +55,11 @@ export async function handlePostDelete(event: any, context: TriggerContext): Pro
 
           await txn.hDel('usersCategories', [deletedPostCategoryCode]);
           await txn.hDel('categoriesWords', [deletedPostCategoryCode]);
+          
+          // Remove category from all sorted sets
+          await txn.zRem('categoriesByTime', [deletedPostCategoryCode]);
+          await txn.zRem('categoriesByPlays', [deletedPostCategoryCode]);
+          await txn.zRem('categoriesByScore', [deletedPostCategoryCode]);
 
           await txn.exec();
           break;
@@ -89,41 +94,6 @@ async function generateTestCategories(context: TriggerContext): Promise<void> {
   console.log('Scheduled test categories creation to start in 30 seconds');
 }
 
-/**
- * Creates additional indexes to improve category lookup performance
- */
-async function createCategoryIndexes(context: TriggerContext): Promise<void> {
-  try {
-    // Get all category data
-    let cursor = 0;
-    const categoryTitleMap: Record<string, string> = {};
-    
-    do {
-      const scanResult = await context.redis.hScan('usersCategories', cursor);
-      cursor = scanResult.cursor;
-      
-      // Build title-to-code mapping for fast lookups
-      for (const entry of scanResult.fieldValues) {
-        const categoryCode = entry.field;
-        const categoryData = entry.value;
-        const titleParts = categoryData.split(':');
-        if (titleParts.length >= 3) {
-          const title = titleParts[1];
-          categoryTitleMap[title.toLowerCase()] = categoryCode;
-        }
-      }
-    } while (cursor !== 0);
-    
-    // Store the category title index
-    if (Object.keys(categoryTitleMap).length > 0) {
-      await context.redis.hSet('categoryTitleIndex', categoryTitleMap);
-    }
-    
-    console.log(`Created category indexes with ${Object.keys(categoryTitleMap).length} entries`);
-  } catch (error) {
-    console.error('Error creating category indexes:', error);
-  }
-}
 
 // Add a new scheduler job to create test categories one at a time
 Devvit.addSchedulerJob({
@@ -175,8 +145,6 @@ Devvit.addSchedulerJob({
       if (typeof userIndex === 'number' && userIndex >= mockUsers.length) {
         console.log(`Completed creating ${categoriesCreated} test categories`);
         
-        // Create indexes after all categories are created
-        await createCategoryIndexes(context);
         return;
       }
       
@@ -264,6 +232,25 @@ Devvit.addSchedulerJob({
         // Update the latest category code
         await context.redis.set('latestCategoryCode', latestCategoryCode);
         
+        // Add to sorted sets for efficient sorting
+        // Timestamp-based sorting (newest first)
+        await context.redis.zAdd('categoriesByTime', {
+          score: creationTimestamp,
+          member: categoryCode
+        });
+        
+        // Play count-based sorting
+        await context.redis.zAdd('categoriesByPlays', {
+          score: playCount,
+          member: categoryCode
+        });
+        
+        // High score-based sorting (initial score is 0)
+        await context.redis.zAdd('categoriesByScore', {
+          score: 0, // Initial high score
+          member: categoryCode
+        });
+        
         console.log(`Created category ${title} with ID ${categoryCode} for user ${user.name} (${(typeof categoriesCreated === 'number' ? categoriesCreated : 0) + 1}/30)`);
       } catch (error) {
         console.error(`Failed to create category for user ${user.name}:`, error);
@@ -292,7 +279,6 @@ Devvit.addSchedulerJob({
         });
       } else {
         // All categories have been created, create indexes
-        await createCategoryIndexes(context);
         console.log(`Completed creating all 30 test categories`);
       }
     } catch (error) {
@@ -325,6 +311,9 @@ export async function handleAppInstall(event: any, context: TriggerContext): Pro
 
     // Start the test category generation process
     await generateTestCategories(context);
+    
+    // Initialize the sorted sets
+    // We don't need to populate them yet as new categories will be added to them
     
     console.log('App installed successfully, test categories will be generated with delays');
   } catch (error) {

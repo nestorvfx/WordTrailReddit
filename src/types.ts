@@ -35,7 +35,8 @@ export type WebViewMessage =
     | {
         type: 'updateCategories';
         data: {
-            cursor: number
+            cursor: number,
+            sortMethod?: string
         };
     }
     | {
@@ -130,4 +131,4 @@ export type CategoryUpdateInfo = {
     newScore: number,
     guessedAll: boolean,
     previousHSID?: string
-}; 
+};

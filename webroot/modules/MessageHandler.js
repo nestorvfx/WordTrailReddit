@@ -1,3 +1,6 @@
+import { clamp, randomPointInCircle } from './utils.js';
+import { MAX_WORD_COUNT } from './constants.js';
+
 /**
  * Class that handles communication with the parent window
  */
@@ -7,6 +10,9 @@ export class MessageHandler {
         this.uiManager = uiManager;
         this.particleSystem = particleSystem;
         this.callbacks = {};
+        
+        // Add request tracking to prevent duplicate requests
+        this.pendingRequests = {};
     }
 
     /**
@@ -131,7 +137,35 @@ export class MessageHandler {
      * @param {Object} data - Categories data
      */
     handleSendCategories(data) {
-        this.uiManager.displayCategories(data.usersCategories, 'playCategories');
+        // Remove the pending request flag
+        const requestId = `${this.uiManager.currentSortMethod}-${data.cursor}`;
+        delete this.pendingRequests[requestId];
+        
+        // When we receive categories, correctly identify if this is an initial load or a scroll append
+        const sceneType = this.gameState.categoriesList.length > 0 ? 'playCategories' : 'initialPlayCategories';
+        
+        if (data.usersCategories) {
+            console.log(`[DEBUG_CATEGORY] Received categories data - cursor: ${data.cursor}, sceneType: ${sceneType}`);
+            
+            const categories = data.usersCategories.split(';');
+            if (categories.length > 0 && categories[0]) {
+                // Log the first category (which should be newest and potentially a newly created one)
+                console.log(`[DEBUG_CATEGORY] First category in response: ${categories[0]}`);
+                
+                // Split and analyze the first category's structure
+                const parts = categories[0].split(':');
+                console.log(`[DEBUG_CATEGORY] First category parts:`);
+                console.log(`  Code: ${parts[0]}`);
+                console.log(`  Creator: ${parts[1]}`);
+                console.log(`  Title: ${parts[2]}`);
+                console.log(`  Plays: ${parts[3]}`);
+                console.log(`  HighScore: ${parts[4]}`);
+            }
+        }
+        
+        this.uiManager.displayCategories(data.usersCategories, sceneType);
+        
+        // Update cursor for pagination
         this.gameState.currentCategoriesCursor = data.cursor;
         if (this.gameState.currentCategoriesCursor == 0) {
             this.gameState.allCategoriesReceived = true;
@@ -237,11 +271,16 @@ export class MessageHandler {
      * @param {Object} data - Form correct data
      */
     handleFormCorrect(data) {
+        console.log(`[DEBUG_CATEGORY] Form submitted correctly for category: "${data.categoryTitle}"`);
+        
         if (data.categoryTitle == '') {
             this.uiManager.displayMessage('There was an error. Try again.');
         }
         else {
             this.uiManager.displayMessage(data.categoryTitle + ' has been succesfully created');
+            
+            // After successful creation, we'll request categories again
+            console.log(`[DEBUG_CATEGORY] Will request categories after creation`);
         }
     }
 
@@ -290,12 +329,37 @@ export class MessageHandler {
     /**
      * Send message to request categories
      * @param {number} cursor - Cursor position for pagination
+     * @param {string} sortMethod - The sort method to use (time, plays, score)
      */
-    requestCategories(cursor) {
+    requestCategories(cursor, sortMethod = 'time') {
+        // Create a unique request ID based on cursor and sort method
+        const requestId = `${sortMethod}-${cursor}`;
+        
+        // Skip if an identical request is already pending
+        if (this.pendingRequests[requestId]) {
+            return;
+        }
+        
+        console.log(`[DEBUG_CATEGORY] Requesting categories: cursor=${cursor}, sortMethod=${sortMethod}`);
+        
+        // Mark this request as pending
+        this.pendingRequests[requestId] = true;
+        
         window.parent.postMessage(
-            { type: 'updateCategories', data: { cursor } },
+            {
+                type: 'updateCategories',
+                data: {
+                    cursor: cursor,
+                    sortMethod: sortMethod
+                }
+            },
             '*'
         );
+        
+        // Set a timeout to clear the pending request flag if no response is received
+        setTimeout(() => {
+            delete this.pendingRequests[requestId];
+        }, 5000); // 5 second timeout
     }
 
     /**

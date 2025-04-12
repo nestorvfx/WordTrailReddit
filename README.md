@@ -75,8 +75,8 @@ The application uses Redis for data persistence with the following key structure
    
 - `usersCategories` (Hash)
    - Key: `categoryCode` (unique identifier)
-   - Value: `creator:categoryTitle:plays:highScore:highScoreUserName:highScoreUserID:postID`
-     - Contains metadata about each category including play count and high score info
+   - Value: `creator:categoryTitle:plays:highScore:highScoreUserName:highScoreUserID:postID:timestamp`
+     - Contains metadata about each category including play count, high score info, and creation timestamp
 
 - `categoriesWords` (Hash)
    - Key: `categoryCode`
@@ -86,6 +86,22 @@ The application uses Redis for data persistence with the following key structure
    - Key: `postID` (Reddit post identifier)
    - Value: `categoryCode:authorID`
    - Maps Reddit posts to their corresponding category codes and creators
+
+#### Sorted Sets
+- `categoriesByTime` (Sorted Set)
+   - Members: Category codes
+   - Scores: Unix timestamps of creation
+   - Used for sorting categories by newest first
+
+- `categoriesByPlays` (Sorted Set)
+   - Members: Category codes
+   - Scores: Number of times each category has been played
+   - Used for sorting categories by popularity
+
+- `categoriesByScore` (Sorted Set)
+   - Members: Category codes
+   - Scores: Highest score achieved in the category
+   - Used for sorting categories by difficulty/achievement
 
 ### Application Flow
 1. **Initialization**:
@@ -97,20 +113,28 @@ The application uses Redis for data persistence with the following key structure
    - WebView loads HTML/CSS/JS from `webroot/` directory
    - Communication between WebView and backend handled via typed message passing
 
-3. **Game Lifecycle**:
-   - User selects from Play, Create Category, or Settings
-   - Game creates visual particles representing words to guess
+3. **Category Navigation**:
+   - Play menu supports infinite scrolling with Redis pagination
+   - Categories are loaded in batches of 20 and appended to the existing view
+   - Supports sorting by newest, most played, or highest score
+   - Search functionality allows filtering categories by title or creator
+
+4. **Game Lifecycle**:
+   - User selects category and particles representing words to guess are displayed
    - Correct guesses update scores and modify the timer (-8 seconds per correct guess)
+   - Particles increase in complexity over time and reset on correct guesses
    - End of game posts comments to category posts and updates high scores if applicable
 
-4. **Data Management**:
+5. **Data Management**:
    - Categories creation/deletion handled through backend Redis transactions
    - User data removal (manual or automated) preserves categories but anonymizes creator/high scorer information
-   - Redis transactions with watch/multi/exec ensure data consistency
+   - Redis sorted sets ensure efficient category retrieval, pagination, and sorting
 
 ### Security & Performance Considerations
 - User data is tied to Reddit IDs and cleaned up for deleted accounts
 - Redis transactions prevent race conditions when updating categories
 - WebView messages are typed to ensure proper data structure validation
+- Optimized category loading with append-on-scroll behavior improves performance
+- Redis sorted sets enable efficient pagination and sorting without loading all categories
 - Monthly cleanup job ensures the database doesn't accumulate data from deleted users
 
