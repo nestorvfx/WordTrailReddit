@@ -311,11 +311,6 @@ export async function handleAppInstall(event: any, context: TriggerContext): Pro
 
     // Start the test category generation process
     await generateTestCategories(context);
-    
-    // Initialize the sorted sets
-    // We don't need to populate them yet as new categories will be added to them
-    
-    console.log('App installed successfully, test categories will be generated with delays');
   } catch (error) {
     console.error('Error during app installation:', error);
   }

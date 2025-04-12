@@ -4,22 +4,24 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta charset="UTF-8" />
-    <title>Web View Example</title>
+    <title>Word Trail</title>
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
     <div id="centeringScreen">
+        <!-- Main menu screen -->
         <div id="starting-screen">
             <button id="play-button">Play</button>
             <button id="create-category-button">Create Category</button>
             <button id="settingsButton">Settings</button>
         </div>
 
+        <!-- Navigation buttons -->
         <button id="returnToStartButton">Main Screen</button>
         <button id="retryButton">Try again</button>
-
         <button id="deleteDataButton">Remove Data</button>
 
+        <!-- Delete confirmation modal -->
         <div id="deleteConfirmationScreen">
             <div id="banner">
                 <h3 id="deleteText">Confirm deleting all of your Reddit data related to Word Trail Game?</h3>
@@ -30,18 +32,17 @@
             </div>
         </div>
 
-        <!-- Container for top-left text -->
+        <!-- Game HUD elements -->
         <div id="top-left-container">
             <div id="timeDisplay"></div>
             <div id="wordCount"></div>
         </div>
 
-        <!-- List items will be dynamically added -->
+        <!-- Categories browser -->
         <div id="categoriesScreen">
             <div id="categoriesText">Pick a Category</div>
             <button id="scrollButtonUp">▲</button>
             
-            <!-- Add search container above categories table -->
             <div id="searchContainer">
                 <div class="search-inner">
                     <div class="search-icon">🔍</div>
@@ -50,7 +51,6 @@
                 </div>
             </div>
             
-            <!-- Add sorting dropdown container here -->
             <div id="sortContainer">
                 <button id="sortButton">Sort: <span id="currentSort">Newest</span> <span class="sort-arrow">▼</span></button>
                 <div id="sortDropdown">
@@ -66,10 +66,10 @@
                     <div class="col-created">Created By</div>
                     <div class="col-played">Played</div>
                     <div class="col-hs">HS</div>
-                    <div class="col-timestamp">Ago</div> <!-- Changed from "Time Created" to "Ago" -->
+                    <div class="col-timestamp">Ago</div>
                 </div>
                 <div id="rows-wrapper">
-                    <!-- Rows will be added dynamically here -->
+                    <!-- Rows populated dynamically -->
                 </div>
             </div>
 
@@ -78,15 +78,15 @@
             <button id="deleteCategoryButton">Delete Category</button>
         </div>
 
+        <!-- Game results elements -->
         <div id="final-score"></div>
         <div id="highScore"></div>
-
         <div id="formMessage"></div>
 
+        <!-- Virtual keyboard -->
         <div id="keyboard-holder">
             <div id="output"></div>
             <div id="keyboard">
-                <!-- First Row -->
                 <button class="key">Q</button>
                 <button class="key">W</button>
                 <button class="key">E</button>
@@ -99,7 +99,6 @@
                 <button class="key">P</button>
                 <button class="key backspace">⌫</button>
 
-                <!-- Second Row -->
                 <button class="key">A</button>
                 <button class="key">S</button>
                 <button class="key">D</button>
@@ -110,11 +109,8 @@
                 <button class="key">K</button>
                 <button class="key">L</button>
                 <img src="Keyboard Image.png" alt="Keyboard Image" class="keyboardImage">
-                <!-- <space></space> -->
-                <!-- Checkmark Button Spanning Rows -->
                 <button class="key submit">✔</button>
 
-                <!-- Third Row -->
                 <button class="key">Z</button>
                 <button class="key">X</button>
                 <button class="key">C</button>
@@ -124,13 +120,15 @@
                 <button class="key">M</button>
                 <button class="key space"></button>
             </div>
-
         </div>
     </div>
+    
+    <!-- Maintenance message -->
     <div id="maintenanceOverlay">
         Maintenance in progress.<br>
         Try again in a few minutes.
     </div>
+    
     <script type="module" src="script.js"></script>
 </body>
 </html>

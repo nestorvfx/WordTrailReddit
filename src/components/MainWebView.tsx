@@ -231,9 +231,6 @@ export const MainWebView = (context: any) => {
           title: event.title, 
           words: event.words 
         });
-      } else {
-        // If successful, disable pointer events (as in original code)
-       // document.body.style.pointerEvents = 'none';
       }
     }
   );

@@ -7,123 +7,48 @@ export async function sendCategories(context: Context, cursor: number, sortMetho
   const start = cursor * pageSize;
   const stop = start + pageSize - 1;
   
-  // Select the appropriate sorted set based on the requested sort method
-  let sortedSetKey = 'categoriesByTime'; // Default to sorting by time
-  if (sortMethod === 'plays') {
-    sortedSetKey = 'categoriesByPlays';
-  } else if (sortMethod === 'score') {
-    sortedSetKey = 'categoriesByScore';
-  }
-  
-  console.log(`Fetching categories: sortMethod=${sortMethod}, sortedSetKey=${sortedSetKey}, range=${start}-${stop}`);
+  // Determine which sorted set to use based on the sort method
+  const sortedSetKey = sortMethod === 'time' 
+    ? 'categoriesByTime'
+    : sortMethod === 'plays'
+      ? 'categoriesByPlays'
+      : 'categoriesByScore';
   
   try {
-    // Get categories sorted by the selected method (always in descending order - newest/most/highest first)
-    // Using by:'rank' (default) instead of by:'score' to retrieve by position, not score value
+    // Get categories sorted by the selected method
     const sortedCategories = await context.redis.zRange(sortedSetKey, start, stop, { 
       by:'rank',
       reverse: true // Reversed order for descending sort
     });
     
-    console.log(`[DEBUG_CATEGORY] zRange results: found ${sortedCategories.length} categories in sorted set ${sortedSetKey}`);
-    
-    if (sortedCategories.length > 0) {
-      // Log first category code for debugging
-      console.log(`[DEBUG_CATEGORY] First sorted category code: ${sortedCategories[0].member}`);
-    }
-    
-    // Diagnostic: Check if members exist in their respective sets
     if (sortedCategories.length === 0) {
-      console.log('No categories found in sorted set, checking if data exists in hash...');
-      
-      // Check if we have any categories at all in the hash
-      const usersCategories = await context.redis.hKeys('usersCategories');
-      console.log(`Found ${usersCategories.length} categories in usersCategories hash`);
-      
-      if (usersCategories.length > 0) {
-        console.log('DIAGNOSIS: Categories exist in hash but NOT in sorted set.');
-        console.log('This indicates a synchronization issue. Run a data migration script to populate sorted sets.');
-        
-        // Sample a few categories for diagnostic purposes
-        const sampleSize = Math.min(5, usersCategories.length);
-        const sampleCategories = usersCategories.slice(0, sampleSize);
-        const sampleData = await context.redis.hMGet('usersCategories', sampleCategories);
-        
-        console.log(`Sample categories (${sampleSize}):`);
-        sampleCategories.forEach((code, i) => {
-          if (sampleData[i]) {
-            const parts = sampleData[i]?.split(':') || [];
-            const title = parts[1] || 'unknown';
-            const plays = parts[2] || '0';
-            const score = parts[3] || '0';
-            console.log(`  - ${code}: "${title}" (plays: ${plays}, score: ${score})`);
-          }
-        });
-      } else {
-        console.log('DIAGNOSIS: No categories exist in the hash either. This may be expected if no categories have been created.');
-      }
-      
+      // No categories found, send empty result
       postMessage({
         type: 'sendCategories',
         data: {
           usersCategories: '',
-          cursor: 0 // No more categories
+          cursor: 0
         },
       });
       return;
     }
-    
-    // Check if we have more categories available
-    const hasMoreCategories = sortedCategories.length === pageSize;
     
     // Get full category data for the sorted category codes
     const categoryData = await context.redis.hMGet('usersCategories', 
       sortedCategories.map(category => category.member)
     );
     
-    if (categoryData.length > 0 && categoryData[0]) {
-      // Log first category data for debugging
-      console.log(`[DEBUG_CATEGORY] First category raw data: ${categoryData[0]}`);
-      
-      // Analyze the structure of the first category
-      const parts = (categoryData[0] as string).split(':');
-      console.log(`[DEBUG_CATEGORY] First category parts in backend:`);
-      console.log(`  Creator: ${parts[0]}`);
-      console.log(`  Title: ${parts[1]}`);
-      console.log(`  Plays: ${parts[2]}`);
-      console.log(`  HighScore: ${parts[3]}`);
-      // Remaining parts...
-    }
-    
-    // Check for inconsistencies where categories exist in sorted set but not in hash
-    const missingCategories = categoryData.filter(data => !data).length;
-    if (missingCategories > 0) {
-      console.log(`WARNING: Found ${missingCategories}/${sortedCategories.length} categories in sorted set that don't exist in hash`);
-      
-      // Detailed log of missing categories
-      sortedCategories.forEach((category, index) => {
-        if (!categoryData[index]) {
-          console.log(`Missing category in hash: ${category.member} (score: ${category.score})`);
-        }
-      });
-    }
-    
     // Format the results in the expected format: categoryCode:categoryData
     const processedCategories = sortedCategories.map((category, index) => {
       if (!categoryData[index]) return '';
-      const formatted = `${category.member}:${categoryData[index]}`;
-      
-      // Log the first processed category for debugging
-      if (index === 0) {
-        console.log(`[DEBUG_CATEGORY] First formatted category: ${formatted}`);
-      }
-      
-      return formatted;
+      return `${category.member}:${categoryData[index]}`;
     }).filter(Boolean); // Remove any empty strings
     
     const result = processedCategories.join(';');
     
-    console.log(`[DEBUG_CATEGORY] Sending ${processedCategories.length} categories to client`);
+    // Check if there are more categories after this page
+    const totalCategories = await context.redis.zCard(sortedSetKey);
+    const hasMoreCategories = (start + sortedCategories.length) < totalCategories;
     
     // Send the sorted categories back to the client
     postMessage({
@@ -134,8 +59,8 @@ export async function sendCategories(context: Context, cursor: number, sortMetho
       },
     });
   } catch (error) {
-    console.error('Error fetching sorted categories:', error);
-    // In case of error, return empty string
+    console.error('Error sending categories:', error);
+    // Send empty result on error
     postMessage({
       type: 'sendCategories',
       data: {

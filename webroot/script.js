@@ -98,8 +98,6 @@ class App {
                 
                 // Call the message handler to start the category form
                 this.messageHandler.startCategoryForm();
-                
-                console.log("Create Category button clicked, sending startForm message");
             },
             
             onSettingsClick: () => {
@@ -157,7 +155,6 @@ class App {
      * Set up the start screen (Called AFTER initialData is received)
      */
     setupStartScreen() {
-        console.log("Setting up start screen...");
         this.gameState.gameStarted = false;
         this.gameState.gameFinished = false;
         

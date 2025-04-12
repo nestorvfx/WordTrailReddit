@@ -44,23 +44,19 @@ export async function createCategory(context: Context, userID: string, categoryT
   const retryLimit = 5;
   for (let attempt = 1; attempt <= retryLimit; attempt++) {
     try {
-      // Check input validity
+      // Validate inputs against required patterns
       const regexWords = /^([a-zA-Z]+(?: [a-zA-Z]+)*)(?:,([a-zA-Z]+(?: [a-zA-Z]+)*))*$/;
       const regexTitle = /^[a-zA-Z0-9-_ ]{1,16}$/;
 
       const titleCorrect = regexTitle.test(categoryTitle);
 
-      // Fix type error by explicitly declaring type
       const wordsList: string[] = words.replace(/[\n\r]/g, '').split(',').map(element => element.trim()).filter(element => element != '' && /^[a-zA-Z\s]+$/.test(element) && element.length <= 12);
-
-      // Fix name collision by using a different variable name
       const wordsString: string = wordsList.join(',').toUpperCase();
       const wordsRegexCorrect = regexWords.test(wordsString);
-
       const wordsCorrect = wordsRegexCorrect && wordsList.length >= 10 && wordsList.length <= 100;
 
       if (wordsCorrect && titleCorrect) {
-        // Create new category
+        // Create category with validated inputs
         const currentCode = await context.redis.get('latestCategoryCode');
         if (currentCode == undefined) {
           continue;
@@ -71,6 +67,8 @@ export async function createCategory(context: Context, userID: string, categoryT
         if (cUserInfo == '') {
           continue;
         }
+        
+        // Update user's category list
         let newInfo = cUserInfo.includes(':c:') ? ':' + newCode : ':c:' + newCode;
         const hIndex = cUserInfo.indexOf(':h:');
         newInfo = hIndex != -1
@@ -79,7 +77,7 @@ export async function createCategory(context: Context, userID: string, categoryT
 
         const txn = await context.redis.watch('latestCategoryCode');
 
-        // Use the LoadingPreview component for the preview
+        // Create post for category
         const postOptions = {
           title: 'Play ' + categoryTitle + ' category',
           subredditName: context.subredditName ?? '',
@@ -87,12 +85,12 @@ export async function createCategory(context: Context, userID: string, categoryT
         };
 
         const post = await context.reddit.submitPost(postOptions);
-
-        // Add timestamp (in seconds since epoch) when the category was created
         const timestamp = Math.floor(Date.now() / 1000);
 
+        // Fix: Use only the pure username part from user info
         const categoryInfo = `${cUserInfo.split(':')[0]}:${categoryTitle}:0:0:::${post.id}:${timestamp}`;
 
+        // Store all category data in transaction
         await txn.multi();
         await txn.hSet('postCategories', { [post.id]: newCode + ':' + userID });
         await txn.set('latestCategoryCode', newCode);
@@ -101,25 +99,23 @@ export async function createCategory(context: Context, userID: string, categoryT
         });
         
         await txn.hSet('categoriesWords', {
-          [newCode]: wordsString  // Use the correct variable name
+          [newCode]: wordsString
         });
         await txn.hSet('userIDs', {
           [userID]: newInfo
         });
 
-        // Use timestamp as score for time-based sorting
+        // Add to sorted sets for efficient retrieval
         await txn.zAdd('categoriesByTime', {
           score: timestamp,
           member: newCode
         });
 
-        // Initial plays count is 0
         await txn.zAdd('categoriesByPlays', {
           score: 0,
           member: newCode
         });
 
-        // Initial high score is 0
         await txn.zAdd('categoriesByScore', {
           score: 0,
           member: newCode
@@ -143,10 +139,10 @@ export async function createCategory(context: Context, userID: string, categoryT
           },
         });
         
-        console.log(`[DEBUG_CATEGORY] Category creation completed for: ${categoryTitle}`);
-        return true; // Validation passed and category created successfully
+        return true;
       }
       else {
+        // Show appropriate validation error message
         let toastMessage = '';
         if (!wordsCorrect && !titleCorrect) {
           toastMessage = 'Both fields have been incorrectly submitted';
@@ -163,10 +159,15 @@ export async function createCategory(context: Context, userID: string, categoryT
           appearance: 'neutral'
         });
 
-        console.log(`Form validation failed - title: ${titleCorrect}, words: ${wordsCorrect}`);
-        console.log(`Attempted values - title: ${categoryTitle}, words length: ${wordsList.length}`);
-
-        return false; // Return false to indicate validation failure
+        postMessage({
+          type: 'formIncorrect',
+          data: {
+            wordsCorrect: wordsCorrect,
+            titleCorrect: titleCorrect
+          },
+        });
+        
+        return false;
       }
     }
     catch (error) {
@@ -183,5 +184,5 @@ export async function createCategory(context: Context, userID: string, categoryT
       }
     }
   }
-  return false; // Default return value if all attempts failed
+  return false;
 }

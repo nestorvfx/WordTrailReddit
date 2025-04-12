@@ -1,140 +1,97 @@
 # WORD TRAIL
 
-Guess words from particles and trails, set by other users/moderators in different categories.
+Word Trail is an interactive word-guessing game built on Reddit's Devvit platform where players try to guess words represented by animated particles and trails.
 
-### Features
-* **60 seconds** timer
-* Each **correct guess subtracts 8 seconds** from timer (0:00 being lowest time at any given point)
-* Trails increase in length with time and shorten (fully) on correct guess + paths 'change subtly' with time and correct guesses
-* When all words are guessed correctly, on incorrect guess or when timer runs out game finishes.
-* **High scores** are tracked per category, where only first to reach certain high score is tracked as such.
-* Number of times each category has been played is tracked
+## Gameplay
 
-### Categories creators
-When installing the game, moderators can choose whether everyone is allowed to create categories or
-moderators want to be in charge of creating them.
+* **60-second timer** with countdown display
+* **-8 seconds** from timer for each correct guess (timer won't go below 0:00)
+* Dynamic particle trails that evolve over time and reset on correct guesses
+* Game ends when all words are correctly guessed, on incorrect guess, or when timer expires
+* **High scores** tracked per category with creator recognition
+* **Play counts** showing category popularity
 
-### UGC content
-Each time category is created, post will be provided for it.
-Each time category has been played, commented will be posted within original categories post.
+## Key Features
 
+### Categories System
+* Browse user-created categories with search functionality
+* Sort by Newest, Most Played, or Highest Score
+* Infinite scrolling with efficient data pagination
+* Real-time relative timestamps (now, 5min, 2h, 3d, etc.)
 
-## HOW TO PLAY
-On game install Word Trail main post will appear pinned in the respective subreddit (there will also be option
-within subreddits Menu to create such post with limit of 1 such post per subreddit).
-Within main post there will be 3 buttons:
+### Category Creation
+* Users can create custom word lists (10-100 words)
+* Moderator-only creation option for community management
+* Form validation with automatic resubmission on errors
+* Personal category limit of 10 per user (unlimited for moderators)
 
-### Play
-Within Play screen, there will be list of categories available for play displayed with following information:
-* **Title** - categories title
-* **Created By** - username of who created category
-* **Played** - how many times has category been played (*Where game is considered played once game play finishes*)
-* **HS** - high score in the category
+### User Settings
+* Manage created categories with individual deletion
+* Account data removal option for privacy
+* High score and play count tracking
 
-### Create Category
-When pressed, form will appear with title and words options, with input requiremnts below each.
-
-### Settings
-In this section, users will be presented with all the categories they've created and *Delete Category* button
-to remove them (one by one).
-In the top right of the section there will be *Remove Data* button, which will allow users
-to remove all data stored within Word Trail game (and associated databases) including all the categories created,
-posts created alongside those categories and high scores achieved (respective categories will now have HS of 0).
-
-
-## Data cleanup
-20th on each month, every user (by id) that has been removed/is no longer active Reddit user
-will have their data removed from Word Trail game in the following manner:
-* Categories they created will still stay, but instead of username for creator it will be '[deleted]'
-* Similar for high scorer for category, instead of username '[deleted]' will be written.
-* And userID/username will be removed from every other part of Word Trail itself/associated database(s)
-posts created alongside those categories and high scores achieved (respective categories will now have HS of 0).
-
-
-## Technical Documentation
+## Technical Design
 
 ### Architecture Overview
-Word Trail is built on Reddit's Devvit platform, utilizing a client-server architecture:
-- **Backend**: Node.js with TypeScript, leveraging Devvit's APIs for Reddit integration and Redis for data storage
-- **Frontend**: HTML5/CSS3/JavaScript web application embedded in a Reddit WebView component
+Word Trail uses a modern client-server architecture:
+
+* **Frontend**: WebView with HTML5/CSS3/JavaScript and Three.js for particle animations
+* **Backend**: TypeScript with Devvit Reddit integration and Redis for persistence
+* **Communication**: Message-based protocol between frontend and backend components
 
 ### Database Structure
-The application uses Redis for data persistence with the following key structures:
 
 #### Global Keys
-- `mainPostID`: ID of the main game post created upon app installation
-- `periodicRemoval`: ID of the periodic removal job for user data cleanup
-- `latestCategoryCode`: Counter/string value used to generate unique codes for new categories
+* `mainPostID`: ID of the main game post
+* `latestCategoryCode`: Counter for generating unique category codes
+* `periodicRemoval`: Scheduled job reference for monthly cleanup
 
 #### Hash Tables
-- `userIDs` (Hash)
-   - Key: User's Reddit ID
-   - Value: `username:c:categoryCode1:categoryCode2...:h:categoryCodeH1:categoryCodeH2`
-     - Between `:c:` and `:h:` are categories created by the user
-     - After `:h:` are categories where the user holds the high score
+* `userIDs`: Maps Reddit user IDs to their data
+  * Format: `username:c:categoryCode1:categoryCode2...:h:categoryCodeH1:categoryCodeH2`
+  * Categories created by user are between `:c:` and `:h:`
+  * Categories where user holds high score are after `:h:`
    
-- `usersCategories` (Hash)
-   - Key: `categoryCode` (unique identifier)
-   - Value: `creator:categoryTitle:plays:highScore:highScoreUserName:highScoreUserID:postID:timestamp`
-     - Contains metadata about each category including play count, high score info, and creation timestamp
+* `usersCategories`: Stores category metadata
+  * Key: `categoryCode`
+  * Value: `creator:categoryTitle:plays:highScore:highScoreUserName:highScoreUserID:postID:timestamp`
 
-- `categoriesWords` (Hash)
-   - Key: `categoryCode`
-   - Value: Comma-separated list of words for the category (the actual game content)
+* `categoriesWords`: Stores the actual words for categories
+  * Key: `categoryCode`
+  * Value: Comma-separated list of uppercase words
 
-- `postCategories` (Hash)
-   - Key: `postID` (Reddit post identifier)
-   - Value: `categoryCode:authorID`
-   - Maps Reddit posts to their corresponding category codes and creators
+* `postCategories`: Links Reddit posts to categories
+  * Key: `postID`
+  * Value: `categoryCode:authorID`
 
 #### Sorted Sets
-- `categoriesByTime` (Sorted Set)
-   - Members: Category codes
-   - Scores: Unix timestamps of creation
-   - Used for sorting categories by newest first
+* `categoriesByTime`: Categories sorted by creation timestamp (newest first)
+* `categoriesByPlays`: Categories sorted by number of plays (most popular first)
+* `categoriesByScore`: Categories sorted by high score (highest first)
 
-- `categoriesByPlays` (Sorted Set)
-   - Members: Category codes
-   - Scores: Number of times each category has been played
-   - Used for sorting categories by popularity
+### Performance Optimizations
+* **Debounced scroll events** prevent redundant category requests
+* **Request tracking** avoids duplicate API calls with same parameters
+* **Redis sorted sets** enable efficient pagination without loading all data
+* **Transaction-based updates** prevent race conditions
 
-- `categoriesByScore` (Sorted Set)
-   - Members: Category codes
-   - Scores: Highest score achieved in the category
-   - Used for sorting categories by difficulty/achievement
+### Data Management
+* Monthly cleanup removes data from deleted Reddit accounts
+* Categories persist with `[deleted]` attribution when user accounts are removed
+* User data can be removed on request while preserving categories
 
-### Application Flow
-1. **Initialization**:
-   - App installation triggers `handleAppInstall` and schedules `initialPost` to create a pinned post
-   - `removeUserDataPeriodically` job runs monthly (on the 20th) to clean up data from deleted users
+### Security Considerations
+* Data tied to Reddit IDs rather than usernames for consistency
+* Validation for all user inputs with clear error messages
+* Rate limiting through request tracking
 
-2. **Main Interface**:
-   - `MainWebView` renders the game interface in a Reddit post
-   - WebView loads HTML/CSS/JS from `webroot/` directory
-   - Communication between WebView and backend handled via typed message passing
+## Maintenance
 
-3. **Category Navigation**:
-   - Play menu supports infinite scrolling with Redis pagination
-   - Categories are loaded in batches of 20 and appended to the existing view
-   - Supports sorting by newest, most played, or highest score
-   - Search functionality allows filtering categories by title or creator
+The application performs automatic maintenance on the 20th of each month during which:
+* Deleted Reddit users are identified and processed
+* Attribution for created categories is anonymized
+* High scores are preserved with `[deleted]` attribution
+* Associated user data is removed from internal databases
 
-4. **Game Lifecycle**:
-   - User selects category and particles representing words to guess are displayed
-   - Correct guesses update scores and modify the timer (-8 seconds per correct guess)
-   - Particles increase in complexity over time and reset on correct guesses
-   - End of game posts comments to category posts and updates high scores if applicable
-
-5. **Data Management**:
-   - Categories creation/deletion handled through backend Redis transactions
-   - User data removal (manual or automated) preserves categories but anonymizes creator/high scorer information
-   - Redis sorted sets ensure efficient category retrieval, pagination, and sorting
-
-### Security & Performance Considerations
-- User data is tied to Reddit IDs and cleaned up for deleted accounts
-- Redis transactions prevent race conditions when updating categories
-- WebView messages are typed to ensure proper data structure validation
-- Optimized category loading with append-on-scroll behavior improves performance
-- Redis sorted sets enable efficient pagination and sorting without loading all categories
-- Monthly cleanup job ensures the database doesn't accumulate data from deleted users
+During the maintenance window (first 5 minutes of the 20th), a maintenance message is displayed to users.
 
