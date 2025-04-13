@@ -197,7 +197,11 @@ export const MainWebView = (context: any) => {
       }
     },
     onUnmount: () => {
-      // Cleanup if needed
+      // Reset to default view when web view is closed
+      setWebviewVisible(false);
+      
+      // Reset any form inputs if needed
+      setFormInputs({ title: '', words: '' });
     },
   });
 
