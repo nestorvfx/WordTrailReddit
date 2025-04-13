@@ -690,9 +690,13 @@ export class UIManager {
     _renderEmptyState() {
         const emptyElement = document.createElement('div');
         emptyElement.classList.add('emptyElement');
-        emptyElement.innerHTML =
-            "<span class=\"emptyText\">There are currently no available categories.\n" +
-            "(feel free to create one) </span> ";
+        
+        // Customize message based on whether the user can create categories
+        const messageText = this.gameState.userAllowedToCreate 
+            ? "There are currently no available categories.\n(feel free to create one)"
+            : "There are currently no available categories.\n(only moderators can create categories)";
+            
+        emptyElement.innerHTML = `<span class="emptyText">${messageText}</span>`;
         this.elements.categoriesDisplay.appendChild(emptyElement);
 
         // Disable/hide buttons appropriately for empty state
