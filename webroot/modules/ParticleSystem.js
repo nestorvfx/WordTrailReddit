@@ -30,6 +30,13 @@ export class ParticleSystem {
         this._tempVector1 = new THREE.Vector3();
         this._tempVector2 = new THREE.Vector3();
         this._tempVector3 = new THREE.Vector3();
+        
+        // Add new properties for trail growth with corrected values
+        this.trailGrowthTimer = 0;
+        this.maxTrailLength = 120; // Keep the doubled value
+        this.initialTrailGrowthSpeed = 0.96; // 0.8 * 1.2 = 0.96
+        this.isStartScreen = false; // Flag to track if we're on the start screen
+        this.isEndScreen = false;   // Flag to track if we're on the end screen
     }
 
     /**
@@ -160,6 +167,20 @@ export class ParticleSystem {
         this.currentWord = newWord;
         this.particleCount = newWord.length;
         this.numberArray = Array.from(newWord, c => c.toLowerCase().charCodeAt(0) - 'a'.charCodeAt(0));
+        
+        // Reset trail growth timer when setting a new word
+        this.trailGrowthTimer = 0;
+        
+        // Set flags for special screens - reset END screen flag to false when setting any new word
+        this.isStartScreen = (newWord === 'Word Trail');
+        this.isEndScreen = (newWord === 'SCORE');
+        
+        // Apply appropriate pre-growth for special screens
+        if (this.isStartScreen) {
+            this.trailGrowthTimer = 10.0; // Keep the start screen pre-growth
+        } else if (this.isEndScreen) {
+            this.trailGrowthTimer = 8.0; // Less pre-growth for end screen
+        }
 
         for (let p = 0; p < Math.max(newWord.length, this.particles.length); p++) {
             let opacity = 0;
@@ -176,7 +197,7 @@ export class ParticleSystem {
             if (p < this.particles.length) {
                 this.particles[p].material.opacity = opacity;
                 
-                // Reset trail to current position (two points at same location)
+                // Always reset trails to minimal length (just two points at current position)
                 const pos = this.particles[p].position.clone();
                 this.particles[p].userData.trail = [pos.clone(), pos.clone()];
                 
@@ -199,13 +220,23 @@ export class ParticleSystem {
      * @param {Object} params - Parameters to update
      */
     updateParams(params) {
-        const { xRemapRange, yOffset, letterScaling, radiusScaling, currentWordIndex } = params;
+        const { xRemapRange, yOffset, letterScaling, radiusScaling, currentWordIndex, isEndScreen } = params;
         
         if (xRemapRange !== undefined) this.xRemapRange = xRemapRange;
         if (yOffset !== undefined) this.yOffset = yOffset;
         if (letterScaling !== undefined) this.letterScaling = letterScaling;
         if (radiusScaling !== undefined) this.radiusScaling = radiusScaling;
         if (currentWordIndex !== undefined) this.currentWordIndex = currentWordIndex;
+        
+        // Only set isEndScreen if explicitly provided (don't reset it otherwise)
+        if (isEndScreen !== undefined) {
+            this.isEndScreen = isEndScreen;
+            
+            // Reset growth timers if we're switching to end screen
+            if (isEndScreen) {
+                this.trailGrowthTimer = 8.0;
+            }
+        }
     }
 
     /**
@@ -215,7 +246,42 @@ export class ParticleSystem {
     update(deltaTime) {
         if (this.particles.length === 0) return;
         
-        this.totalDeltaTime += deltaTime * (1 + this.currentWordIndex / 20);
+        // Increase the growth timer at appropriate speeds for different screens
+        if (this.isStartScreen) {
+            this.trailGrowthTimer += deltaTime * 0.96; // 0.8 * 1.2
+        } else if (this.isEndScreen) {
+            this.trailGrowthTimer += deltaTime * 1.44; // 1.2 * 1.2
+        } else {
+            this.trailGrowthTimer += deltaTime * 1.08; // 0.9 * 1.2
+        }
+        
+        // Calculate particle movement speed and trail growth speed
+        let particleSpeedMultiplier, trailGrowthMultiplier;
+        
+        if (this.isStartScreen) {
+            // Start screen - 1.2x faster particles, 1.5x longer trails
+            particleSpeedMultiplier = 0.84;
+            trailGrowthMultiplier = 14.4; // 12.0 * 1.2
+        } else if (this.isEndScreen) {
+            // End screen - Slower particles with longer trails
+            particleSpeedMultiplier = 0.7;
+            trailGrowthMultiplier = 21.6; // 18.0 * 1.2
+        } else {
+            // Regular gameplay - more balanced progression
+            particleSpeedMultiplier = 1.0 + Math.min(this.currentWordIndex * 0.12, 1.2); // Reduced multiplier
+            
+            // Slower trail growth for regular words
+            trailGrowthMultiplier = 0.96 + Math.min(this.currentWordIndex * 0.24, 1.92); // 0.8 * 1.2, 0.2 * 1.2, 1.6 * 1.2
+            
+            // Apply diminishing returns after word 7
+            if (this.currentWordIndex > 7) {
+                particleSpeedMultiplier = 2.2 + Math.log10(1 + (this.currentWordIndex - 7) * 0.05); // Reduced acceleration
+                trailGrowthMultiplier = 2.88 + Math.log10(1 + (this.currentWordIndex - 7) * 0.084); // 2.4 * 1.2, 0.07 * 1.2
+            }
+        }
+        
+        // Apply multipliers to total delta time for animation
+        this.totalDeltaTime += deltaTime * particleSpeedMultiplier;
 
         for (let i = 0; i < this.particleCount; i++) {
             const particle = this.particles[i];
@@ -279,18 +345,24 @@ export class ParticleSystem {
                         );
                     }
                     
+                    // Adjust movement speed more moderately
                     this._tempVector1.normalize().multiplyScalar(
-                        (1 + this.currentWordIndex / 20) * 
+                        (1 + this.currentWordIndex / 30) * // More gradual increase with word count 
                         (1.8 - (1 - this.radiusScaling) * 0.7) * 
                         deltaTime * this.camera.aspect
                     );
                 }
 
                 // Use temporary vector for velocity calculation
+                // Make particle movement smoother by adjusting the lerp factor
+                const lerpFactor = this.isStartScreen 
+                    ? 0.12 // Smoother movement for start screen
+                    : clamp(0.14 + this.currentWordIndex / 120, 0.14, 0.25); // More gradual increase
+                
                 this._tempVector2.set(0, 0, 0).lerpVectors(
                     velocity, 
                     this._tempVector1, 
-                    0.19 + this.currentWordIndex / 100 + this.particleCount / 140 + 0.02 * (1 - this.radiusScaling)
+                    lerpFactor
                 );
 
                 // Create a new velocity vector (to match original behavior)
@@ -302,10 +374,27 @@ export class ParticleSystem {
                 // Add current position to trail (as Vector3 object)
                 trail.push(particle.position.clone());
 
-                // Remove oldest points if trail is too long
-                const maxTrailPoints = Math.floor(5 * this.camera.aspect * 
-                    clamp(this.totalDeltaTime + 30 * (1 - this.radiusScaling), 0.5, 30));
+                // Calculate max trail points based on different factors for each screen type
+                let maxTrailPoints;
+                
+                if (this.isStartScreen) {
+                    // Start screen trails
+                    maxTrailPoints = Math.floor(52.5 * this.camera.aspect);
+                } else if (this.isEndScreen) {
+                    // End screen trails
+                    maxTrailPoints = Math.floor(70.0 * this.camera.aspect); // Reduced from 94.5
+                } else {
+                    // Calculate current growth speed based on word count - reduced for gameplay
+                    const currentGrowthSpeed = this.initialTrailGrowthSpeed * trailGrowthMultiplier;
                     
+                    // Dynamic growth based on time passed
+                    maxTrailPoints = Math.floor(Math.min(
+                        4 + currentGrowthSpeed * this.trailGrowthTimer, // Start with 4 points
+                        this.maxTrailLength * this.camera.aspect
+                    ));
+                }
+                
+                // Remove oldest points if trail is too long
                 while (trail.length > maxTrailPoints) {
                     trail.shift();
                 }
@@ -370,4 +459,4 @@ export class ParticleSystem {
             sharedGeometry.dispose();
         }
     }
-} 
+}

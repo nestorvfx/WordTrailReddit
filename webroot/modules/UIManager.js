@@ -124,6 +124,37 @@ export class UIManager {
         this.elements.currentSortText = document.getElementById('currentSort');
         this.elements.sortOptions = document.querySelectorAll('.sort-option');
         this.elements.reverseSort = document.getElementById('reverseSort');
+
+        // Add loading spinner to cached elements
+        this.elements.categoriesLoading = document.getElementById('categoriesLoading');
+    }
+
+    /**
+     * Show loading spinner for category fetching
+     */
+    showCategoriesLoading() {
+        if (this.elements.categoriesLoading) {
+            this.elements.categoriesLoading.style.display = 'flex'; // Changed to flex for centering
+            
+            // Add loading class to down scroll button to indicate it's temporarily disabled
+            if (this.elements.scrollButtonDown) {
+                this.elements.scrollButtonDown.classList.add('loading');
+            }
+        }
+    }
+
+    /**
+     * Hide loading spinner for category fetching
+     */
+    hideCategoriesLoading() {
+        if (this.elements.categoriesLoading) {
+            this.elements.categoriesLoading.style.display = 'none';
+            
+            // Remove loading class from down scroll button
+            if (this.elements.scrollButtonDown) {
+                this.elements.scrollButtonDown.classList.remove('loading');
+            }
+        }
     }
 
     /**
@@ -440,8 +471,9 @@ export class UIManager {
 
     /**
      * Render the categories list after sorting
+     * @param {string} sceneType - The type of scene to display
      */
-    renderCategoriesList() {
+    renderCategoriesList(sceneType) {
         console.log(`[RENDER] renderCategoriesList called`);
         
         // Clear current list
@@ -464,6 +496,11 @@ export class UIManager {
         // Reset scroll position
         this.elements.categoriesDisplay.scrollTop = 0;
         this.updateScrollButtonStates();
+
+        // Auto-select the first category after rendering the full list
+        if (sceneType === 'initialPlayCategories' || this.gameState.selectedCategory === null) {
+            this._autoSelectFirstCategory();
+        }
     }
 
     /**
@@ -565,7 +602,7 @@ export class UIManager {
         console.log(`[FLOW] Handling as full list operation`);
         
         // Step 3: For initial loads or updates (not append), render the full list
-        this._renderCategoryList(); // Sorts and renders the list or empty state
+        this._renderCategoryList(sceneType); // Pass scene type to _renderCategoryList
 
         // Step 4: Set up common UI elements visible in both modes
         this._setupCommonCategoryUI();
@@ -691,8 +728,9 @@ export class UIManager {
     /**
      * Sorts and renders the current category list or the empty state message.
      * @private
+     * @param {string} sceneType - The type of scene to display
      */
-    _renderCategoryList() {
+    _renderCategoryList(sceneType) {
         console.log(`[RENDER] _renderCategoryList called with sort method: ${this.currentSortMethod}`);
         console.log(`[STATE] Before sort - categoriesList.length: ${this.gameState.categoriesList.length}`);
         
@@ -706,7 +744,7 @@ export class UIManager {
         } else {
             // Render the populated list using the existing method
             console.log(`[RENDER] Rendering ${this.gameState.categoriesList.length} category items`);
-            this.renderCategoriesList(); // This method clears and adds all rows
+            this.renderCategoriesList(sceneType); // Pass scene type to renderCategoriesList
 
             // Ensure buttons are correctly styled for a non-empty list
             this.elements.startButton.style.borderColor = "#ffffff";
@@ -921,10 +959,42 @@ export class UIManager {
             this.elements.finalScore.style.display = 'block';
             
             if (feedbackData.highScore) {
-                this.elements.highScore.innerHTML = parseInt(feedbackData.highScore.score) > 0 ? 
-                    "High Score<br>" + "by " + feedbackData.highScore.user + ":" + 
-                    "<br>" + feedbackData.highScore.score : 
-                    'High Score:<br> 0';
+                const playerScore = this.gameState.currentWordIndex;
+                const highScore = parseInt(feedbackData.highScore.score) || 0;
+                const isNewHighScore = playerScore >= highScore && playerScore > 0;
+                
+                // Clear any previous high score HTML
+                this.elements.highScore.innerHTML = '';
+                
+                // Create all elements with proper CSS classes instead of inline styles
+                const titleEl = document.createElement('div');
+                titleEl.className = 'hs-title';
+                
+                const scoreEl = document.createElement('div');
+                scoreEl.className = 'hs-score';
+                
+                const userEl = document.createElement('div');
+                userEl.className = 'hs-user';
+                
+                if (isNewHighScore) {
+                    // New high score achieved
+                    titleEl.textContent = 'New High Score!';
+                    scoreEl.textContent = playerScore;
+                    userEl.textContent = `Previous: ${highScore > 0 ? highScore : '0'}`;
+                    this.elements.highScore.classList.add('new-record');
+                } else {
+                    // Regular high score display
+                    titleEl.textContent = 'High Score';
+                    scoreEl.textContent = highScore > 0 ? highScore : '0';
+                    userEl.textContent = highScore > 0 ? `by ${feedbackData.highScore.user}` : '';
+                    this.elements.highScore.classList.remove('new-record');
+                }
+                
+                // Append elements to high score container
+                this.elements.highScore.appendChild(titleEl);
+                this.elements.highScore.appendChild(scoreEl);
+                this.elements.highScore.appendChild(userEl);
+                
                 this.elements.highScore.style.display = 'block';
             }
         }
@@ -998,5 +1068,54 @@ export class UIManager {
         }
         
         // DO NOT Ensure buttons are properly positioned here - handled by showStartScreen
+    }
+
+    /**
+     * Auto-select the first category if available
+     * @private
+     */
+    _autoSelectFirstCategory() {
+        // Only proceed if we have categories and none is currently selected
+        if (this.gameState.categoriesList.length > 0) {
+            const firstRow = this.elements.categoriesDisplay.querySelector('.list-row');
+            
+            if (firstRow) {
+                // Get the category data from the first row
+                const categoryIndex = parseInt(firstRow.dataset.categoryIndex);
+                
+                if (!isNaN(categoryIndex) && categoryIndex >= 0) {
+                    console.log(`[AUTO-SELECT] Selecting first category at index ${categoryIndex}`);
+                    
+                    // Update visual selection
+                    const allRows = this.elements.categoriesDisplay.querySelectorAll('.list-row');
+                    allRows.forEach(row => row.classList.remove('selected'));
+                    firstRow.classList.add('selected');
+                    
+                    // Update game state
+                    this.gameState.selectedCategory = categoryIndex;
+                    
+                    // Parse category data
+                    const categoryString = this.gameState.categoriesList[categoryIndex];
+                    if (categoryString) {
+                        const parts = categoryString.split(':');
+                        const code = parts[0];
+                        const creator = parts[1];
+                        
+                        // Set category in game state
+                        this.gameState.setCategoryFromString(categoryString);
+                        
+                        // Show appropriate buttons
+                        this.elements.startButton.style.display = 'block';
+                        
+                        // Show delete button if user is the creator
+                        if (creator === this.gameState.username) {
+                            this.elements.deleteCategoryButton.style.display = 'block';
+                        } else {
+                            this.elements.deleteCategoryButton.style.display = 'none';
+                        }
+                    }
+                }
+            }
+        }
     }
 }

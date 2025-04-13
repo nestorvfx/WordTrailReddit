@@ -172,17 +172,91 @@ body {
     white-space: pre-wrap;
 }
 
+/* Enhanced High Score display - Toned down version */
 #highScore {
     position: absolute;
     top: 40%;
-    font-size: 4vw;
     right: 5%;
     color: rgba(255, 170, 40, 1);
-    background-color: transparent;
+    background-color: rgba(0, 0, 0, 0.15);
     text-align: center;
+    padding: 1.5vw;
+    border-radius: 2vw;
+    box-shadow: 0 0.2vw 0.6vw rgba(0, 0, 0, 0.2);
+    border: 0.15vw solid rgba(255, 200, 100, 0.4);
+    backdrop-filter: blur(3px);
+    animation: glow 2s infinite alternate;
+    width: auto;
+    min-width: 15vw;
     display: none;
     cursor: default;
-    white-space: pre-wrap;
+    white-space: normal;
+}
+
+.hs-title {
+    font-size: 3vw;
+    font-weight: bold;
+    margin-bottom: 0.8vw;
+    color: #FFB74D;
+}
+
+.hs-score {
+    font-size: 4.2vw;
+    font-weight: bold;
+    margin-bottom: 1.2vw;
+}
+
+.hs-user {
+    font-size: 2.2vw;
+    opacity: 0.7;
+}
+
+/* New high score specific styling */
+#highScore.new-record .hs-title {
+    color: #FFC107;
+    font-size: 3vw;
+}
+
+#highScore.new-record .hs-score {
+    font-size: 5.5vw;
+    color: #FFD700;
+}
+
+#highScore.new-record .hs-user {
+    font-style: italic;
+}
+
+#highScore.new-record {
+    border-color: #FFD700;
+    animation: newRecord 2.5s infinite alternate;
+}
+
+/* More subtle high score glow animation */
+@keyframes glow {
+    from {
+        box-shadow: 0 0 0.3vw rgba(255, 180, 50, 0.3);
+    }
+    to {
+        box-shadow: 0 0 0.8vw rgba(255, 180, 50, 0.6);
+    }
+}
+
+/* Toned down new high score styling */
+#highScore.new-record {
+    color: #FFD700;
+    border-color: #FFD700;
+    animation: newRecord 2.5s infinite alternate;
+}
+
+@keyframes newRecord {
+    from {
+        box-shadow: 0 0 0.6vw #FFD700;
+        transform: scale(1);
+    }
+    to {
+        box-shadow: 0 0 1.2vw #FFD700, 0 0 1.8vw rgba(255, 215, 0, 0.3);
+        transform: scale(1.03);
+    }
 }
 
 /* Styling for the top-left container */
@@ -370,6 +444,7 @@ body {
     box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.3);
     text-align: center;
     z-index: 155;
+    transition: opacity 0.3s ease;
 }
 
 #scrollButtonUp {
@@ -378,6 +453,10 @@ body {
 
 #scrollButtonDown {
     top: 77%;
+}
+
+#scrollButtonDown.loading {
+    opacity: 0.6;
 }
 
 #startButton, #deleteCategoryButton {
@@ -821,16 +900,16 @@ body {
     /* ...existing code... */
 }
 
-/* Reverse sort button styling */
+/* Reverse sort button styling - updated position to be left of sort box */
 #reverseSort {
     position: absolute;
     top: 15%;
-    right: calc(10% + 31%); /* Position it immediately to the left of sort button */
+    right: calc(10% + 31%); /* Position to the left of sort button */
     width: 4.5vw;
     height: 4.5vw;
     background-color: rgba(255, 204, 128, 0.8);
     border: none;
-    border-radius: 2vw; /* Changed from circular to match sort button style */
+    border-radius: 2vw;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -838,7 +917,7 @@ body {
     box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
     z-index: 156;
     transition: background-color 0.2s ease;
-    margin-right: 0.5vw; /* Add a small margin for separation */
+    margin-right: 0.5vw; /* Add small gap between buttons */
 }
 
 #reverseSort .sort-direction {
@@ -883,5 +962,158 @@ body {
     
     #reverseSort .sort-direction {
         font-size: 1.8vw;
+    }
+}
+
+/* Improved centered loading spinner */
+#categoriesLoading {
+    position: absolute;
+    top: 77%; /* Align with scroll down button position */
+    right: 4%;
+    width: 4vw;
+    height: 4vw;
+    display: none;
+    z-index: 157; /* Higher than scroll button to overlay it */
+    background-color: rgba(0, 0, 0, 0.3); /* Darker background for better visibility */
+    border-radius: 50%;
+    
+    /* Use flexbox for perfect centering */
+    display: none; /* Will be changed to flex when visible */
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner {
+    width: 80%; /* Slightly smaller than container for better visual balance */
+    height: 80%;
+    border: 0.35vw solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #ffcc80;
+    animation: spin 0.8s linear infinite;
+}
+
+/* More compact and subtle loading indicator for small screens */
+@media screen and (max-width: 600px) {
+    #categoriesLoading {
+        width: 4vw;
+        height: 4vw;
+        bottom: 23.5%;
+    }
+    
+    .spinner {
+        border-width: 0.35vw;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    #categoriesLoading {
+        width: 3.5vw;
+        height: 3.5vw;
+    }
+}
+
+/* Improve the visual relationship between scroll button and loading */
+#scrollButtonDown {
+    top: 77%;
+    transition: opacity 0.3s ease;
+}
+
+/* Make the scroll button slightly dimmed when loading */
+#scrollButtonDown.loading {
+    opacity: 0.6;
+}
+
+/* Improved sorting controls using percentage-based positioning */
+#sortContainer {
+    position: absolute;
+    top: 15%;
+    right: 10%;
+    z-index: 156;
+    width: 25%; /* Adjust size to be purely percentage-based */
+}
+
+/* Place reverse sort button directly adjacent to the sort box */
+#reverseSort {
+    position: absolute;
+    top: 15%;
+    right: 36%; /* Position it immediately to the left of sort container */
+    width: 4.5vw;
+    height: 4.5vw;
+    background-color: rgba(255, 204, 128, 0.8);
+    border: none;
+    border-radius: 2vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
+    z-index: 156;
+    transition: background-color 0.2s ease;
+    margin-right: 1vw; /* Add small gap between buttons */
+}
+
+/* Ensure search container uses percentage-based width */
+#searchContainer {
+    position: absolute;
+    top: 15%;
+    left: 10%;
+    z-index: 156;
+    width: 30%; /* Set to percentage */
+}
+
+/* Reposition loading spinner directly over scroll down button */
+#categoriesLoading {
+    position: absolute;
+    top: 77%; /* Align with scroll down button position */
+    right: 4%;
+    width: 4vw;
+    height: 4vw;
+    display: none;
+    z-index: 157; /* Higher than scroll button to overlay it */
+    background-color: rgba(0, 0, 0, 0.5); /* Darker background for better visibility */
+    border-radius: 50%;
+    padding: 0.5vw;
+}
+
+/* Media queries for responsive design */
+@media screen and (max-width: 600px) {
+    #sortContainer {
+        width: 22%;
+    }
+    
+    #reverseSort {
+        right: 33%;
+        width: 4vw;
+        height: 4vw;
+    }
+    
+    #searchContainer {
+        width: 25%;
+    }
+    
+    #categoriesLoading {
+        width: 4vw;
+        height: 4vw;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    #sortContainer {
+        width: 20%;
+    }
+    
+    #reverseSort {
+        right: 31%;
+        width: 3.8vw;
+        height: 3.8vw;
+    }
+    
+    #searchContainer {
+        width: 23%;
+    }
+    
+    #categoriesLoading {
+        width: 3.5vw;
+        height: 3.5vw;
     }
 }

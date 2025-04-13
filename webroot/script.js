@@ -188,12 +188,13 @@ class App {
             guessedAll: completed
         });
         
-        // Reset parameters for "SCORE" display
+        // Reset parameters for "SCORE" display with longer trails (1.8x)
         this.particleSystem.updateParams({
             letterScaling: 1.5,
             yOffset: 1.2 * clamp(this.sceneManager.camera.aspect, 0.9, 1.8),
             xRemapRange: 1,
-            radiusScaling: 0
+            radiusScaling: 0,
+            isEndScreen: true,  // Special flag for end screen
         });
         
         this.particleSystem.setNewWord('SCORE');

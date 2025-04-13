@@ -131,6 +131,9 @@ export class MessageHandler {
         if (this.gameState.currentCategoriesCursor == 0) {
             this.gameState.allCategoriesReceived = true;
         }
+        
+        // Hide loading spinner when data is received
+        this.uiManager.hideCategoriesLoading();
     }
 
     /**
@@ -185,6 +188,9 @@ export class MessageHandler {
         
         // Update scroll buttons state after new content is added
         this.uiManager.updateScrollButtonStates();
+        
+        // Hide loading spinner after appending is complete
+        this.uiManager.hideCategoriesLoading();
         
         console.log(`[STATE] After append - categoriesList.length: ${this.gameState.categoriesList.length}`);
     }
@@ -337,6 +343,9 @@ export class MessageHandler {
         
         this.pendingRequests[requestId] = true;
         
+        // Show loading spinner
+        this.uiManager.showCategoriesLoading();
+        
         window.parent.postMessage(
             {
                 type: 'updateCategories',
@@ -349,8 +358,10 @@ export class MessageHandler {
             '*'
         );
         
+        // Set a timeout to clear the pending request and loading state if no response
         setTimeout(() => {
             delete this.pendingRequests[requestId];
+            this.uiManager.hideCategoriesLoading();
         }, 5000);
     }
 
