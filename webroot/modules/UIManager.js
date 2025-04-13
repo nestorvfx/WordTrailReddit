@@ -332,9 +332,6 @@ export class UIManager {
                 const prevSortMethod = this.currentSortMethod;
                 this.currentSortMethod = sortMethod;
                 
-                console.log(`[SORT] Sort option clicked - changing from '${prevSortMethod}' to '${sortMethod}'`);
-                console.log(`[STATE] Before sort change - categoriesList.length: ${this.gameState.categoriesList.length}`);
-                
                 // Update UI
                 this.elements.currentSortText.textContent = 
                     sortMethod === 'time' ? 'Newest' : 
@@ -355,12 +352,8 @@ export class UIManager {
                 this.gameState.categoriesList = [];
                 this.elements.categoriesDisplay.innerHTML = '';
                 
-                console.log(`[SORT] State reset for new sort method - cursor: 0, allCategoriesReceived: false`);
-                console.log(`[SORT] categoriesList cleared, DOM list cleared`);
-                
                 // Request categories with the new sort method and current direction
                 if (callbacks.onPlayClick) {
-                    console.log(`[SORT] Requesting categories with new sort method: ${sortMethod} and reversed: ${this.currentSortReversed}`);
                     callbacks.onPlayClick(sortMethod, this.currentSortReversed);
                 }
             });
@@ -373,7 +366,6 @@ export class UIManager {
     setupSortingListeners() {
         // Toggle dropdown visibility when sort button is clicked
         this.elements.sortButton.addEventListener('click', () => {
-            console.log(`[SORT] Sort dropdown toggled`);
             this.elements.sortButton.classList.toggle('active');
             this.elements.sortDropdown.classList.toggle('show');
         });
@@ -394,8 +386,6 @@ export class UIManager {
                 opt.classList.remove('active');
             }
         });
-        
-        console.log(`[SORT] Initial sort method set to: ${this.currentSortMethod}`);
 
         // Add reverse sort button functionality
         this.currentSortReversed = false;
@@ -412,8 +402,6 @@ export class UIManager {
                     this.elements.reverseSort.title = "Reverse sort order";
                 }
                 
-                console.log(`[SORT] Reversed sort order: ${this.currentSortReversed}`);
-                
                 // Reset categories state and request with new sort direction
                 this.gameState.currentCategoriesCursor = 0;
                 this.gameState.allCategoriesReceived = false;
@@ -422,7 +410,6 @@ export class UIManager {
                 
                 // Request categories with current sort method and new direction
                 if (this.callbacks.onPlayClick) {
-                    console.log(`[SORT] Requesting categories with current sort method: ${this.currentSortMethod} and reversed: ${this.currentSortReversed}`);
                     this.callbacks.onPlayClick(this.currentSortMethod, this.currentSortReversed);
                 }
             });
@@ -474,24 +461,14 @@ export class UIManager {
      * @param {string} sceneType - The type of scene to display
      */
     renderCategoriesList(sceneType) {
-        console.log(`[RENDER] renderCategoriesList called`);
-        
         // Clear current list
-        console.log(`[DOM] Clearing categories display before rendering full list`);
         this.elements.categoriesDisplay.innerHTML = '';
         
         // Add sorted categories
         for (let i = 0; i < this.gameState.categoriesList.length; i++) {
             const categoryItem = this.createCategoryRow(this.gameState.categoriesList[i], i);
-            // Add a visual indicator for debugging that this was from a full render
-            categoryItem.dataset.renderBatch = 'full';
-            categoryItem.dataset.renderIndex = i;
-            categoryItem.title = `Full render index ${i}`;
-            
             this.elements.categoriesDisplay.appendChild(categoryItem);
         }
-        
-        console.log(`[DOM] Rendered ${this.gameState.categoriesList.length} category rows`);
         
         // Reset scroll position
         this.elements.categoriesDisplay.scrollTop = 0;
@@ -578,28 +555,14 @@ export class UIManager {
      * @param {string} sceneType - Type of categories screen to show ('initialPlayCategories', 'playCategories', 'userCategories', 'userCategoriesRemoveOne')
      */
     displayCategories(categoriesData, sceneType) {
-        console.log(`[DISPLAY] displayCategories called - sceneType: ${sceneType}`);
-        console.log(`[STATE] Before display - categoriesList.length: ${this.gameState.categoriesList.length}`);
-        
-        if (categoriesData) {
-            const catCount = categoriesData.split(';').filter(cat => cat !== '').length;
-            console.log(`[DATA] categoriesData contains ${catCount} items`);
-        } else {
-            console.log(`[DATA] categoriesData is empty or null`);
-        }
-
         // Step 1: Process incoming data based on scene type (updates gameState.categoriesList)
         this._processCategoriesData(categoriesData, sceneType);
 
         // Step 2: If we're appending categories (scroll pagination), handle separately and exit
         if (sceneType === 'playCategories') {
-            console.log(`[FLOW] Handling as append operation`);
             this._handleCategoryAppend(categoriesData);
-            console.log(`[STATE] After append - categoriesList.length: ${this.gameState.categoriesList.length}`);
             return; // Append logic handles its own rendering and UI updates
         }
-
-        console.log(`[FLOW] Handling as full list operation`);
         
         // Step 3: For initial loads or updates (not append), render the full list
         this._renderCategoryList(sceneType); // Pass scene type to _renderCategoryList
@@ -617,8 +580,6 @@ export class UIManager {
         // Step 6: Set up interaction handlers and initial scroll state
         this.setupCategoryClickHandler(); // Ensure click handlers are attached
         this.updateScrollButtonStates(); // Set initial state of scroll buttons
-        
-        console.log(`[STATE] After display - categoriesList.length: ${this.gameState.categoriesList.length}`);
     }
 
     /**
@@ -628,38 +589,27 @@ export class UIManager {
      * @param {string} sceneType - Scene type to display
      */
     _processCategoriesData(categoriesData, sceneType) {
-        console.log(`[PROCESS] _processCategoriesData - sceneType: ${sceneType}`);
-        console.log(`[STATE] Before processing - categoriesList.length: ${this.gameState.categoriesList.length}`);
-        
         // Only clear display for initial loads or category removal, not for appends
         if (sceneType !== 'playCategories') {
-            console.log(`[DOM] Clearing category display (not an append operation)`);
             this.elements.categoriesDisplay.innerHTML = '';
         }
 
         if (sceneType === 'userCategoriesRemoveOne') {
-            console.log(`[PROCESS] Removing single category at index: ${this.gameState.selectedCategory}`);
             // Remove a single category (after deletion)
             if (this.gameState.selectedCategory >= 0 && this.gameState.selectedCategory < this.gameState.categoriesList.length) {
                 this.gameState.categoriesList.splice(this.gameState.selectedCategory, 1);
-                console.log(`[STATE] Category removed - new categoriesList.length: ${this.gameState.categoriesList.length}`);
             }
             // Reset selection as the index is now invalid
             this.gameState.selectedCategory = -1;
         }
         else if (sceneType === 'initialPlayCategories' || sceneType === 'userCategories') {
-            console.log(`[PROCESS] Initial load or user categories - REPLACING list`);
             // Initial load for play or settings view - REPLACE list completely, don't append
             const categories = categoriesData ? categoriesData.split(';') : [];
             const validCategories = categories.length > 0 && categories[0] !== '' ? categories : [];
-            console.log(`[DATA] Parsed ${validCategories.length} valid categories from data`);
             
             this.gameState.categoriesList = validCategories;
-            console.log(`[STATE] List replaced - new categoriesList.length: ${this.gameState.categoriesList.length}`);
         }
         // Note: 'playCategories' (append) case is handled in _handleCategoryAppend
-        
-        console.log(`[STATE] After processing - categoriesList.length: ${this.gameState.categoriesList.length}`);
     }
 
     /**
@@ -668,61 +618,46 @@ export class UIManager {
      * @param {string} categoriesData - New categories data string to append
      */
     _handleCategoryAppend(categoriesData) {
-        console.log(`[APPEND] _handleCategoryAppend called`);
-        console.log(`[STATE] Before append - categoriesList.length: ${this.gameState.categoriesList.length}`);
-        
         const newCategories = categoriesData ? categoriesData.split(';') : [];
         // Filter out empty strings that might result from splitting
         const validNewCategories = newCategories.filter(cat => cat !== '');
-        console.log(`[DATA] Found ${validNewCategories.length} valid new categories to append`);
-
+    
         if (validNewCategories.length === 0) {
-            // No more categories received, mark as all received
+            // No valid categories to append, mark as all received
             this.gameState.allCategoriesReceived = true;
-            console.log(`[APPEND] No valid categories to append - marking allCategoriesReceived: true`);
-            this.updateScrollButtonStates(); // Update buttons as we might be at the end
-            return; // No categories to append
-        }
-
-        // Get current category codes for deduplication
-        const existingCodes = this.gameState.categoriesList.map(cat => cat.split(':')[0]);
-        
-        // Filter out any categories that are already in the list
-        const uniqueNewCategories = validNewCategories.filter(cat => {
-            const code = cat.split(':')[0];
-            return !existingCodes.includes(code);
-        });
-        
-        if (uniqueNewCategories.length === 0) {
-            // All categories were duplicates, mark as all received
-            this.gameState.allCategoriesReceived = true;
-            this.updateScrollButtonStates();
             return;
         }
-
-        // Get starting index for new items
-        const startIndex = this.gameState.categoriesList.length;
-        console.log(`[APPEND] Starting index for new items: ${startIndex}`);
-
-        // Add new categories to our data array
-        this.gameState.categoriesList.push(...uniqueNewCategories);
-        console.log(`[STATE] After pushing new categories - categoriesList.length: ${this.gameState.categoriesList.length}`);
-
-        // Create and append only the new category rows
-        for (let i = 0; i < uniqueNewCategories.length; i++) {
-            const categoryItem = this.createCategoryRow(uniqueNewCategories[i], startIndex + i);
-            // Add a visual indicator for debugging
-            categoryItem.dataset.appendBatch = this.gameState.currentCategoriesCursor;
-            categoryItem.dataset.appendIndex = i;
-            categoryItem.title = `Appended in batch ${this.gameState.currentCategoriesCursor}, index ${i}`;
-            
-            this.elements.categoriesDisplay.appendChild(categoryItem);
-            console.log(`[DOM] Appended row ${i} with internal index ${startIndex + i}`);
+    
+        // Get current category codes for deduplication
+        const existingCategoryCodes = this.gameState.categoriesList.map(cat => cat.split(':')[0]);
+        
+        // Add only new categories that aren't already in the list
+        let addedCount = 0;
+        for (const category of validNewCategories) {
+            const categoryCode = category.split(':')[0];
+            if (!existingCategoryCodes.includes(categoryCode)) {
+                this.gameState.categoriesList.push(category);
+                addedCount++;
+            }
         }
-
-        // Update UI state after appending
+        
+        // If using a reversed sort, we need to re-sort the complete list
+        // to ensure correct order (important for proper scrolling with reverse sort)
+        if (this.currentSortReversed) {
+            this.sortCategories();
+        }
+        
+        // Render the newly added categories
+        for (let i = this.gameState.categoriesList.length - addedCount; i < this.gameState.categoriesList.length; i++) {
+            const categoryItem = this.createCategoryRow(this.gameState.categoriesList[i], i);
+            this.elements.categoriesDisplay.appendChild(categoryItem);
+        }
+        
+        // Update scroll buttons state after new content is added
         this.updateScrollButtonStates();
-        console.log(`[STATE] After append complete - categoriesList.length: ${this.gameState.categoriesList.length}`);
+        
+        // Hide loading spinner after appending is complete
+        this.hideCategoriesLoading();
     }
 
     /**
@@ -731,19 +666,13 @@ export class UIManager {
      * @param {string} sceneType - The type of scene to display
      */
     _renderCategoryList(sceneType) {
-        console.log(`[RENDER] _renderCategoryList called with sort method: ${this.currentSortMethod}`);
-        console.log(`[STATE] Before sort - categoriesList.length: ${this.gameState.categoriesList.length}`);
-        
         // Always sort before rendering
         this.sortCategories();
-        console.log(`[SORT] Categories sorted by ${this.currentSortMethod}`);
 
         if (this.gameState.categoriesList.length === 0) {
-            console.log(`[RENDER] Rendering empty state`);
             this._renderEmptyState();
         } else {
             // Render the populated list using the existing method
-            console.log(`[RENDER] Rendering ${this.gameState.categoriesList.length} category items`);
             this.renderCategoriesList(sceneType); // Pass scene type to renderCategoriesList
 
             // Ensure buttons are correctly styled for a non-empty list
@@ -752,8 +681,6 @@ export class UIManager {
             this.elements.scrollButtonDown.style.display = 'flex';
             this.elements.scrollButtonUp.style.display = 'flex';
         }
-        
-        console.log(`[STATE] After render - categoriesList.length: ${this.gameState.categoriesList.length}`);
     }
 
     /**
@@ -839,7 +766,6 @@ export class UIManager {
                 this.gameState.setCategoryFromString(this.gameState.categoriesList[categoryIndex]);
                 this.gameState.selectedCategory = categoryIndex; // Store index
             } else {
-                console.error("Invalid category index clicked:", categoryIndex);
                 this.gameState.selectedCategory = -1; // Indicate invalid selection
             }
         };
@@ -873,10 +799,6 @@ export class UIManager {
      * @returns {HTMLElement} - Category row element
      */
     createCategoryRow(categoryString, index) {
-        // Log the full category string for debugging
-        console.log(`[DEBUG_CATEGORY] Creating row for category string: ${categoryString}`);
-        
-        // ... existing code to parse categoryString ...
         const parts = categoryString.split(':');
         const code = parts[0];
         const creator = parts[1];
@@ -884,14 +806,6 @@ export class UIManager {
         const plays = parts[3];
         const highScore = parts[4];
         const timestamp = parts.length > 8 ? parts[8] : null;
-        
-        console.log(`[DEBUG_CATEGORY] Parsed category parts for row ${index}:`);
-        console.log(`  Code: ${code}`);
-        console.log(`  Creator: ${creator}`);
-        console.log(`  Title: ${title}`);
-        console.log(`  Plays: ${plays}`);
-        console.log(`  HighScore: ${highScore}`);
-        console.log(`  Timestamp: ${timestamp}`);
 
         const formattedTime = formatRelativeTime(timestamp);
 
@@ -1084,8 +998,6 @@ export class UIManager {
                 const categoryIndex = parseInt(firstRow.dataset.categoryIndex);
                 
                 if (!isNaN(categoryIndex) && categoryIndex >= 0) {
-                    console.log(`[AUTO-SELECT] Selecting first category at index ${categoryIndex}`);
-                    
                     // Update visual selection
                     const allRows = this.elements.categoriesDisplay.querySelectorAll('.list-row');
                     allRows.forEach(row => row.classList.remove('selected'));

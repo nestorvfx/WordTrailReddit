@@ -142,13 +142,9 @@ export class MessageHandler {
      * @param {string} categoriesData - New categories data string to append
      */
     _handleCategoryAppend(categoriesData) {
-        console.log(`[APPEND] _handleCategoryAppend called`);
-        console.log(`[STATE] Before append - categoriesList.length: ${this.gameState.categoriesList.length}`);
-        
         const newCategories = categoriesData ? categoriesData.split(';') : [];
         // Filter out empty strings that might result from splitting
         const validNewCategories = newCategories.filter(cat => cat !== '');
-        console.log(`[DATA] Found ${validNewCategories.length} valid new categories to append`);
     
         if (validNewCategories.length === 0) {
             // No valid categories to append, mark as all received
@@ -169,12 +165,9 @@ export class MessageHandler {
             }
         }
         
-        console.log(`[APPEND] Added ${addedCount} new categories to list`);
-        
         // If using a reversed sort, we need to re-sort the complete list
         // to ensure correct order (important for proper scrolling with reverse sort)
         if (this.uiManager.currentSortReversed) {
-            console.log(`[SORT] Re-sorting with reverse order after append`);
             this.uiManager.sortCategories();
         }
         
@@ -191,8 +184,6 @@ export class MessageHandler {
         
         // Hide loading spinner after appending is complete
         this.uiManager.hideCategoriesLoading();
-        
-        console.log(`[STATE] After append - categoriesList.length: ${this.gameState.categoriesList.length}`);
     }
 
     /**

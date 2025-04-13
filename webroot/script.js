@@ -276,6 +276,36 @@ class App {
         
         update();
     }
+
+    /**
+     * Create a row element for a category
+     */
+    createCategoryRow(categoryString, index) {
+        const parts = categoryString.split(':');
+        const code = parts[0];
+        
+        const timestamp = parts.length > 8 ? parts[8] : null;
+        const formattedTime = formatRelativeTime(timestamp);
+        
+        const row = document.createElement('div');
+        row.className = 'list-row';
+        row.setAttribute('data-index', index);
+        row.setAttribute('data-code', code);
+        
+        row.innerHTML = `
+            <div class="col-title">${parts[2]}</div>
+            <div class="col-created">${parts[1]}</div>
+            <div class="col-played">${parts[3]}</div>
+            <div class="col-hs">${parts[4]}</div>
+            <div class="col-timestamp">${formattedTime}</div>
+        `;
+        
+        row.addEventListener('click', () => {
+            this.handleRowClick(row);
+        });
+        
+        return row;
+    }
 }
 
 
