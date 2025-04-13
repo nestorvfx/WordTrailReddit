@@ -2,7 +2,7 @@ import { Context } from '@devvit/public-api';
 import { WebViewMessage, CategoryUpdateInfo } from '../types.js';
 import { getNextCode, addCategoryToSortedSets, removeCategoryFromSortedSets, updateCategoryInSortedSets } from '../utils/redis.js';
 
-export async function sendCategories(context: Context, cursor: number, sortMethod: string = 'time', postMessage: (message: WebViewMessage) => void): Promise<void> {
+export async function sendCategories(context: Context, cursor: number, sortMethod: string = 'time', postMessage: (message: WebViewMessage) => void, reversed: boolean = false): Promise<void> {
   const pageSize = 20; // Number of categories per page
   const start = cursor * pageSize;
   const stop = start + pageSize - 1;
@@ -15,10 +15,12 @@ export async function sendCategories(context: Context, cursor: number, sortMetho
       : 'categoriesByScore';
   
   try {
-    // Get categories sorted by the selected method
+    // Important: Consistently use the reverse flag for all queries
+    // When reversed is true, we want ascending order (oldest/lowest first) 
+    // When reversed is false, we want descending order (newest/highest first) - default
     const sortedCategories = await context.redis.zRange(sortedSetKey, start, stop, { 
-      by:'rank',
-      reverse: true // Reversed order for descending sort
+      by: 'rank',
+      reverse: !reversed  // Invert the reverse flag since our default is descending
     });
     
     if (sortedCategories.length === 0) {

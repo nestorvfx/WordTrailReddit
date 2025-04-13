@@ -95,13 +95,20 @@ export class MessageHandler {
                 this.gameState.categoryHSByID = parts[7];
                 this.gameState.categoryPostID = parts[8];
                 
-                if (parts[9]) {
-                    this.gameState.setWordsList(parts[9]);
-                    this.uiManager.startGameInterface();
-                    const initialWord = this.gameState.startGuessingGame();
-                    
-                    if (this.callbacks.onGameStart) {
-                        this.callbacks.onGameStart(initialWord);
+                // Check for words in both possible positions to ensure compatibility 
+                // with both old and new data formats
+                const wordsString = parts[10];
+                
+                if (wordsString) {
+                    if (this.gameState.setWordsList(wordsString)) {
+                        this.uiManager.startGameInterface();
+                        const initialWord = this.gameState.startGuessingGame();
+                        
+                        if (this.callbacks.onGameStart) {
+                            this.callbacks.onGameStart(initialWord);
+                        }
+                    } else {
+                        this.uiManager.displayMessage('There was an error with the word list. Try again');
                     }
                 } else {
                     this.uiManager.displayMessage('There was an error. Try again');
@@ -114,7 +121,7 @@ export class MessageHandler {
      * Process categories data from backend
      */
     handleSendCategories(data) {
-        const requestId = `${this.uiManager.currentSortMethod}-${data.cursor}`;
+        const requestId = `${this.uiManager.currentSortMethod}-${this.uiManager.currentSortReversed ? 'rev' : 'norm'}-${data.cursor}`;
         delete this.pendingRequests[requestId];
         
         const sceneType = this.gameState.categoriesList.length > 0 ? 'playCategories' : 'initialPlayCategories';
@@ -124,6 +131,62 @@ export class MessageHandler {
         if (this.gameState.currentCategoriesCursor == 0) {
             this.gameState.allCategoriesReceived = true;
         }
+    }
+
+    /**
+     * Handle append operation for infinite scrolling in Play mode.
+     * @private
+     * @param {string} categoriesData - New categories data string to append
+     */
+    _handleCategoryAppend(categoriesData) {
+        console.log(`[APPEND] _handleCategoryAppend called`);
+        console.log(`[STATE] Before append - categoriesList.length: ${this.gameState.categoriesList.length}`);
+        
+        const newCategories = categoriesData ? categoriesData.split(';') : [];
+        // Filter out empty strings that might result from splitting
+        const validNewCategories = newCategories.filter(cat => cat !== '');
+        console.log(`[DATA] Found ${validNewCategories.length} valid new categories to append`);
+    
+        if (validNewCategories.length === 0) {
+            // No valid categories to append, mark as all received
+            this.gameState.allCategoriesReceived = true;
+            return;
+        }
+    
+        // Get current category codes for deduplication
+        const existingCategoryCodes = this.gameState.categoriesList.map(cat => cat.split(':')[0]);
+        
+        // Add only new categories that aren't already in the list
+        let addedCount = 0;
+        for (const category of validNewCategories) {
+            const categoryCode = category.split(':')[0];
+            if (!existingCategoryCodes.includes(categoryCode)) {
+                this.gameState.categoriesList.push(category);
+                addedCount++;
+            }
+        }
+        
+        console.log(`[APPEND] Added ${addedCount} new categories to list`);
+        
+        // If using a reversed sort, we need to re-sort the complete list
+        // to ensure correct order (important for proper scrolling with reverse sort)
+        if (this.uiManager.currentSortReversed) {
+            console.log(`[SORT] Re-sorting with reverse order after append`);
+            this.uiManager.sortCategories();
+        }
+        
+        // Render the newly added categories
+        for (let i = this.gameState.categoriesList.length - addedCount; i < this.gameState.categoriesList.length; i++) {
+            const categoryItem = this.uiManager.createCategoryRow(this.gameState.categoriesList[i], i);
+            categoryItem.dataset.renderBatch = 'append';
+            categoryItem.dataset.renderIndex = i;
+            this.uiManager.elements.categoriesDisplay.appendChild(categoryItem);
+        }
+        
+        // Update scroll buttons state after new content is added
+        this.uiManager.updateScrollButtonStates();
+        
+        console.log(`[STATE] After append - categoriesList.length: ${this.gameState.categoriesList.length}`);
     }
 
     /**
@@ -265,8 +328,8 @@ export class MessageHandler {
     /**
      * Request categories from backend with pagination and sorting
      */
-    requestCategories(cursor, sortMethod = 'time') {
-        const requestId = `${sortMethod}-${cursor}`;
+    requestCategories(cursor, sortMethod = 'time', reversed = false) {
+        const requestId = `${sortMethod}-${reversed ? 'rev' : 'norm'}-${cursor}`;
         
         if (this.pendingRequests[requestId]) {
             return;
@@ -279,7 +342,8 @@ export class MessageHandler {
                 type: 'updateCategories',
                 data: {
                     cursor: cursor,
-                    sortMethod: sortMethod
+                    sortMethod: sortMethod,
+                    reversed: reversed
                 }
             },
             '*'

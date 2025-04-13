@@ -123,6 +123,7 @@ export class UIManager {
         this.elements.sortDropdown = document.getElementById('sortDropdown');
         this.elements.currentSortText = document.getElementById('currentSort');
         this.elements.sortOptions = document.querySelectorAll('.sort-option');
+        this.elements.reverseSort = document.getElementById('reverseSort');
     }
 
     /**
@@ -130,6 +131,8 @@ export class UIManager {
      * @param {Object} callbacks - Callback functions for different events
      */
     setupEventListeners(callbacks) {
+        this.callbacks = callbacks;
+        
         // Main UI click delegation
         document.addEventListener('click', (event) => {
             const target = event.target;
@@ -267,7 +270,12 @@ export class UIManager {
                 // Set a new timeout to debounce the scroll event
                 scrollTimeout = setTimeout(() => {
                     if (callbacks.onCategoriesScrollEnd) {
-                        callbacks.onCategoriesScrollEnd(this.gameState.currentCategoriesCursor, this.currentSortMethod);
+                        // Pass the current sort method AND the reversed state
+                        callbacks.onCategoriesScrollEnd(
+                            this.gameState.currentCategoriesCursor, 
+                            this.currentSortMethod,
+                            this.currentSortReversed
+                        );
                     }
                     scrollTimeout = null;
                 }, 300); // 300ms debounce delay
@@ -319,10 +327,10 @@ export class UIManager {
                 console.log(`[SORT] State reset for new sort method - cursor: 0, allCategoriesReceived: false`);
                 console.log(`[SORT] categoriesList cleared, DOM list cleared`);
                 
-                // Request categories with the new sort method
+                // Request categories with the new sort method and current direction
                 if (callbacks.onPlayClick) {
-                    console.log(`[SORT] Requesting categories with new sort method: ${sortMethod}`);
-                    callbacks.onPlayClick(sortMethod);
+                    console.log(`[SORT] Requesting categories with new sort method: ${sortMethod} and reversed: ${this.currentSortReversed}`);
+                    callbacks.onPlayClick(sortMethod, this.currentSortReversed);
                 }
             });
         });
@@ -357,6 +365,37 @@ export class UIManager {
         });
         
         console.log(`[SORT] Initial sort method set to: ${this.currentSortMethod}`);
+
+        // Add reverse sort button functionality
+        this.currentSortReversed = false;
+        if (this.elements.reverseSort) {
+            this.elements.reverseSort.addEventListener('click', () => {
+                this.currentSortReversed = !this.currentSortReversed;
+                
+                // Update UI to show reversed state
+                if (this.currentSortReversed) {
+                    this.elements.reverseSort.classList.add('reversed');
+                    this.elements.reverseSort.title = "Normal sort order";
+                } else {
+                    this.elements.reverseSort.classList.remove('reversed');
+                    this.elements.reverseSort.title = "Reverse sort order";
+                }
+                
+                console.log(`[SORT] Reversed sort order: ${this.currentSortReversed}`);
+                
+                // Reset categories state and request with new sort direction
+                this.gameState.currentCategoriesCursor = 0;
+                this.gameState.allCategoriesReceived = false;
+                this.gameState.categoriesList = [];
+                this.elements.categoriesDisplay.innerHTML = '';
+                
+                // Request categories with current sort method and new direction
+                if (this.callbacks.onPlayClick) {
+                    console.log(`[SORT] Requesting categories with current sort method: ${this.currentSortMethod} and reversed: ${this.currentSortReversed}`);
+                    this.callbacks.onPlayClick(this.currentSortMethod, this.currentSortReversed);
+                }
+            });
+        }
     }
 
     /**
@@ -375,7 +414,7 @@ export class UIManager {
                     const partsB = b.split(':');
                     const timestampA = partsA.length > 8 ? parseInt(partsA[8]) : 0;
                     const timestampB = partsB.length > 8 ? parseInt(partsB[8]) : 0;
-                    return timestampB - timestampA; // Descending (newest first)
+                    return this.currentSortReversed ? timestampA - timestampB : timestampB - timestampA; // Descending (newest first)
                 });
                 break;
                 
@@ -384,7 +423,7 @@ export class UIManager {
                 this.gameState.categoriesList.sort((a, b) => {
                     const playsA = parseInt(a.split(':')[3]) || 0;
                     const playsB = parseInt(b.split(':')[3]) || 0;
-                    return playsB - playsA; // Descending
+                    return this.currentSortReversed ? playsA - playsB : playsB - playsA; // Descending
                 });
                 break;
                 
@@ -393,7 +432,7 @@ export class UIManager {
                 this.gameState.categoriesList.sort((a, b) => {
                     const scoreA = parseInt(a.split(':')[4]) || 0;
                     const scoreB = parseInt(b.split(':')[4]) || 0;
-                    return scoreB - scoreA; // Descending
+                    return this.currentSortReversed ? scoreA - scoreB : scoreB - scoreA; // Descending
                 });
                 break;
         }

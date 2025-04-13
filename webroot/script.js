@@ -88,8 +88,8 @@ class App {
      */
     setupEventListeners() {
         const uiCallbacks = {
-            onPlayClick: (sortMethod = 'time') => {
-                this.messageHandler.requestCategories(this.gameState.currentCategoriesCursor, sortMethod);
+            onPlayClick: (sortMethod = 'time', reversed = false) => {
+                this.messageHandler.requestCategories(this.gameState.currentCategoriesCursor, sortMethod, reversed);
             },
             
             onCreateCategoryClick: () => {
@@ -143,8 +143,8 @@ class App {
                 this.messageHandler.deleteAllUserData();
             },
             
-            onCategoriesScrollEnd: (cursor, sortMethod = 'time') => {
-                this.messageHandler.requestCategories(cursor, sortMethod);
+            onCategoriesScrollEnd: (cursor, sortMethod = 'time', reversed = false) => {
+                this.messageHandler.requestCategories(cursor, sortMethod, reversed);
             }
         };
         

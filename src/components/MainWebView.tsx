@@ -162,7 +162,13 @@ export const MainWebView = (context: any) => {
       if (!isItPeriodicRemoval) {
         switch (message.type) {
           case 'updateCategories':
-            await sendCategories(context, message.data.cursor, message.data.sortMethod || 'time', postMessage);
+            await sendCategories(
+              context, 
+              message.data.cursor, 
+              message.data.sortMethod || 'time', 
+              postMessage,
+              message.data.reversed || false
+            );
             break;
           case 'requestUserData':
             await sendUserData(context, userID, postMessage);

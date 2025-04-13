@@ -36,7 +36,8 @@ export type WebViewMessage =
         type: 'updateCategories';
         data: {
             cursor: number,
-            sortMethod?: string
+            sortMethod?: string,
+            reversed?: boolean
         };
     }
     | {
