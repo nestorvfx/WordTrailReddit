@@ -65,6 +65,9 @@ export class MessageHandler {
             case 'allDataDeleted':
                 this.handleAllDataDeleted(message.data);
                 break;
+            case 'deleteCategoryResponse':
+                this.handleDeleteCategoryResponse(message.data);
+                break;
             default:
                 console.log('Unhandled message type:', message.type);
         }
@@ -415,6 +418,83 @@ export class MessageHandler {
             { type: 'updateCategoryInfo', data },
             '*'
         );
+    }
+
+    /**
+     * Handle delete category response
+     */
+    handleDeleteCategoryResponse(data) {
+        // Hide the confirmation modal regardless of success/failure
+        const deleteConfirmation = document.getElementById('deleteConfirmationScreen');
+        if (deleteConfirmation) {
+            deleteConfirmation.style.display = 'none';
+        }
+        
+        // Restore pointer events to allow interaction
+        document.body.style.pointerEvents = 'all';
+        
+        // Refresh the settings screen if success
+        if (data.success) {
+            // If we have category code in the data, remove it from the UI immediately
+            if (data.categoryCode) {
+                try {
+                    // Remove from categories list in GameState
+                    this.gameState.categoriesList = this.gameState.categoriesList.filter(
+                        cat => cat.split(':')[0] !== data.categoryCode
+                    );
+                    
+                    // Find and remove the specific row from UI
+                    const selector = `.list-row[data-code="${data.categoryCode}"]`;
+                    const categoryRow = document.querySelector(selector);
+                    
+                    if (categoryRow) {
+                        // Remove the row with animation
+                        categoryRow.style.transition = 'opacity 0.3s ease-out';
+                        categoryRow.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            categoryRow.remove();
+                            
+                            // Update the indexes of remaining rows
+                            const rows = document.querySelectorAll('.list-row');
+                            rows.forEach((row, index) => {
+                                row.setAttribute('data-index', index);
+                            });
+                            
+                            // Update scroll buttons after removing the item
+                            this.uiManager.updateScrollButtonStates();
+                            
+                            // Update empty state message if no categories left
+                            if (rows.length === 0) {
+                                const emptyStateMsg = document.querySelector('.emptyElement');
+                                if (!emptyStateMsg) {
+                                    const emptyElement = document.createElement('div');
+                                    emptyElement.classList.add('emptyElement');
+                                    emptyElement.innerHTML = '<span class="emptyText">You have no categories.\n(create one from main screen)</span>';
+                                    document.getElementById('rows-wrapper').appendChild(emptyElement);
+                                }
+                            }
+                        }, 300);
+                    } else {
+                        // If we can't find the row, refresh the data
+                        this.requestUserData();
+                    }
+                } catch (err) {
+                    // If there's any error in the UI update, fallback to refreshing data
+                    console.log("Error updating UI after deletion, refreshing data instead");
+                    this.requestUserData();
+                }
+            } else {
+                // If no category code, refresh all user data
+                this.requestUserData();
+            }
+            
+            // Show success toast
+            this.uiManager.displayMessage(data.message || 'Category deleted successfully');
+        } else {
+            // Show error message
+            this.uiManager.displayMessage(data.message || 'Failed to delete category');
+        }
     }
 }
 

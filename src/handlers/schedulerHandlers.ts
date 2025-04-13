@@ -20,13 +20,6 @@ export async function initialPost(event: any, context: JobContext): Promise<void
 
   await context.redis.set('mainPostID', post.id);
 
-  const periodicRemoval = await context.scheduler.runJob({
-    name: 'removeUserDataPeriodically',
-    cron: '* * 20 * *',
-  });
-
-  await context.redis.set('periodicRemoval', periodicRemoval);
-
   const jobs = await context.scheduler.listJobs();
   console.log('Scheduled jobs:', jobs);
 }

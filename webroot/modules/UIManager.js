@@ -857,6 +857,18 @@ export class UIManager {
         this.elements.wordCount.style.display = 'block';
         this.elements.keyboard.style.display = 'grid';
         this.elements.keyboardOutput.style.display = 'flex';
+
+        // Clear keyboard output when starting new game
+        const outputElement = document.getElementById('output');
+        if (outputElement) {
+            outputElement.innerHTML = '';
+            outputElement.style.display = 'flex';
+        }
+        
+        // Reset any existing typed letters
+        if (this.gameState) {
+            this.gameState.guess = '';
+        }
     }
 
     /**

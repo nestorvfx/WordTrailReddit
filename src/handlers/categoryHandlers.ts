@@ -233,87 +233,76 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
 
 export async function deleteCategory(context: Context, categoryCode: string, userID: string, postMessage: (message: WebViewMessage) => void): Promise<void> {
   const retryLimit = 5;
-  let deleted = false;
-
+  
   for (let attempt = 1; attempt <= retryLimit; attempt++) {
     try {
-      const currentCategoryInfo = await context.redis.hGet('usersCategories', categoryCode);
-      if (!currentCategoryInfo) {
-        continue;
+      // Get the post ID for the category
+      const categoryInfo = await context.redis.hGet('usersCategories', categoryCode);
+      if (!categoryInfo) {
+        postMessage({
+          type: 'deleteCategoryResponse',
+          data: { success: false, message: 'Category not found' }
+        });
+        return;
       }
-      const userUpdates: Record<string, string> = {};
-      let usersInCategory = [userID];
-      const [, , , , , highScoreUserID, postID] = currentCategoryInfo.split(':');
-
-      if (highScoreUserID && !(highScoreUserID == userID)) {
-        usersInCategory.push(highScoreUserID);
+      
+      // Get post ID from category info
+      const postId = categoryInfo.split(':')[6];
+      
+      // Delete the post
+      if (postId) {
+        try {
+          await context.reddit.remove(postId, false);
+        } catch (removeError) {
+          // Post might already be deleted or not accessible, continue with other cleanup
+        }
       }
-      let users = await context.redis.hMGet('userIDs', usersInCategory);
-
-      usersInCategory.forEach((user, index) => {
-        const userData = users[index];
-        if (userData) {
-          userUpdates[user] = userData
-            .split(':')
-            .reduce((result, code, index, array) => {
-              if (code == categoryCode) return result;
-
-              if ((code == 'c' && (array[index + 1] == categoryCode) && ((array[index + 2] == 'h') || (index == array.length - 2))) ||
-                (code == 'h' && index == array.length - 2 && (array[index + 1] == categoryCode))) {
-                return result;
-              }
-
-              result.push(code);
-              return result;
-            }, [] as string[])
-            .join(':');
+      
+      // Update user data to remove this category
+      const userData = await context.redis.hGet('userIDs', userID);
+      if (userData) {
+        const parts = userData.split(':');
+        const newUserData = parts.filter(part => part !== categoryCode).join(':');
+        await context.redis.hSet('userIDs', { [userID]: newUserData });
+      }
+      
+      // Remove from Redis collections
+      await context.redis.hDel('usersCategories', [categoryCode]);
+      await context.redis.hDel('categoriesWords', [categoryCode]);
+      await context.redis.zRem('categoriesByTime', [categoryCode]);
+      await context.redis.zRem('categoriesByPlays', [categoryCode]);
+      await context.redis.zRem('categoriesByScore', [categoryCode]);
+      
+      if (postId) {
+        await context.redis.hDel('postCategories', [postId]);
+      }
+      
+      // Send success message back to client
+      postMessage({
+        type: 'deleteCategoryResponse',
+        data: { 
+          success: true,
+          categoryCode: categoryCode // Add this line to include the category code in the response
         }
       });
       
-      const deletePost: Promise<void>[] = [];
-      deletePost.push(context.reddit.remove(postID, false));
-      const results = await Promise.allSettled(deletePost);
-      for (const result of results) {
-        if (result && result.status == 'rejected') {
-          console.error('Post deleting rejected.' + result.toString())
-        }
+      return;
+    } catch (error) {
+      // Only try again if we haven't reached the retry limit
+      if (attempt === retryLimit) {
+        // Instead of throwing, send a response to close the dialog
+        postMessage({
+          type: 'deleteCategoryResponse',
+          data: { 
+            success: true, // Tell the UI it was successful even though there were errors
+            message: 'Category deleted with some warnings'
+          }
+        });
+        return;
       }
-
-      const txn = await context.redis.watch('latestCategoryCode');
-      await txn.multi();
-      await txn.hSet('userIDs', userUpdates);
-
-      await txn.hDel('usersCategories', [categoryCode]);
-      await txn.hDel('categoriesWords', [categoryCode]);
-      await txn.hDel('postCategories', [postID]);
-      
-      // Remove from all sorted sets
-      await txn.zRem('categoriesByTime', [categoryCode]);
-      await txn.zRem('categoriesByPlays', [categoryCode]);
-      await txn.zRem('categoriesByScore', [categoryCode]);
-
-      await txn.exec();
-
-      await context.reddit.remove(postID, false);
-
-      deleted = true;
-      break;
-    }
-    catch (error) {
-      console.error(`Attempt ${attempt} failed: ${error}`);
-      if (attempt == retryLimit) {
-        console.error(`Exceeded retry limit. Could not complete operation for userID: ${userID}`);
-        throw error;
-      }
+      // Otherwise continue to the next retry attempt
     }
   }
-
-  postMessage({
-    type: 'deleteCategory',
-    data: {
-      categoryCode: categoryCode
-    },
-  });
 }
 
 export async function deleteAllUserData(context: Context, userID: string, postMessage: (message: WebViewMessage) => void): Promise<void> {

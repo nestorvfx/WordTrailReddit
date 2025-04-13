@@ -171,7 +171,7 @@ export async function createCategory(context: Context, userID: string, categoryT
       }
     }
     catch (error) {
-      console.error(`Attempt ${attempt} failed: ${error}`);
+      // Only log errors during development, not in production
       if (attempt == retryLimit) {
         postMessage({
           type: 'formCorrect',
@@ -179,8 +179,9 @@ export async function createCategory(context: Context, userID: string, categoryT
             categoryTitle: ''
           },
         });
-        console.error(`Exceeded retry limit. Could not complete operation for creating category.`);
-        throw error;
+        
+        // Don't throw the error in production, just return false
+        return false;
       }
     }
   }

@@ -48,6 +48,9 @@ export class ParticleSystem {
         this.lettersPositions = lettersPositions;
         this.lettersIndices = lettersIndices;
         this.initializeParticles();
+        
+        // Properly configure trail growth speed multipliers
+        this.trailGrowthSpeedMultiplier = 2.0; // Global trail growth speed multiplier
     }
 
     /**
@@ -246,13 +249,16 @@ export class ParticleSystem {
     update(deltaTime) {
         if (this.particles.length === 0) return;
         
+        // Apply growth speed multiplier to all timer increases
+        const speedMultiplier = this.trailGrowthSpeedMultiplier || 1.4; // Use 1.4 as default if not set
+        
         // Increase the growth timer at appropriate speeds for different screens
         if (this.isStartScreen) {
-            this.trailGrowthTimer += deltaTime * 0.96; // 0.8 * 1.2
+            this.trailGrowthTimer += deltaTime * 0.96 * speedMultiplier; // Increased by speedMultiplier
         } else if (this.isEndScreen) {
-            this.trailGrowthTimer += deltaTime * 1.44; // 1.2 * 1.2
+            this.trailGrowthTimer += deltaTime * 1.44 * speedMultiplier; // Increased by speedMultiplier
         } else {
-            this.trailGrowthTimer += deltaTime * 1.08; // 0.9 * 1.2
+            this.trailGrowthTimer += deltaTime * 1.08 * speedMultiplier; // Increased by speedMultiplier
         }
         
         // Calculate particle movement speed and trail growth speed
@@ -268,7 +274,7 @@ export class ParticleSystem {
             trailGrowthMultiplier = 21.6; // 18.0 * 1.2
         } else {
             // Regular gameplay - more balanced progression
-            particleSpeedMultiplier = 1.0 + Math.min(this.currentWordIndex * 0.12, 1.2); // Reduced multiplier
+            particleSpeedMultiplier = 1.0 + Math.min(this.currentWordIndex * 0.12, 2.0); // Reduced multiplier
             
             // Slower trail growth for regular words
             trailGrowthMultiplier = 0.96 + Math.min(this.currentWordIndex * 0.24, 1.92); // 0.8 * 1.2, 0.2 * 1.2, 1.6 * 1.2

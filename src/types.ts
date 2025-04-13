@@ -125,6 +125,14 @@ export type WebViewMessage =
             information: string,
             categoryInfo?: string
         };
+    }
+    | {
+        type: 'deleteCategoryResponse';
+        data: {
+            success: boolean,
+            message?: string,
+            categoryCode?: string
+        };
     };
 
 export type CategoryUpdateInfo = {
