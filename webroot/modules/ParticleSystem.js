@@ -273,16 +273,16 @@ export class ParticleSystem {
             particleSpeedMultiplier = 0.7;
             trailGrowthMultiplier = 21.6; // 18.0 * 1.2
         } else {
-            // Regular gameplay - more balanced progression
-            particleSpeedMultiplier = 1.0 + Math.min(this.currentWordIndex * 0.12, 2.0); // Reduced multiplier
+            // Regular gameplay - more balanced progression through word 11
+            particleSpeedMultiplier = 1.0 + Math.min(this.currentWordIndex * 0.09, 1.4); // Slower increase to reach word 11
             
             // Slower trail growth for regular words
-            trailGrowthMultiplier = 0.96 + Math.min(this.currentWordIndex * 0.24, 1.92); // 0.8 * 1.2, 0.2 * 1.2, 1.6 * 1.2
+            trailGrowthMultiplier = 1.06 + Math.min(this.currentWordIndex * 0.24, 2.4); // Adjusted to reach word 11
             
-            // Apply diminishing returns after word 7
-            if (this.currentWordIndex > 7) {
-                particleSpeedMultiplier = 2.2 + Math.log10(1 + (this.currentWordIndex - 7) * 0.05); // Reduced acceleration
-                trailGrowthMultiplier = 2.88 + Math.log10(1 + (this.currentWordIndex - 7) * 0.084); // 2.4 * 1.2, 0.07 * 1.2
+            // Apply diminishing returns after word 11
+            if (this.currentWordIndex > 11) {
+                particleSpeedMultiplier = 1.8 + Math.log10(1 + (this.currentWordIndex - 11) * 0.05); // Changed offset from 7 to 11
+                trailGrowthMultiplier = 3.08 + Math.log10(1 + (this.currentWordIndex - 11) * 0.084); // Changed offset from 7 to 11
             }
         }
         
