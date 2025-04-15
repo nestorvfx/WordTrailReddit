@@ -3,7 +3,7 @@ import { WebViewMessage, CategoryUpdateInfo } from '../types.js';
 import { getNextCode, addCategoryToSortedSets, removeCategoryFromSortedSets, updateCategoryInSortedSets } from '../utils/redis.js';
 
 export async function sendCategories(context: Context, cursor: number, sortMethod: string = 'time', postMessage: (message: WebViewMessage) => void, reversed: boolean = false): Promise<void> {
-  const pageSize = 20; // Number of categories per page
+  const pageSize = 500; // Number of categories per page (changed from 20 to 500)
   const start = cursor * pageSize;
   const stop = start + pageSize - 1;
   
