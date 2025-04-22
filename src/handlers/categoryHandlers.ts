@@ -85,7 +85,7 @@ export async function sendWords(context: Context, categoryCode: string, postMess
 }
 
 export async function updateCategoryInfo(context: Context, categoryInfo: CategoryUpdateInfo, postMessage: (message: WebViewMessage) => void, username: string, userID: string): Promise<void> {
-  let retryLimit = 1;
+  let retryLimit = 5;
   for (let attempt = 1; attempt <= retryLimit; attempt++) {
     try {
       let feedback = 'NOTHS';
@@ -99,13 +99,28 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
         continue;
       }
 
-      let commentText = 'Just scored ' + categoryInfo.newScore;
+      // Robust score parsing with safeguards
+      // First, ensure the raw value is converted to a string
+      const rawScoreStr = String(categoryInfo.newScore || 0);
+      
+      // Then parse with safe fallback to 0 if result is NaN
+      const newScoreValue = Math.max(0, parseInt(rawScoreStr) || 0);
+      
+      // Store the score in the original raw format for debugging
+      const originalRawScore = categoryInfo.newScore;
+      
+      // Track if transaction succeeded
+      let transactionSucceeded = false;
+      
+      // We'll generate the comment text after the transaction succeeds
+      // This ensures we use the actual value that was stored in Redis
+      let commentText = '';
+      
       const txn = await context.redis.watch('latestCategoryCode');
       await txn.multi();
       
       // Fix: Explicitly parse both values to ensure consistent type handling
       const previousScore = parseInt(previousInfo[3]);
-      const newScore = parseInt(String(categoryInfo.newScore));
       
       // Always increment play count
       const newPlayCount = parseInt(previousInfo[2]) + 1;
@@ -117,21 +132,15 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
         member: categoryInfo.categoryCode
       });
       
-      if (previousScore < newScore) {
-        if (categoryInfo.guessedAll) {
-          commentText = '**GUESSED ALL ' + categoryInfo.newScore + ' CORRECTLY**';
-        }
-        else {
-          commentText = '**HIGH SCORED** with **' + categoryInfo.newScore + '**';
-        }
-        newInfo[3] = String(newScore); // Ensure we're storing a string
+      if (previousScore < newScoreValue) {
+        newInfo[3] = String(newScoreValue); // Ensure we're storing a string
         newInfo[4] = username;
         newInfo[5] = userID;
         feedback = 'NEWHS';
 
         // Update sorted set for high score
         await txn.zAdd('categoriesByScore', {
-          score: newScore,
+          score: newScoreValue,
           member: categoryInfo.categoryCode
         });
 
@@ -180,37 +189,11 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
         [categoryInfo.categoryCode]: newInfo.join(':')
       });
 
-      await txn.exec();
-
-      // Add comment to post with retry logic
-      let commentSuccess = false;
-      const commentRetries = 3; // Number of retries for comment posting
-      let comment = null;
+      // Execute transaction and check for success
+      const txnResult = await txn.exec();
+      transactionSucceeded = txnResult !== null;
       
-      for (let commentAttempt = 1; commentAttempt <= commentRetries; commentAttempt++) {
-        try {
-          comment = await post.addComment({
-            text: commentText
-          });
-          
-          if (comment != null) {
-            await context.reddit.approve(comment.id);
-            commentSuccess = true;
-            break;
-          }
-        } catch (error) {
-          console.error(`Comment attempt ${commentAttempt} failed: ${error}`);
-          if (commentAttempt < commentRetries) {
-            // Wait a short time before retrying
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
-      }
-      
-      if (!commentSuccess) {
-        //console.warn(`Failed to post comment after ${commentRetries} attempts. Continuing without posting comment.`);
-      }
-
+      // CRITICAL: Send feedback to user immediately after Redis transaction succeeds/fails
       postMessage({
         type: 'updateCategoryFeedback',
         data: {
@@ -219,13 +202,60 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
         },
       });
 
-      break;
-    }
-    catch (error) {
+      // Only post comment if transaction succeeded
+      if (transactionSucceeded) {
+        try {
+          // Prepare comment text *after* transaction succeeds using the value that was stored
+          // This ensures the comment matches what's in the database
+          if (categoryInfo.guessedAll) {
+            commentText = `**GUESSED ALL ${newScoreValue} CORRECTLY**`;
+          } else if (previousScore < newScoreValue) {
+            commentText = `**HIGH SCORED** with **${newScoreValue}**`;
+          } else {
+            commentText = `Just scored ${newScoreValue}`;
+          }
+          
+          // Last safety check - if we have a discrepancy between original and parsed values, log it
+          // This helps diagnose issues while ensuring the comment is accurate
+          if (originalRawScore !== newScoreValue && String(originalRawScore) !== rawScoreStr) {
+            console.log(`Score conversion: original=${originalRawScore}, parsed=${newScoreValue}`);
+            // If original score wasn't 0 but parsed score is 0, we've hit the bug - add a note
+            if (originalRawScore && newScoreValue === 0) {
+              commentText += ` (Note: Original score was ${originalRawScore})`;
+            }
+          }
+          
+          const comment = await post.addComment({
+            text: commentText
+          });
+          
+          if (comment != null) {
+            await context.reddit.approve(comment.id);
+          }
+        } catch (commentError) {
+          // Just log the error but don't retry or block user experience
+          console.error(`Comment posting failed but category updated: ${commentError}`);
+        }
+      } else {
+        console.error(`Transaction failed, comment not posted for user ${userID}`);
+      }
+
+      // Exit the function upon reaching this point
+      return;
+      
+    } catch (error) {
       console.error(`Attempt ${attempt} failed: ${error}`);
       if (attempt == retryLimit) {
+        // If all retries fail, still send a response to prevent UI from hanging
+        postMessage({
+          type: 'updateCategoryFeedback',
+          data: {
+            information: 'NOTHS',
+            categoryInfo: ''
+          },
+        });
         console.error(`Exceeded retry limit. Could not complete operation for userID: ${userID}`);
-        throw error;
+        return; // Don't throw, just return
       }
     }
   }

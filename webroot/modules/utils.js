@@ -41,21 +41,62 @@ export function randomPointInCircle(center, r) {
 }
 
 /**
- * Checks if we're within 5 minutes before the 20th day of the month (23:55-23:59 on 19th)
- * @returns {number} Minutes until midnight of the 20th if in the window (1-5), or 0 if outside window
+ * Checks if we're approaching the maintenance time (5 minutes before midnight on the 19th)
+ * @returns {number} Minutes until maintenance or -1 if not approaching maintenance
  */
 export function isApproachingMaintenance() {
     const now = new Date();
-    const day = now.getUTCDate();
-    const hour = now.getUTCHours();
-    const minute = now.getUTCMinutes();
+    const day = now.getDate();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
     
-    // Check if it's the 19th day of the month between 23:55 and 23:59
-    if (day === 19 && hour === 23 && minute >= 55 && minute < 60) {
-        // Return minutes until midnight (1-5)
-        return 60 - minute;
+    // Check if we're on the 19th day and approaching midnight
+    if (day === 19 && hour === 23) {
+        // Calculate minutes until midnight
+        const minutesUntil = 60 - minute;
+        
+        // If we're within 5 minutes of midnight
+        if (minutesUntil <= 5) {
+            return minutesUntil;
+        }
     }
-    return 0;  // Not in the pre-maintenance window
+    
+    // If we're already in maintenance window (first 5 minutes of the 20th)
+    if (day === 20 && hour === 0 && minute < 5) {
+        return 0; // Maintenance is active now
+    }
+    
+    return -1; // Not approaching maintenance
+}
+
+/**
+ * Schedules a timer to start showing maintenance warnings
+ * @param {Function} callback - Function to call when it's time to show warnings
+ * @returns {number|null} - Timer ID or null if no timer was set
+ */
+export function scheduleMaintenanceWarning(callback) {
+    const now = new Date();
+    const day = now.getDate();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    
+    // Only set a timer if we're on the 19th but not yet 5 minutes before midnight
+    if (day === 19 && (hour < 23 || (hour === 23 && minute < 55))) {
+        // Calculate milliseconds until 5 minutes before midnight
+        let targetTime = new Date(now);
+        targetTime.setHours(23);
+        targetTime.setMinutes(55);
+        targetTime.setSeconds(0);
+        
+        const timeUntilWarning = targetTime.getTime() - now.getTime();
+        
+        console.log(`Scheduling maintenance warning for ${timeUntilWarning/60000} minutes from now`);
+        
+        // Set a timer to call the callback when we reach the warning period
+        return setTimeout(callback, timeUntilWarning);
+    }
+    
+    return null; // No timer set
 }
 
 /**

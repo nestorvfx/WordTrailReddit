@@ -1,99 +1,113 @@
-import { isApproachingMaintenance, isInMaintenanceWindow } from './utils.js';
+import { isInMaintenanceWindow, isApproachingMaintenance, scheduleMaintenanceWarning } from './utils.js';
 
 /**
- * Class that manages the maintenance state and notifications
+ * Manages the maintenance window display and notifications
  */
 export class MaintenanceManager {
     constructor(uiManager) {
         this.uiManager = uiManager;
-        this.maintenanceTime = false;
-        this.maintenanceCheckInterval = null;
+        this.maintenanceOverlay = document.getElementById('maintenanceOverlay');
+        this.maintenanceTimerId = null;
+        this.warningTimerId = null;
+        this.lastWarningTime = 0; // To prevent showing warnings too frequently
     }
 
     /**
-     * Initialize maintenance checks
+     * Initialize the maintenance manager
      */
     initialize() {
-        this.checkMaintenanceState();
-        this.setupMaintenanceSchedule();
-    }
-
-    /**
-     * Check if we're in a maintenance window
-     */
-    checkMaintenanceState() {
-        const minutesBeforeMaintenance = isApproachingMaintenance();
+        // Check if we're already in or approaching maintenance window
+        const minutesUntil = isApproachingMaintenance();
         
-        if (minutesBeforeMaintenance > 0) {
-            this.maintenanceTime = true;
-            const minutesString = minutesBeforeMaintenance == 1 ? ' minute' : ' minutes';
-            this.uiManager.displayMessage('In ~' + Math.round(minutesBeforeMaintenance).toString() + 
-                minutesString + ', app will close for database maintenance for 5 minutes.');
+        if (minutesUntil >= 0) {
+            // Already in warning period or maintenance window
+          //  console.log(`Maintenance is ${minutesUntil > 0 ? 'approaching in ' + minutesUntil + ' minutes' : 'active now'}`);
+            this.activateWarningMode();
+        } else {
+            // Schedule a timer for when we'll reach the warning period
+            this.maintenanceTimerId = scheduleMaintenanceWarning(() => {
+            //    console.log('Scheduled maintenance warning timer activated');
+                this.activateWarningMode();
+            });
         }
         
-        // Check if we're already in maintenance
-        const minutesInMaintenance = isInMaintenanceWindow();
-        if (0 <= minutesInMaintenance && minutesInMaintenance <= 5) {
-            this.uiManager.showMaintenanceOverlay();
-        } else if (minutesInMaintenance < 0) {
-            // Schedule maintenance overlay - convert to milliseconds and add small buffer
-            setTimeout(() => {
-                this.uiManager.showMaintenanceOverlay();
-            }, Math.max(Math.abs(minutesInMaintenance) * 60000 + 50, 1000));
-        }
+        // Update maintenance overlay immediately if we're in the window
+        this.updateMaintenanceMessage();
     }
-
+    
     /**
-     * Set up maintenance schedule for future notifications
+     * Activate warning mode - showing periodic warnings to users
      */
-    setupMaintenanceSchedule() {
-        const minutesBeforeMaintenance = isApproachingMaintenance();
+    activateWarningMode() {
+        // Clear any existing timers
+        if (this.warningTimerId) {
+            clearInterval(this.warningTimerId);
+        }
         
-        // If not already in the 5-minute warning period
-        if (minutesBeforeMaintenance === 0) {
-            // Calculate time until next maintenance warning (19th at 23:55)
-            const now = new Date();
-            const nextWarning = new Date(Date.UTC(
-                now.getUTCFullYear(),
-                now.getUTCMonth(),
-                now.getUTCDate() < 19 ? 19 : (now.getUTCMonth() === 11 ? 19 : 49), // Handle December
-                23, 55, 0, 0
-            ));
+        // Set up a timer to check and show warnings every minute
+        this.warningTimerId = setInterval(() => {
+            const minutesUntil = isApproachingMaintenance();
             
-            // If we're past the 19th for this month, move to next month
-            if (now.getUTCDate() > 19 || (now.getUTCDate() === 19 && now.getUTCHours() >= 23 && now.getUTCMinutes() >= 55)) {
-                nextWarning.setUTCMonth(nextWarning.getUTCMonth() + 1);
+            // Show warning message if approaching maintenance and enough time has passed since last warning
+            if (minutesUntil > 0 && Date.now() - this.lastWarningTime > 60000) {
+                const minutesString = minutesUntil === 1 ? ' minute' : ' minutes';
+                this.uiManager.displayMessage('In ~' + minutesUntil + minutesString + 
+                    ', app will close for maintenance for 5 minutes.');
+                this.lastWarningTime = Date.now();
             }
             
-            const timeUntilWarning = nextWarning.getTime() - Date.now();
-            
-            // Schedule a maintenance notification for 5 minutes before maintenance
-            setTimeout(() => {
-                this.maintenanceTime = true;
-                this.uiManager.displayMessage('In ~5 minutes, app will close for maintenance for 5 minutes.');
-            }, timeUntilWarning);
+            // Also update maintenance overlay in case we've entered the window
+            this.updateMaintenanceMessage();
+        }, 60000); // Check every minute
+        
+        // Immediately show a first warning
+        const minutesUntil = isApproachingMaintenance();
+        if (minutesUntil > 0) {
+            const minutesString = minutesUntil === 1 ? ' minute' : ' minutes';
+            this.uiManager.displayMessage('In ~' + minutesUntil + minutesString + 
+                ', app will close for maintenance for 5 minutes.');
+            this.lastWarningTime = Date.now();
         }
     }
 
     /**
-     * Check if we're in maintenance time
-     * @returns {boolean} - Whether it's maintenance time
+     * Check if we're currently in the maintenance window
+     * @returns {boolean} - True if we're in the maintenance window
      */
     isMaintenanceTime() {
-        return this.maintenanceTime;
+        const maintenanceState = isInMaintenanceWindow();
+        return maintenanceState >= 0 && maintenanceState < 5;
     }
 
     /**
-     * Update maintenance message if needed
+     * Update the maintenance overlay visibility
      */
     updateMaintenanceMessage() {
-        if (this.maintenanceTime) {
-            const minutesBeforeMaintenance = isApproachingMaintenance();
-            if (minutesBeforeMaintenance > 0) {
-                const minutesString = Math.round(minutesBeforeMaintenance) == 1 ? ' minute' : ' minutes';
-                this.uiManager.displayMessage('In ~' + Math.round(minutesBeforeMaintenance).toString() + 
-                    minutesString + ', app will close for maintenance for 5 minutes.');
-            }
+        if (this.isMaintenanceTime()) {
+            // We're in the maintenance window, show the overlay
+            this.maintenanceOverlay.style.display = 'block';
+            
+            // Disable user interaction with the app
+            document.body.style.pointerEvents = 'none';
+            this.maintenanceOverlay.style.pointerEvents = 'all';
+        } else {
+            // Not in maintenance window, hide the overlay
+            this.maintenanceOverlay.style.display = 'none';
+            
+            // Re-enable user interaction
+            document.body.style.pointerEvents = 'all';
+        }
+    }
+    
+    /**
+     * Clean up timers when the manager is destroyed
+     */
+    destroy() {
+        if (this.maintenanceTimerId) {
+            clearTimeout(this.maintenanceTimerId);
+        }
+        if (this.warningTimerId) {
+            clearInterval(this.warningTimerId);
         }
     }
 }
