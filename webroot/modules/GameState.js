@@ -86,14 +86,27 @@ export class GameState {
      * Reset for starting a new game
      */
     resetForNewGame() {
+        // 🔍 SCORE LOGGING: This is likely where the bug happens! Log before reset
+        const scoreBeforeReset = this.currentWordIndex;
+        console.log(`🚨 GAMESTATE_RESET_CALLED: currentWordIndex BEFORE reset = ${scoreBeforeReset}, gameStarted=${this.gameStarted}, gameFinished=${this.gameFinished}`);
+        
+        // 🚨 POTENTIAL BUG: If this is called after displayEndScreen but before the message is sent,
+        // it will reset the score from e.g. 5 to 0!
+        if (scoreBeforeReset > 0 && this.gameFinished) {
+            console.error(`🚨 SCORE_CORRUPTION_DETECTED_0: resetForNewGame called with score=${scoreBeforeReset} AFTER game finished! This is the BUG!`);
+            console.trace('Stack trace for resetForNewGame call:');
+        }
+        
         this.totalTime = 0;
         this.guess = '';
         this.currentlyTyped = '';
-        this.currentWordIndex = 0;
+        this.currentWordIndex = 0;  // ← This is the line that causes score 0!
         this.totalDeltaTime = 0;
         this.gameStarted = true;
         this.gameFinished = false;
         this._formattedTime = '0:00';
+        
+        console.log(`🎯 GAMESTATE_RESET_COMPLETE: currentWordIndex AFTER reset = ${this.currentWordIndex}`);
     }
 
     /**

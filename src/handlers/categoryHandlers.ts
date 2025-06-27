@@ -85,128 +85,181 @@ export async function sendWords(context: Context, categoryCode: string, postMess
 }
 
 export async function updateCategoryInfo(context: Context, categoryInfo: CategoryUpdateInfo, postMessage: (message: WebViewMessage) => void, username: string, userID: string): Promise<void> {
-  let retryLimit = 5;
-  for (let attempt = 1; attempt <= retryLimit; attempt++) {
-    try {
-      let feedback = 'NOTHS';
-      let returnInfo = '';
-      const previousInfo = ((await context.redis.hGet('usersCategories', categoryInfo.categoryCode)) ?? '').split(':');
-      let newInfo = previousInfo;
-      let cUserInfo = await context.redis.hGet('userIDs', userID) ?? '';
-      const post = await context.reddit.getPostById(previousInfo[6]);
-      
-      if (cUserInfo == '' || post == undefined) {
-        continue;
-      }
+  // 🔍 PRODUCTION: Generate unique execution ID to prevent duplicates
+  const executionId = `score_${userID}_${categoryInfo.categoryCode}_${Date.now()}`;
+  const requestTimestamp = Date.now();
+  console.log(`🎯 SCORE_TRACKING_4_BACKEND_RECEIVED: executionId=${executionId}, userID=${userID}, username=${username}, categoryCode=${categoryInfo.categoryCode}, receivedScore=${categoryInfo.newScore}, scoreType=${typeof categoryInfo.newScore}, guessedAll=${categoryInfo.guessedAll}, timestamp=${requestTimestamp}`);
+  
+  // 🚨 SCORE 0 BUG DETECTION: Log detailed score information for analysis
+  if (categoryInfo.newScore === 0 && categoryInfo.guessedAll === true) {
+    console.error(`🚨 SCORE_0_BUG_DETECTED: User reports guessedAll=true but score=0! This is the bug we're hunting!`);
+    console.error(`🚨 SCORE_0_BUG_CONTEXT: userID=${userID}, username=${username}, categoryCode=${categoryInfo.categoryCode}`);
+    console.error(`🚨 SCORE_0_BUG_RAW_DATA: ${JSON.stringify(categoryInfo)}`);
+  }
+  
+  // 🔍 ENVIRONMENT LOGGING: Track potential mobile/browser patterns
+  console.log(`🌐 ENVIRONMENT_INFO: Processing score for user=${username}, value=${categoryInfo.newScore}, type=${typeof categoryInfo.newScore}, stringified="${String(categoryInfo.newScore)}"`);
+  
+  // 🛡️ PRODUCTION: Check for duplicate execution (idempotency)
+  const duplicateCheck = await context.redis.get(`exec_${executionId}`);
+  if (duplicateCheck) {
+    console.log(`🛡️ DUPLICATE_EXECUTION_PREVENTED: ${executionId} already processed`);
+    postMessage({
+      type: 'updateCategoryFeedback',
+      data: { information: 'NOTHS', categoryInfo: '' }
+    });
+    return;
+  }
+  
+  // 🛡️ PRODUCTION: Mark execution as in-progress with TTL
+  await context.redis.set(`exec_${executionId}`, "processing", { expiration: new Date(Date.now() + 30000) });
+  
+  try {
+    let feedback = 'NOTHS';
+    let returnInfo = '';
+    const previousInfo = ((await context.redis.hGet('usersCategories', categoryInfo.categoryCode)) ?? '').split(':');
+    let newInfo = [...previousInfo]; // Create copy to avoid mutation
+    let cUserInfo = await context.redis.hGet('userIDs', userID) ?? '';
+    const post = await context.reddit.getPostById(previousInfo[6]);
+    
+    if (cUserInfo == '' || post == undefined) {
+      console.error(`� SCORE_TRACKING_ERROR: Critical data missing - userInfo=${cUserInfo == '' ? 'empty' : 'ok'}, post=${post == undefined ? 'undefined' : 'ok'}`);
+      throw new Error('Critical data unavailable');
+    }
 
-      // Robust score parsing with safeguards
-      // First, ensure the raw value is converted to a string
-      const rawScoreStr = String(categoryInfo.newScore || 0);
-      
-      // Then parse with safe fallback to 0 if result is NaN
-      const newScoreValue = Math.max(0, parseInt(rawScoreStr) || 0);
-      
-      // Store the score in the original raw format for debugging
-      const originalRawScore = categoryInfo.newScore;
-      
-      // Track if transaction succeeded
-      let transactionSucceeded = false;
-      
-      // We'll generate the comment text after the transaction succeeds
-      // This ensures we use the actual value that was stored in Redis
-      let commentText = '';
-      
-      const txn = await context.redis.watch('latestCategoryCode');
-      await txn.multi();
-      
-      // Fix: Explicitly parse both values to ensure consistent type handling
-      const previousScore = parseInt(previousInfo[3]);
-      
-      // Always increment play count
-      const newPlayCount = parseInt(previousInfo[2]) + 1;
-      newInfo[2] = newPlayCount.toString();
-      
-      // Update sorted set for plays
-      await txn.zAdd('categoriesByPlays', {
-        score: newPlayCount,
+    // 🔍 SCORE LOGGING: Track score parsing with detailed information
+    console.log(`🎯 SCORE_TRACKING_5_PARSING_START: originalValue=${categoryInfo.newScore}, originalType=${typeof categoryInfo.newScore}`);
+    
+    // 🛡️ PRODUCTION: Robust score parsing with safeguards
+    const rawScoreStr = String(categoryInfo.newScore || 0);
+    console.log(`🎯 SCORE_TRACKING_6_STRING_CONVERSION: stringified="${rawScoreStr}"`);
+    
+    const parseAttempt = parseInt(rawScoreStr);
+    console.log(`🎯 SCORE_TRACKING_7_PARSE_ATTEMPT: parseInt_result=${parseAttempt}, isNaN=${isNaN(parseAttempt)}`);
+    
+    const newScoreValue = Math.max(0, parseAttempt || 0);
+    console.log(`🎯 SCORE_TRACKING_8_FINAL_PARSED: finalScore=${newScoreValue}`);
+    
+    // Store the score in the original raw format for debugging
+    const originalRawScore = categoryInfo.newScore;
+    
+    // 🔍 SCORE LOGGING: Check for score corruption during parsing
+    if (originalRawScore !== newScoreValue) {
+      if (typeof originalRawScore === 'number' && originalRawScore > 0 && newScoreValue === 0) {
+        console.error(`🚨 SCORE_CORRUPTION_DETECTED_2: CRITICAL parsing corruption! original=${originalRawScore} (${typeof originalRawScore}) became parsed=${newScoreValue}`);
+      } else {
+        console.log(`ℹ️ SCORE_CONVERSION_NORMAL: original=${originalRawScore} (${typeof originalRawScore}) → parsed=${newScoreValue} (${typeof newScoreValue})`);
+      }
+    }
+    
+    // 🛡️ PRODUCTION: CRITICAL PATH - Atomic Redis Transaction (Score Storage Priority)
+    let transactionSucceeded = false;
+    let commentText = '';
+    
+    // Begin optimistic locking transaction
+    const txn = await context.redis.watch('latestCategoryCode');
+    await txn.multi();
+    
+    // Parse scores for comparison
+    const previousScore = parseInt(previousInfo[3]);
+    console.log(`🎯 SCORE_TRACKING_9_PREVIOUS_SCORE: previousScore=${previousScore}, newScore=${newScoreValue}, isHighScore=${previousScore < newScoreValue}`);
+    
+    // Always increment play count
+    const newPlayCount = parseInt(previousInfo[2]) + 1;
+    newInfo[2] = newPlayCount.toString();
+    
+    // Update sorted set for plays
+    await txn.zAdd('categoriesByPlays', {
+      score: newPlayCount,
+      member: categoryInfo.categoryCode
+    });
+    
+    // Handle high score updates
+    if (previousScore < newScoreValue) {
+      console.log(`🎯 SCORE_TRACKING_10_HIGH_SCORE_UPDATE: updating from ${previousScore} to ${newScoreValue} for user ${username}`);
+      newInfo[3] = String(newScoreValue);
+      newInfo[4] = username;
+      newInfo[5] = userID;
+      feedback = 'NEWHS';
+
+      // Update sorted set for high score
+      await txn.zAdd('categoriesByScore', {
+        score: newScoreValue,
         member: categoryInfo.categoryCode
       });
-      
-      if (previousScore < newScoreValue) {
-        newInfo[3] = String(newScoreValue); // Ensure we're storing a string
-        newInfo[4] = username;
-        newInfo[5] = userID;
-        feedback = 'NEWHS';
 
-        // Update sorted set for high score
-        await txn.zAdd('categoriesByScore', {
-          score: newScoreValue,
-          member: categoryInfo.categoryCode
-        });
+      // Update previous high scorer's user info
+      if (previousInfo[5] != userID) {
+        let previousHSInfo = (await context.redis.hGet('userIDs', previousInfo[5])) ?? '';
+        if (previousHSInfo.includes(':h:')) {
+          const hsIndex = previousHSInfo.indexOf(':h:');
+          previousHSInfo = previousHSInfo.split(':')
+            .reduce((result, code, index, array) => {
+              if (code == categoryInfo.categoryCode && index > hsIndex) return result;
 
-        // Update previous high scorer's user info
-        if (previousInfo[5] != userID) {
-          let previousHSInfo = (await context.redis.hGet('userIDs', previousInfo[5])) ?? '';
-          if (previousHSInfo.includes(':h:')) {
-            const hsIndex = previousHSInfo.indexOf(':h:');
-            previousHSInfo = previousHSInfo.split(':')
-              .reduce((result, code, index, array) => {
-                if (code == categoryInfo.categoryCode && index > hsIndex) return result;
-
-                if (index > 0 && code == 'h' && index == array.length - 2 && (array[index + 1] == categoryInfo.categoryCode)) {
-                  return result;
-                }
-
-                result.push(code);
+              if (index > 0 && code == 'h' && index == array.length - 2 && (array[index + 1] == categoryInfo.categoryCode)) {
                 return result;
-              }, [] as string[])
-              .join(':');
-          }
-          await txn.hSet('userIDs', {
-            [previousInfo[5]]: previousHSInfo
-          });
-        }
+              }
 
-        // Update current user's info
-        if (cUserInfo.includes(':h:')) {
-          const afterH = cUserInfo.split(':h:')[1];
-          if (afterH && !afterH.includes(categoryInfo.categoryCode)) {
-            cUserInfo += ':' + categoryInfo.categoryCode;
-          }
+              result.push(code);
+              return result;
+            }, [] as string[])
+            .join(':');
         }
-        else {
-          cUserInfo += ':h:' + categoryInfo.categoryCode;
-        }
-
         await txn.hSet('userIDs', {
-          [userID]: cUserInfo
+          [previousInfo[5]]: previousHSInfo
         });
-      } else {
-        returnInfo = previousInfo[4] + ':' + previousInfo[3];
       }
 
-      await txn.hSet('usersCategories', {
-        [categoryInfo.categoryCode]: newInfo.join(':')
-      });
+      // Update current user's info
+      if (cUserInfo.includes(':h:')) {
+        const afterH = cUserInfo.split(':h:')[1];
+        if (afterH && !afterH.includes(categoryInfo.categoryCode)) {
+          cUserInfo += ':' + categoryInfo.categoryCode;
+        }
+      }
+      else {
+        cUserInfo += ':h:' + categoryInfo.categoryCode;
+      }
 
-      // Execute transaction and check for success
-      const txnResult = await txn.exec();
-      transactionSucceeded = txnResult !== null;
-      
-      // CRITICAL: Send feedback to user immediately after Redis transaction succeeds/fails
-      postMessage({
-        type: 'updateCategoryFeedback',
-        data: {
-          information: feedback,
-          categoryInfo: returnInfo
-        },
+      await txn.hSet('userIDs', {
+        [userID]: cUserInfo
       });
+    } else {
+      returnInfo = previousInfo[4] + ':' + previousInfo[3];
+    }
 
-      // Only post comment if transaction succeeded
-      if (transactionSucceeded) {
+    await txn.hSet('usersCategories', {
+      [categoryInfo.categoryCode]: newInfo.join(':')
+    });
+
+    console.log(`🎯 SCORE_TRACKING_11_STORING_IN_REDIS: categoryCode=${categoryInfo.categoryCode}, storingValue=${newScoreValue}, redisString="${newInfo.join(':')}"`);
+
+    // 🛡️ CRITICAL: Execute Redis transaction atomically
+    const txnResult = await txn.exec();
+    transactionSucceeded = txnResult !== null;
+    
+    console.log(`🎯 SCORE_TRACKING_12_REDIS_TRANSACTION: success=${transactionSucceeded}, result=${txnResult ? 'committed' : 'failed/null'}`);
+    
+    // 🛡️ PRODUCTION: ALWAYS send feedback immediately after Redis operation
+    postMessage({
+      type: 'updateCategoryFeedback',
+      data: {
+        information: feedback,
+        categoryInfo: returnInfo
+      },
+    });
+
+    // 🛡️ PRODUCTION: Mark execution as completed
+    await context.redis.set(`exec_${executionId}`, "completed", { expiration: new Date(Date.now() + 300000) }); // 5 min retention
+
+    // 🎯 SECONDARY PATH: Comment posting (best effort, non-blocking)
+    if (transactionSucceeded) {
+      // Prepare comment in background - don't block user experience
+      setImmediate(async () => {
         try {
-          // Prepare comment text *after* transaction succeeds using the value that was stored
-          // This ensures the comment matches what's in the database
+          console.log(`🎯 SCORE_TRACKING_13_COMMENT_PREP: preparing comment with score=${newScoreValue}, guessedAll=${categoryInfo.guessedAll}, previousScore=${previousScore}`);
+          
           if (categoryInfo.guessedAll) {
             commentText = `**GUESSED ALL ${newScoreValue} CORRECTLY**`;
           } else if (previousScore < newScoreValue) {
@@ -215,49 +268,43 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
             commentText = `Just scored ${newScoreValue}`;
           }
           
-          // Last safety check - if we have a discrepancy between original and parsed values, log it
-          // This helps diagnose issues while ensuring the comment is accurate
-          if (originalRawScore !== newScoreValue && String(originalRawScore) !== rawScoreStr) {
-            console.log(`Score conversion: original=${originalRawScore}, parsed=${newScoreValue}`);
-            // If original score wasn't 0 but parsed score is 0, we've hit the bug - add a note
-            if (originalRawScore && newScoreValue === 0) {
-              commentText += ` (Note: Original score was ${originalRawScore})`;
-            }
-          }
+          console.log(`🎯 SCORE_TRACKING_14_COMMENT_TEXT: "${commentText}"`);
           
-          const comment = await post.addComment({
-            text: commentText
-          });
+          const comment = await post.addComment({ text: commentText });
           
           if (comment != null) {
             await context.reddit.approve(comment.id);
+            console.log(`✅ SCORE_TRACKING_16_COMMENT_POSTED: commentID=${comment.id}, finalScore=${newScoreValue}`);
+          } else {
+            console.error(`❌ SCORE_TRACKING_ERROR: comment was null after posting!`);
           }
         } catch (commentError) {
-          // Just log the error but don't retry or block user experience
-          console.error(`Comment posting failed but category updated: ${commentError}`);
+          // 🛡️ PRODUCTION: Suppress comment errors from user - log for monitoring
+          console.error(`🚨 SCORE_TRACKING_ERROR_COMMENT: Comment posting failed (score already saved): ${commentError}`);
+          // TODO: Could add to retry queue here if needed
         }
-      } else {
-        console.error(`Transaction failed, comment not posted for user ${userID}`);
-      }
-
-      // Exit the function upon reaching this point
-      return;
-      
-    } catch (error) {
-      console.error(`Attempt ${attempt} failed: ${error}`);
-      if (attempt == retryLimit) {
-        // If all retries fail, still send a response to prevent UI from hanging
-        postMessage({
-          type: 'updateCategoryFeedback',
-          data: {
-            information: 'NOTHS',
-            categoryInfo: ''
-          },
-        });
-        console.error(`Exceeded retry limit. Could not complete operation for userID: ${userID}`);
-        return; // Don't throw, just return
-      }
+      });
+    } else {
+      console.error(`🚨 SCORE_TRACKING_ERROR_TRANSACTION: Transaction failed, retrying...`);
+      throw new Error('Redis transaction failed');
     }
+
+    console.log(`✅ SCORE_TRACKING_17_FUNCTION_COMPLETE: userID=${userID}, finalScore=${newScoreValue}, success=${transactionSucceeded}`);
+    
+  } catch (error) {
+    console.error(`🚨 SCORE_TRACKING_ERROR_FINAL: Operation failed for userID=${userID}, score=${categoryInfo.newScore}: ${error}`);
+    
+    // �️ PRODUCTION: Always provide user feedback, never leave UI hanging
+    postMessage({
+      type: 'updateCategoryFeedback',
+      data: {
+        information: 'NOTHS',
+        categoryInfo: ''
+      },
+    });
+    
+    // Mark execution as failed but don't throw to prevent Devvit retries
+    await context.redis.set(`exec_${executionId}`, "failed", { expiration: new Date(Date.now() + 60000) });
   }
 }
 

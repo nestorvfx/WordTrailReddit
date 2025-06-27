@@ -1,4 +1,4 @@
-import { Devvit, useState, useForm, useInterval, useWebView } from '@devvit/public-api';
+import { Devvit, useState, useAsync, useForm, useInterval, useWebView } from '@devvit/public-api';
 import { WebViewMessage } from '../types.js';
 import { sendCategories, sendWords, updateCategoryInfo, deleteCategory, deleteAllUserData } from '../handlers/categoryHandlers.js';
 import { sendUserData, createCategory } from '../handlers/userHandlers.js';
@@ -46,7 +46,8 @@ export const MainWebView = (context: any) => {
 
   periodCheck();
 
-  const [user] = useState(async () => {
+  // Convert blocking useState to non-blocking useAsync for user data
+  const { data: user, loading: userLoading, error: userError } = useAsync(async () => {
     const retryLimit = 1;
 
     for (let attempt = 1; attempt <= retryLimit; attempt++) {
@@ -66,22 +67,38 @@ export const MainWebView = (context: any) => {
         if (attempt == retryLimit) {
           console.error(`Exceeded retry limit. Could not complete operation for sending category info.`);
           return '[guestUser]:n';
-          throw error;
         }
       }
     }
     return '[guestUser]:n';
   });
 
-  const [username] = useState(() => { return user.split(':')[0] });
-  const [userID] = useState(() => { return context.userId ?? '' });
-  const [isUserModerator] = useState(() => { return user.split(':')[1] == 'y' });
+  // Handle user loading state and derive dependent values
+  if (userLoading) {
+    return <LoadingPreview />;
+  }
 
-  const [isOnlyModerators] = useState(async () => { return (await context.settings.get('moderator-categories') ?? false) });
+  if (userError) {
+    console.error('User authentication error:', userError);
+  }
 
-  const [userAllowedToCreate] = useState((isOnlyModerators && isUserModerator) || !isOnlyModerators);
+  const username = user?.split(':')[0] || '[guestUser]';
+  const userID = context.userId ?? '';
+  const isUserModerator = user?.split(':')[1] === 'y';
 
-  const [currentUserInfo, setCurrentUserInfo] = useState(async () => {
+  // Convert settings fetch to useAsync
+  const { data: isOnlyModerators, loading: settingsLoading } = useAsync(async () => {
+    return (await context.settings.get('moderator-categories') ?? false);
+  });
+
+  if (settingsLoading) {
+    return <LoadingPreview />;
+  }
+
+  const userAllowedToCreate = (isOnlyModerators && isUserModerator) || !isOnlyModerators;
+
+  // Convert current user info to useAsync with dependency on userID and username
+  const { data: currentUserInfo, loading: userInfoLoading, error: userInfoError } = useAsync(async () => {
     const retryLimit = 1;
     for (let attempt = 1; attempt <= retryLimit; attempt++) {
       try {
@@ -102,9 +119,14 @@ export const MainWebView = (context: any) => {
       }
     }
     return '';
-  });
+  }, { depends: [userID, username] });
 
-  const [latestCategoryCode, setLatestCategoryCode] = useState(async () => {
+  if (userInfoLoading) {
+    return <LoadingPreview />;
+  }
+
+  // Convert latestCategoryCode to useAsync
+  const { data: latestCategoryCode, loading: categoryCodeLoading } = useAsync(async () => {
     const retryLimit = 1;
     for (let attempt = 1; attempt <= retryLimit; attempt++) {
       try {
@@ -128,30 +150,58 @@ export const MainWebView = (context: any) => {
     return '';
   });
 
+  if (categoryCodeLoading) {
+    return <LoadingPreview />;
+  }
+
   const [webviewVisible, setWebviewVisible] = useState(false);
   const [formInputs, setFormInputs] = useState({ title: '', words: '' });
 
-  const [typeOfPost] = useState(async () => {
-    return (context.postId == (await context.redis.get('mainPostID') ?? '') ? 0 : (await context.redis.hGet('postCategories', context.postId ?? '') ? 1 : 2));
-  });
+  // Convert typeOfPost to useAsync with dependencies
+  const { data: typeOfPost, loading: typeOfPostLoading } = useAsync(async () => {
+    const mainPostID = await context.redis.get('mainPostID') ?? '';
+    const postCategoryData = await context.redis.hGet('postCategories', context.postId ?? '');
+    
+    if (context.postId === mainPostID) {
+      return 0;
+    } else if (postCategoryData) {
+      return 1;
+    } else {
+      return 2;
+    }
+  }, { depends: [context.postId] });
 
-  const [postCategory] = useState(async () => {
-    if (typeOfPost == 0) {
+  if (typeOfPostLoading) {
+    return <LoadingPreview />;
+  }
+
+  // Convert postCategory to useAsync with dependencies
+  const { data: postCategory, loading: postCategoryLoading } = useAsync(async () => {
+    if (typeOfPost === 0) {
       return '';
-    } else if (typeOfPost == 1) {
-      const [categoryCode,] = (await context.redis.hGet('postCategories', context.postId ?? '') ?? '').split(':');
-      const categoryInfo = await context.redis.hGet('usersCategories', categoryCode) ?? '';
-      const categoryWords = await context.redis.hGet('categoriesWords', categoryCode) ?? '';
-      if (categoryCode && categoryInfo && categoryWords) {
-        return categoryCode + ':' + categoryInfo + ':' + categoryWords;
+    } else if (typeOfPost === 1) {
+      const postCategoryData = await context.redis.hGet('postCategories', context.postId ?? '') ?? '';
+      const [categoryCode] = postCategoryData.split(':');
+      
+      if (categoryCode) {
+        const [categoryInfo, categoryWords] = await Promise.all([
+          context.redis.hGet('usersCategories', categoryCode),
+          context.redis.hGet('categoriesWords', categoryCode)
+        ]);
+        
+        if (categoryInfo && categoryWords) {
+          return categoryCode + ':' + categoryInfo + ':' + categoryWords;
+        }
       }
-      else {
-        return '';
-      }
+      return '';
     } else {
       return '';
     }
-  });
+  }, { depends: [typeOfPost, context.postId] });
+
+  if (postCategoryLoading) {
+    return <LoadingPreview />;
+  }
 
   const { mount, postMessage } = useWebView({
     url: "page.html",
@@ -180,6 +230,8 @@ export const MainWebView = (context: any) => {
             await sendWords(context, message.data.categoryCode, postMessage);
             break;
           case 'updateCategoryInfo':
+            // 🔍 SCORE LOGGING: Log message reception at WebView level
+            console.log(`🎯 SCORE_TRACKING_3_WEBVIEW_RECEIVED: userID=${userID}, username=${username}, messageData=${JSON.stringify(message.data)}, timestamp=${Date.now()}`);
             await updateCategoryInfo(context, message.data, postMessage, username, userID);
             break;
           case 'deleteCategory':
@@ -331,7 +383,7 @@ export const MainWebView = (context: any) => {
           >
             <spacer />
             <text size="xxlarge" weight="bold" color='#f2fffd' outline='thin'>
-              {postCategory.split(':')[2]} Category
+              {postCategory?.split(':')[2] || 'Unknown'} Category
             </text>
             <spacer />
             <text size="xlarge" weight="bold" color='#f2fffd' outline='thin'>
@@ -339,10 +391,10 @@ export const MainWebView = (context: any) => {
             </text>
             <spacer />
             <text size="xlarge" weight="bold" color='#f2fffd' outline='thin'>
-              {postCategory.split(':')[4]}
+              {postCategory?.split(':')[4] || '0'}
             </text>
             <spacer />
-            {parseInt(postCategory.split(':')[4]) > 0 && <text size="xxlarge" weight="bold" color='#f2fffd' outline='thin'>
+            {(postCategory && parseInt(postCategory.split(':')[4]) > 0) && <text size="xxlarge" weight="bold" color='#f2fffd' outline='thin'>
               By {postCategory.split(':')[5]}
             </text>}
             <spacer />
