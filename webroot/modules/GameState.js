@@ -125,7 +125,7 @@ export class GameState {
                 if (this.currentWordIndex <= this.currentWords.length - 1) {
                     this.guess = '';
                     this.totalDeltaTime = 0;
-                    this.totalTime = clamp(this.totalTime - 8, 0, 100);
+                    this.totalTime = clamp(this.totalTime - 10, 0, 100);
                     
                     // Update the cached time string
                     this.formatTime();

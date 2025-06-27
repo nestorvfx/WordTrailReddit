@@ -5,7 +5,7 @@ Play different categories created by users from subreddit or from moderators (wh
 ## Gameplay
 
 * **60-second timer** with countdown display
-* **-8 seconds** from timer for each correct guess (timer won't go below 0:00)
+* **-10 seconds** from timer for each correct guess (timer won't go below 0:00)
 * Dynamic particle trails that evolve over time and reset on correct guesses
 * Game ends when all words are correctly guessed, on incorrect guess, or when timer expires
 * **High scores** tracked per category with creator recognition
@@ -15,7 +15,7 @@ Play different categories created by users from subreddit or from moderators (wh
 
 ### Categories System
 * Browse user-created categories with search functionality
-* Sort by Newest, Most Played, or Highest Score
+* Sort by Newest, Trending, Most Played, or Highest Score
 * Infinite scrolling
 * Time of when category was created
 

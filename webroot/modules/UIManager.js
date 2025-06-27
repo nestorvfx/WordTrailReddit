@@ -66,6 +66,7 @@ export class UIManager {
         this.elements = {};
         this.typeOfConfirm = 'category';
         this.currentSortMethod = 'time';
+        this._lastRequestSource = null; // Track the source of the last categories request
         this.initUIElements();
         
         // Clear categories display initially
@@ -179,6 +180,9 @@ export class UIManager {
                     this.gameState.currentCategoriesCursor = 0;
                     this.gameState.allCategoriesReceived = false;
                     this.gameState.categoriesList = [];
+                    
+                    // Set source flag for this request
+                    this._lastRequestSource = 'playButton';
                     
                     if (callbacks.onPlayClick) callbacks.onPlayClick();
                     break;
@@ -355,6 +359,8 @@ export class UIManager {
                 
                 // Request categories with the new sort method and current direction
                 if (callbacks.onPlayClick) {
+                    // Set source flag for this request
+                    this._lastRequestSource = 'sortChange';
                     callbacks.onPlayClick(sortMethod, this.currentSortReversed);
                 }
             });
@@ -411,6 +417,8 @@ export class UIManager {
                 
                 // Request categories with current sort method and new direction
                 if (this.callbacks.onPlayClick) {
+                    // Set source flag for this request
+                    this._lastRequestSource = 'reverseButton';
                     this.callbacks.onPlayClick(this.currentSortMethod, this.currentSortReversed);
                 }
             });
@@ -554,8 +562,15 @@ export class UIManager {
      * Show the categories selection screen with improved structure
      * @param {string} categoriesData - Categories data string
      * @param {string} sceneType - Type of categories screen to show ('initialPlayCategories', 'playCategories', 'userCategories', 'userCategoriesRemoveOne')
+     * @param {string} source - Source of the display call ('playButton', 'reverseButton', 'sortChange', 'other')
      */
-    displayCategories(categoriesData, sceneType) {
+    displayCategories(categoriesData, sceneType, source = 'other') {
+        // If no source specified, use the last request source and clear it
+        if (source === 'other' && this._lastRequestSource) {
+            source = this._lastRequestSource;
+            this._lastRequestSource = null; // Clear the flag
+        }
+        
         // Step 1: Process incoming data based on scene type (updates gameState.categoriesList)
         this._processCategoriesData(categoriesData, sceneType);
 
@@ -573,7 +588,7 @@ export class UIManager {
 
         // Step 5: Configure mode-specific UI elements (Play vs. Settings)
         if (sceneType.startsWith('play') || sceneType === 'initialPlayCategories') {
-            this._configurePlayModeUI();
+            this._configurePlayModeUI(source);
         } else if (sceneType.startsWith('user')) {
             this._configureSettingsModeUI();
         }
@@ -723,32 +738,40 @@ export class UIManager {
     /**
      * Configures UI elements specifically for the Play mode category view.
      * @private
+     * @param {string} source - Source of the display call ('playButton', 'reverseButton', 'sortChange', 'other')
      */
-    _configurePlayModeUI() {
+    _configurePlayModeUI(source = 'other') {
         this.elements.startButton.style.display = 'block';
         this.elements.deleteCategoryButton.style.display = 'none';
         this.elements.deleteDataButton.style.display = 'none'; // Ensure this is hidden in play mode
         
-        // Reset sort method to default when entering Play mode
-        this.currentSortMethod = 'time';
-        this.currentSortReversed = false;
-        
-        // Update UI to reflect the reset
-        this.elements.currentSortText.textContent = 'Newest';
-        
-        // Reset active sort option in dropdown
-        this.elements.sortOptions.forEach(opt => {
-            if (opt.dataset.sort === this.currentSortMethod) {
-                opt.classList.add('active');
-            } else {
-                opt.classList.remove('active');
+        // Only reset sort method when entering Play mode via Play button, not on reverse/sort changes
+        if (source === 'playButton') {
+            this.currentSortMethod = 'time';
+            this.currentSortReversed = false;
+            
+            // Update UI to reflect the reset
+            this.elements.currentSortText.textContent = 'Newest';
+            
+            // Reset active sort option in dropdown
+            this.elements.sortOptions.forEach(opt => {
+                if (opt.dataset.sort === this.currentSortMethod) {
+                    opt.classList.add('active');
+                } else {
+                    opt.classList.remove('active');
+                }
+            });
+            
+            // Reset reverse sort button
+            if (this.elements.reverseSort) {
+                this.elements.reverseSort.classList.remove('reversed');
+                this.elements.reverseSort.title = "Reverse sort order";
             }
-        });
-        
-        // Reset reverse sort button
-        if (this.elements.reverseSort) {
-            this.elements.reverseSort.classList.remove('reversed');
-            this.elements.reverseSort.title = "Reverse sort order";
+            
+            // Re-sort and re-render the categories list to match the reset sort settings
+            if (this.gameState.categoriesList.length > 0) {
+                this._renderCategoryList('initialPlayCategories');
+            }
         }
     }
 
@@ -758,8 +781,22 @@ export class UIManager {
      */
     _configureSettingsModeUI() {
         this.elements.startButton.style.display = 'none';
-        this.elements.deleteCategoryButton.style.display = 'block';
         this.elements.deleteDataButton.style.display = 'block'; // Ensure this is shown in settings mode
+        
+        // Show delete button only if user is the creator of the selected category
+        if (this.gameState.selectedCategory >= 0 && this.gameState.selectedCategory < this.gameState.categoriesList.length) {
+            const categoryString = this.gameState.categoriesList[this.gameState.selectedCategory];
+            const parts = categoryString.split(':');
+            const creator = parts[1];
+            
+            if (creator === this.gameState.username) {
+                this.elements.deleteCategoryButton.style.display = 'block';
+            } else {
+                this.elements.deleteCategoryButton.style.display = 'none';
+            }
+        } else {
+            this.elements.deleteCategoryButton.style.display = 'none';
+        }
     }
 
 
@@ -792,8 +829,26 @@ export class UIManager {
             if (categoryIndex >= 0 && categoryIndex < this.gameState.categoriesList.length) {
                 this.gameState.setCategoryFromString(this.gameState.categoriesList[categoryIndex]);
                 this.gameState.selectedCategory = categoryIndex; // Store index
+                
+                // Update delete button visibility in Settings mode
+                if (this.elements.startButton.style.display === 'none') { // We're in Settings mode
+                    const categoryString = this.gameState.categoriesList[categoryIndex];
+                    const parts = categoryString.split(':');
+                    const creator = parts[1];
+                    
+                    if (creator === this.gameState.username) {
+                        this.elements.deleteCategoryButton.style.display = 'block';
+                    } else {
+                        this.elements.deleteCategoryButton.style.display = 'none';
+                    }
+                }
             } else {
                 this.gameState.selectedCategory = -1; // Indicate invalid selection
+                
+                // Hide delete button for invalid selection in Settings mode
+                if (this.elements.startButton.style.display === 'none') { // We're in Settings mode
+                    this.elements.deleteCategoryButton.style.display = 'none';
+                }
             }
         };
 
@@ -1054,16 +1109,6 @@ export class UIManager {
                         
                         // Set category in game state
                         this.gameState.setCategoryFromString(categoryString);
-                        
-                        // Show appropriate buttons
-                        this.elements.startButton.style.display = 'block';
-                        
-                        // Show delete button if user is the creator
-                        if (creator === this.gameState.username) {
-                            this.elements.deleteCategoryButton.style.display = 'block';
-                        } else {
-                            this.elements.deleteCategoryButton.style.display = 'none';
-                        }
                     }
                 }
             }
