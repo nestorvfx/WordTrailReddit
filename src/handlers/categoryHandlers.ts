@@ -12,16 +12,48 @@ export async function sendCategories(context: Context, cursor: number, sortMetho
     ? 'categoriesByTime'
     : sortMethod === 'plays'
       ? 'categoriesByPlays'
-      : 'categoriesByScore';
+      : sortMethod === 'trending'
+        ? 'categoriesByTrending'
+        : 'categoriesByScore';
   
   try {
-    // Important: Consistently use the reverse flag for all queries
-    // When reversed is true, we want ascending order (oldest/lowest first) 
-    // When reversed is false, we want descending order (newest/highest first) - default
-    const sortedCategories = await context.redis.zRange(sortedSetKey, start, stop, { 
-      by: 'rank',
-      reverse: !reversed  // Invert the reverse flag since our default is descending
-    });
+    let sortedCategories;
+    
+    // Special handling for trending sort (30-day filter)
+    if (sortMethod === 'trending') {
+      const now = Math.floor(Date.now() / 1000);
+      const thirtyDaysAgo = now - (30 * 86400);
+      
+      // Get all trending categories first
+      const allTrending = await context.redis.zRange(sortedSetKey, 0, -1, { 
+        by: 'rank',
+        reverse: !reversed
+      });
+      
+      // Filter to last 30 days and apply pagination
+      const recentCategories: any[] = [];
+      for (const category of allTrending) {
+        const score = await context.redis.zScore('categoriesByTrending', category.member);
+        if (score !== null && score !== undefined) {
+          const lastUpdateTime = Math.floor(parseFloat(score.toString()));
+          if (lastUpdateTime >= thirtyDaysAgo) {
+            recentCategories.push(category);
+          }
+        }
+      }
+      
+      // Apply pagination to filtered results
+      const startIndex = start;
+      const endIndex = Math.min(stop + 1, recentCategories.length);
+      sortedCategories = recentCategories.slice(startIndex, endIndex);
+      
+    } else {
+      // Normal handling for other sort methods
+      sortedCategories = await context.redis.zRange(sortedSetKey, start, stop, { 
+        by: 'rank',
+        reverse: !reversed
+      });
+    }
     
     if (sortedCategories.length === 0) {
       // No categories found, send empty result
@@ -171,6 +203,22 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
     // Update sorted set for plays
     await txn.zAdd('categoriesByPlays', {
       score: newPlayCount,
+      member: categoryInfo.categoryCode
+    });
+
+    // Calculate and update trending score
+    const now = Math.floor(Date.now() / 1000);
+    const categoryTimestamp = parseInt(previousInfo[7]); // Existing timestamp field
+    const daysSinceCreation = (now - categoryTimestamp) / 86400;
+    const averageePlaysPerDay = newPlayCount / Math.max(1, daysSinceCreation);
+    const recentActivityFactor = Math.min(15, averageePlaysPerDay); // Cap at 15 plays/day
+    const recencyBonus = Math.max(0, 30 - daysSinceCreation); // 30-day new bonus
+    const popularityScore = Math.log(1 + newPlayCount) * 3; // Logarithmic growth
+    const activityScore = (recentActivityFactor * 30) + popularityScore + recencyBonus;
+    const trendingScore = parseFloat(`${now}.${Math.min(99999, Math.floor(activityScore))}`);
+
+    await txn.zAdd('categoriesByTrending', {
+      score: trendingScore,
       member: categoryInfo.categoryCode
     });
     
@@ -349,6 +397,7 @@ export async function deleteCategory(context: Context, categoryCode: string, use
       await context.redis.zRem('categoriesByTime', [categoryCode]);
       await context.redis.zRem('categoriesByPlays', [categoryCode]);
       await context.redis.zRem('categoriesByScore', [categoryCode]);
+      await context.redis.zRem('categoriesByTrending', [categoryCode]);
       
       if (postId) {
         await context.redis.hDel('postCategories', [postId]);
@@ -533,6 +582,7 @@ export async function deleteAllUserData(context: Context, userID: string, postMe
           await txn.zRem('categoriesByTime', [categoryCode]);
           await txn.zRem('categoriesByPlays', [categoryCode]);
           await txn.zRem('categoriesByScore', [categoryCode]);
+          await txn.zRem('categoriesByTrending', [categoryCode]);
         }
       }
 

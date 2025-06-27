@@ -128,3 +128,37 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
     }
   }
 }
+
+export async function cleanupTrendingCategories(event: any, context: JobContext): Promise<void> {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const thirtyDaysAgo = now - (30 * 86400);
+    
+    // Get all trending categories with scores
+    const allTrending = await context.redis.zRange('categoriesByTrending', 0, -1, { 
+      by: 'rank',
+      reverse: false
+    });
+    
+    // Check each category's timestamp and remove if expired
+    const expiredCategories: string[] = [];
+    
+    for (const category of allTrending) {
+      // Get the score to check timestamp
+      const score = await context.redis.zScore('categoriesByTrending', category.member);
+      if (score !== null && score !== undefined) {
+        const lastUpdateTime = Math.floor(parseFloat(score.toString()));
+        if (lastUpdateTime < thirtyDaysAgo) {
+          expiredCategories.push(category.member);
+        }
+      }
+    }
+    
+    if (expiredCategories.length > 0) {
+      await context.redis.zRem('categoriesByTrending', expiredCategories);
+      console.log(`Cleaned up ${expiredCategories.length} expired trending categories`);
+    }
+  } catch (error) {
+    console.error('Error cleaning up trending categories:', error);
+  }
+}

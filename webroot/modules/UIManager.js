@@ -335,6 +335,7 @@ export class UIManager {
                 // Update UI
                 this.elements.currentSortText.textContent = 
                     sortMethod === 'time' ? 'Newest' : 
+                    sortMethod === 'trending' ? 'Trending' :
                     sortMethod === 'plays' ? 'Plays' : 'High Score';
                 
                 // Remove active class from all options
@@ -727,6 +728,28 @@ export class UIManager {
         this.elements.startButton.style.display = 'block';
         this.elements.deleteCategoryButton.style.display = 'none';
         this.elements.deleteDataButton.style.display = 'none'; // Ensure this is hidden in play mode
+        
+        // Reset sort method to default when entering Play mode
+        this.currentSortMethod = 'time';
+        this.currentSortReversed = false;
+        
+        // Update UI to reflect the reset
+        this.elements.currentSortText.textContent = 'Newest';
+        
+        // Reset active sort option in dropdown
+        this.elements.sortOptions.forEach(opt => {
+            if (opt.dataset.sort === this.currentSortMethod) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
+        
+        // Reset reverse sort button
+        if (this.elements.reverseSort) {
+            this.elements.reverseSort.classList.remove('reversed');
+            this.elements.reverseSort.title = "Reverse sort order";
+        }
     }
 
     /**

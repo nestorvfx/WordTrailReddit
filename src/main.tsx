@@ -2,7 +2,7 @@ import './createPost.js';
 import { Devvit } from '@devvit/public-api';
 import { MainWebView } from './components/MainWebView.js';
 import { handlePostDelete, handleAppInstall } from './handlers/eventHandlers.js';
-import { initialPost, removeUserDataPeriodically } from './handlers/schedulerHandlers.js';
+import { initialPost, removeUserDataPeriodically, cleanupTrendingCategories } from './handlers/schedulerHandlers.js';
 
 Devvit.configure({
     redditAPI: true,
@@ -34,6 +34,11 @@ Devvit.addSchedulerJob({
 Devvit.addSchedulerJob({
     name: 'removeUserDataPeriodically',
     onRun: removeUserDataPeriodically,
+});
+
+Devvit.addSchedulerJob({
+    name: 'cleanupTrendingCategories',
+    onRun: cleanupTrendingCategories,
 });
 
 export default Devvit;

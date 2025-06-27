@@ -121,6 +121,13 @@ export async function createCategory(context: Context, userID: string, categoryT
           member: newCode
         });
 
+        // Initialize trending score for new category
+        const initialTrendingScore = parseFloat(`${timestamp}.30`); // Just recency bonus for new categories
+        await txn.zAdd('categoriesByTrending', {
+          score: initialTrendingScore,
+          member: newCode
+        });
+
         await txn.exec();
 
         if (post != null) {
