@@ -65,7 +65,7 @@ export class UIManager {
         this.gameState = gameState;
         this.elements = {};
         this.typeOfConfirm = 'category';
-        this.currentSortMethod = 'time'; // Changed default sort from 'plays' to 'time' (newest first)
+        this.currentSortMethod = 'time';
         this.initUIElements();
         
         // Clear categories display initially

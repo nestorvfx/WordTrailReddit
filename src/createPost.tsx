@@ -21,7 +21,6 @@ Devvit.addMenuItem({
     location: 'subreddit',
     onPress: async (_event, context) => {
         const mainPostID = await context.redis.get('mainPostID');
-        console.log(mainPostID);
         if (mainPostID == '') {
             const { reddit, ui } = context;
             const subreddit = await reddit.getCurrentSubreddit();

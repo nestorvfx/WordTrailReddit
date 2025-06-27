@@ -178,66 +178,21 @@ class App {
      * @param {boolean} completed - Whether the game was completed
      */
     displayEndScreen(completed) {
-        // 🔍 MOBILE BUG DETECTION: Comprehensive environment and state capture
-        const logTimestamp = Date.now();
-        const userAgent = navigator.userAgent;
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-        const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-        const isAndroid = /Android/.test(userAgent);
-        
-        // 🔍 SCORE LOGGING: Capture EVERYTHING at game end
-        const scoreAtGameEnd = this.gameState.currentWordIndex;
-        const gameStateSnapshot = {
-            currentWordIndex: this.gameState.currentWordIndex,
-            gameFinished: this.gameState.gameFinished,
-            gameStarted: this.gameState.gameStarted,
-            totalWords: this.gameState.words ? this.gameState.words.length : 'undefined'
-        };
-        
-        console.log(`🎯 SCORE_TRACKING_1_GAME_END: score=${scoreAtGameEnd}, completed=${completed}, timestamp=${logTimestamp}, categoryCode=${this.gameState.categoryCode}`);
-        console.log(`🌐 GAME_END_ENVIRONMENT: Mobile=${isMobile}, iOS=${isIOS}, Android=${isAndroid}, Agent=${userAgent}`);
-        console.log(`📊 GAME_END_STATE: ${JSON.stringify(gameStateSnapshot)}`);
-        
-        // 🚨 CRITICAL BUG DETECTION: Check for the impossible scenario
-        if (scoreAtGameEnd === 0 && completed === true) {
-            console.error(`🚨 IMPOSSIBLE_STATE_DETECTED: score=0 but completed=true - THIS IS THE BUG!`);
-            console.error(`🚨 BUG_ENVIRONMENT: Mobile=${isMobile}, iOS=${isIOS}, Android=${isAndroid}`);
-            console.error(`🚨 BUG_STATE_DUMP: ${JSON.stringify(gameStateSnapshot)}`);
-            console.error(`🚨 BUG_USER_AGENT: ${userAgent}`);
-            
-            // Try to get stack trace to see what led to this state
-            console.error(`🚨 BUG_STACK_TRACE:`, new Error().stack);
-        }
-        
         this.gameState.gameFinished = true;
         this.gameState.gameStarted = false;
         
-        // 🔍 SCORE LOGGING: Verify score hasn't changed after state updates
-        const scoreAfterStateUpdate = this.gameState.currentWordIndex;
-        if (scoreAfterStateUpdate !== scoreAtGameEnd) {
-            console.error(`🚨 SCORE_CORRUPTION_DETECTED_1: score changed from ${scoreAtGameEnd} to ${scoreAfterStateUpdate} after state update!`);
-        }
-        
-        // 🔍 FINAL VALIDATION: One more check before sending to backend
-        const finalScore = scoreAfterStateUpdate;
-        if (finalScore === 0 && completed === true) {
-            console.error(`🚨 FINAL_VALIDATION_FAILED: About to send impossible state (score=0, completed=true) to backend!`);
-        }
-        
-        // Send message to update category info
         this.messageHandler.updateCategoryInfo({
             categoryCode: this.gameState.categoryCode,
-            newScore: finalScore,
+            newScore: this.gameState.currentWordIndex,
             guessedAll: completed
         });
         
-        // Reset parameters for "SCORE" display with longer trails (1.8x)
         this.particleSystem.updateParams({
             letterScaling: 1.5,
             yOffset: 1.2 * clamp(this.sceneManager.camera.aspect, 0.9, 1.8),
             xRemapRange: 1,
             radiusScaling: 0,
-            isEndScreen: true,  // Special flag for end screen
+            isEndScreen: true,
         });
         
         this.particleSystem.setNewWord('SCORE');

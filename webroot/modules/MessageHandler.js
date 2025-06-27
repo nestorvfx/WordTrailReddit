@@ -69,7 +69,7 @@ export class MessageHandler {
                 this.handleDeleteCategoryResponse(message.data);
                 break;
             default:
-                console.log('Unhandled message type:', message.type);
+                break;
         }
     }
 
@@ -373,7 +373,6 @@ export class MessageHandler {
      * Start form for category creation
      */
     startCategoryForm() {
-        console.log("Sending startForm message to parent window");
         window.parent.postMessage(
             { type: 'startForm', data: {} },
             '*'
@@ -414,62 +413,10 @@ export class MessageHandler {
      * Update category information
      */
     updateCategoryInfo(data) {
-        // 🔍 MOBILE BUG DETECTION: Comprehensive environment logging
-        const logTimestamp = Date.now();
-        const userAgent = navigator.userAgent;
-        const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-        const isIOS = /iPad|iPhone|iPod/.test(userAgent);
-        const isAndroid = /Android/.test(userAgent);
-        const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
-        const isChrome = /Chrome/.test(userAgent);
-        
-        console.log(`🌐 ENVIRONMENT_DETECTION: Mobile=${isMobile}, iOS=${isIOS}, Android=${isAndroid}, Safari=${isSafari}, Chrome=${isChrome}`);
-        console.log(`🌐 USER_AGENT: ${userAgent}`);
-        
-        // 🔍 SCORE LOGGING: Enhanced logging with environment context
-        console.log(`🎯 SCORE_TRACKING_2_SENDING_TO_BACKEND: newScore=${data.newScore}, scoreType=${typeof data.newScore}, data=${JSON.stringify(data)}, timestamp=${logTimestamp}`);
-        
-        // 🚨 SCORE 0 BUG DETECTION: Enhanced mobile-specific detection
-        if (data.newScore === 0 && data.guessedAll === true) {
-            console.error(`🚨 SCORE_0_BUG_DETECTED_FRONTEND: Sending score=0 but guessedAll=true - THIS IS THE BUG!`);
-            console.error(`🚨 SCORE_0_BUG_ENVIRONMENT: Mobile=${isMobile}, iOS=${isIOS}, Android=${isAndroid}, Safari=${isSafari}`);
-            console.error(`🚨 SCORE_0_BUG_AGENT: ${userAgent}`);
-            
-            // Log the exact state that led to this bug
-            console.error(`🚨 SCORE_0_BUG_STATE: gameState.currentWordIndex=${this.gameState?.currentWordIndex}, gameFinished=${this.gameState?.gameFinished}`);
-        }
-        
-        // 🔍 ADDITIONAL VALIDATION: Check for other suspicious patterns
-        if (data.newScore === 0 && data.guessedAll === false) {
-            console.log(`ℹ️ ZERO_SCORE_NORMAL: User legitimately scored 0`);
-        }
-        
-        if (data.newScore === null || data.newScore === undefined) {
-            console.error(`🚨 NULL_SCORE_DETECTED: newScore is ${data.newScore}, this could cause parsing issues`);
-        }
-        
-        if (typeof data.newScore !== 'number') {
-            console.error(`🚨 NON_NUMBER_SCORE: newScore type is ${typeof data.newScore}, value=${data.newScore}`);
-        }
-        
-        // 🔍 MEMORY PRESSURE DETECTION: Log if we're under memory pressure (mobile issue)
-        if (window.performance && window.performance.memory) {
-            const memory = window.performance.memory;
-            const memoryUsage = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
-            console.log(`📊 MEMORY_USAGE: ${memoryUsage.toFixed(1)}% (${memory.usedJSHeapSize}/${memory.jsHeapSizeLimit})`);
-            
-            if (memoryUsage > 80) {
-                console.warn(`⚠️ HIGH_MEMORY_USAGE: ${memoryUsage.toFixed(1)}% - this could cause state corruption on mobile`);
-            }
-        }
-        
         window.parent.postMessage(
             { type: 'updateCategoryInfo', data },
             '*'
         );
-        
-        // 🔍 SCORE LOGGING: Confirm message was sent
-        console.log(`✅ SCORE_TRACKING_3_MESSAGE_SENT: postMessage called with score=${data.newScore}`);
     }
 
     /**
@@ -533,7 +480,6 @@ export class MessageHandler {
                     }
                 } catch (err) {
                     // If there's any error in the UI update, fallback to refreshing data
-                    console.log("Error updating UI after deletion, refreshing data instead");
                     this.requestUserData();
                 }
             } else {

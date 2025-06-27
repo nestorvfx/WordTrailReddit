@@ -6,9 +6,7 @@ import { LoadingPreview } from '../components/LoadingPreview.js';
 export async function sendUserData(context: Context, userID: string, postMessage: (message: WebViewMessage) => void): Promise<void> {
   const userData = (await context.redis.hGet('userIDs', userID)) ?? '';
   
-  // Check if user data contains the created categories marker
   if (!userData.includes(':c:')) {
-    // No created categories, send empty data immediately
     postMessage({
       type: 'sendUserData',
       data: {
@@ -44,7 +42,6 @@ export async function createCategory(context: Context, userID: string, categoryT
   const retryLimit = 5;
   for (let attempt = 1; attempt <= retryLimit; attempt++) {
     try {
-      // Validate inputs against required patterns
       const regexWords = /^([a-zA-Z]+(?: [a-zA-Z]+)*)(?:,([a-zA-Z]+(?: [a-zA-Z]+)*))*$/;
       const regexTitle = /^[a-zA-Z0-9-_ ]{1,16}$/;
 
@@ -56,7 +53,6 @@ export async function createCategory(context: Context, userID: string, categoryT
       const wordsCorrect = wordsRegexCorrect && wordsList.length >= 10 && wordsList.length <= 100;
 
       if (wordsCorrect && titleCorrect) {
-        // Create category with validated inputs
         const currentCode = await context.redis.get('latestCategoryCode');
         if (currentCode == undefined) {
           continue;
@@ -68,7 +64,6 @@ export async function createCategory(context: Context, userID: string, categoryT
           continue;
         }
         
-        // Update user's category list
         let newInfo = cUserInfo.includes(':c:') ? ':' + newCode : ':c:' + newCode;
         const hIndex = cUserInfo.indexOf(':h:');
         newInfo = hIndex != -1
@@ -77,7 +72,6 @@ export async function createCategory(context: Context, userID: string, categoryT
 
         const txn = await context.redis.watch('latestCategoryCode');
 
-        // Create post for category
         const postOptions = {
           title: 'Play ' + categoryTitle + ' category',
           subredditName: context.subredditName ?? '',
@@ -87,10 +81,8 @@ export async function createCategory(context: Context, userID: string, categoryT
         const post = await context.reddit.submitPost(postOptions);
         const timestamp = Math.floor(Date.now() / 1000);
 
-        // Fix: Use only the pure username part from user info
         const categoryInfo = `${cUserInfo.split(':')[0]}:${categoryTitle}:0:0:::${post.id}:${timestamp}`;
 
-        // Store all category data in transaction
         await txn.multi();
         await txn.hSet('postCategories', { [post.id]: newCode + ':' + userID });
         await txn.set('latestCategoryCode', newCode);
@@ -121,8 +113,7 @@ export async function createCategory(context: Context, userID: string, categoryT
           member: newCode
         });
 
-        // Initialize trending score for new category
-        const initialTrendingScore = parseFloat(`${timestamp}.30`); // Just recency bonus for new categories
+        const initialTrendingScore = parseFloat(`${timestamp}.30`);
         await txn.zAdd('categoriesByTrending', {
           score: initialTrendingScore,
           member: newCode
@@ -149,7 +140,6 @@ export async function createCategory(context: Context, userID: string, categoryT
         return true;
       }
       else {
-        // Show appropriate validation error message
         let toastMessage = '';
         if (!wordsCorrect && !titleCorrect) {
           toastMessage = 'Both fields have been incorrectly submitted';
@@ -178,7 +168,6 @@ export async function createCategory(context: Context, userID: string, categoryT
       }
     }
     catch (error) {
-      // Only log errors during development, not in production
       if (attempt == retryLimit) {
         postMessage({
           type: 'formCorrect',
@@ -187,7 +176,6 @@ export async function createCategory(context: Context, userID: string, categoryT
           },
         });
         
-        // Don't throw the error in production, just return false
         return false;
       }
     }

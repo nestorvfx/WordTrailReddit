@@ -90,8 +90,6 @@ export function scheduleMaintenanceWarning(callback) {
         
         const timeUntilWarning = targetTime.getTime() - now.getTime();
         
-        console.log(`Scheduling maintenance warning for ${timeUntilWarning/60000} minutes from now`);
-        
         // Set a timer to call the callback when we reach the warning period
         return setTimeout(callback, timeUntilWarning);
     }

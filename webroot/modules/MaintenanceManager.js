@@ -21,12 +21,10 @@ export class MaintenanceManager {
         
         if (minutesUntil >= 0) {
             // Already in warning period or maintenance window
-          //  console.log(`Maintenance is ${minutesUntil > 0 ? 'approaching in ' + minutesUntil + ' minutes' : 'active now'}`);
             this.activateWarningMode();
         } else {
             // Schedule a timer for when we'll reach the warning period
             this.maintenanceTimerId = scheduleMaintenanceWarning(() => {
-            //    console.log('Scheduled maintenance warning timer activated');
                 this.activateWarningMode();
             });
         }

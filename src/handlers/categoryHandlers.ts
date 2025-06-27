@@ -117,25 +117,10 @@ export async function sendWords(context: Context, categoryCode: string, postMess
 }
 
 export async function updateCategoryInfo(context: Context, categoryInfo: CategoryUpdateInfo, postMessage: (message: WebViewMessage) => void, username: string, userID: string): Promise<void> {
-  // 🔍 PRODUCTION: Generate unique execution ID to prevent duplicates
   const executionId = `score_${userID}_${categoryInfo.categoryCode}_${Date.now()}`;
-  const requestTimestamp = Date.now();
-  console.log(`🎯 SCORE_TRACKING_4_BACKEND_RECEIVED: executionId=${executionId}, userID=${userID}, username=${username}, categoryCode=${categoryInfo.categoryCode}, receivedScore=${categoryInfo.newScore}, scoreType=${typeof categoryInfo.newScore}, guessedAll=${categoryInfo.guessedAll}, timestamp=${requestTimestamp}`);
   
-  // 🚨 SCORE 0 BUG DETECTION: Log detailed score information for analysis
-  if (categoryInfo.newScore === 0 && categoryInfo.guessedAll === true) {
-    console.error(`🚨 SCORE_0_BUG_DETECTED: User reports guessedAll=true but score=0! This is the bug we're hunting!`);
-    console.error(`🚨 SCORE_0_BUG_CONTEXT: userID=${userID}, username=${username}, categoryCode=${categoryInfo.categoryCode}`);
-    console.error(`🚨 SCORE_0_BUG_RAW_DATA: ${JSON.stringify(categoryInfo)}`);
-  }
-  
-  // 🔍 ENVIRONMENT LOGGING: Track potential mobile/browser patterns
-  console.log(`🌐 ENVIRONMENT_INFO: Processing score for user=${username}, value=${categoryInfo.newScore}, type=${typeof categoryInfo.newScore}, stringified="${String(categoryInfo.newScore)}"`);
-  
-  // 🛡️ PRODUCTION: Check for duplicate execution (idempotency)
   const duplicateCheck = await context.redis.get(`exec_${executionId}`);
   if (duplicateCheck) {
-    console.log(`🛡️ DUPLICATE_EXECUTION_PREVENTED: ${executionId} already processed`);
     postMessage({
       type: 'updateCategoryFeedback',
       data: { information: 'NOTHS', categoryInfo: '' }
@@ -143,7 +128,6 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
     return;
   }
   
-  // 🛡️ PRODUCTION: Mark execution as in-progress with TTL
   await context.redis.set(`exec_${executionId}`, "processing", { expiration: new Date(Date.now() + 30000) });
   
   try {
@@ -155,65 +139,35 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
     const post = await context.reddit.getPostById(previousInfo[6]);
     
     if (cUserInfo == '' || post == undefined) {
-      console.error(`� SCORE_TRACKING_ERROR: Critical data missing - userInfo=${cUserInfo == '' ? 'empty' : 'ok'}, post=${post == undefined ? 'undefined' : 'ok'}`);
       throw new Error('Critical data unavailable');
     }
 
-    // 🔍 SCORE LOGGING: Track score parsing with detailed information
-    console.log(`🎯 SCORE_TRACKING_5_PARSING_START: originalValue=${categoryInfo.newScore}, originalType=${typeof categoryInfo.newScore}`);
-    
-    // 🛡️ PRODUCTION: Robust score parsing with safeguards
-    const rawScoreStr = String(categoryInfo.newScore || 0);
-    console.log(`🎯 SCORE_TRACKING_6_STRING_CONVERSION: stringified="${rawScoreStr}"`);
-    
-    const parseAttempt = parseInt(rawScoreStr);
-    console.log(`🎯 SCORE_TRACKING_7_PARSE_ATTEMPT: parseInt_result=${parseAttempt}, isNaN=${isNaN(parseAttempt)}`);
-    
-    const newScoreValue = Math.max(0, parseAttempt || 0);
-    console.log(`🎯 SCORE_TRACKING_8_FINAL_PARSED: finalScore=${newScoreValue}`);
-    
-    // Store the score in the original raw format for debugging
+    const newScoreValue = Math.max(0, parseInt(String(categoryInfo.newScore || 0)) || 0);
     const originalRawScore = categoryInfo.newScore;
     
-    // 🔍 SCORE LOGGING: Check for score corruption during parsing
-    if (originalRawScore !== newScoreValue) {
-      if (typeof originalRawScore === 'number' && originalRawScore > 0 && newScoreValue === 0) {
-        console.error(`🚨 SCORE_CORRUPTION_DETECTED_2: CRITICAL parsing corruption! original=${originalRawScore} (${typeof originalRawScore}) became parsed=${newScoreValue}`);
-      } else {
-        console.log(`ℹ️ SCORE_CONVERSION_NORMAL: original=${originalRawScore} (${typeof originalRawScore}) → parsed=${newScoreValue} (${typeof newScoreValue})`);
-      }
-    }
-    
-    // 🛡️ PRODUCTION: CRITICAL PATH - Atomic Redis Transaction (Score Storage Priority)
     let transactionSucceeded = false;
     let commentText = '';
     
-    // Begin optimistic locking transaction
     const txn = await context.redis.watch('latestCategoryCode');
     await txn.multi();
     
-    // Parse scores for comparison
     const previousScore = parseInt(previousInfo[3]);
-    console.log(`🎯 SCORE_TRACKING_9_PREVIOUS_SCORE: previousScore=${previousScore}, newScore=${newScoreValue}, isHighScore=${previousScore < newScoreValue}`);
     
-    // Always increment play count
     const newPlayCount = parseInt(previousInfo[2]) + 1;
     newInfo[2] = newPlayCount.toString();
     
-    // Update sorted set for plays
     await txn.zAdd('categoriesByPlays', {
       score: newPlayCount,
       member: categoryInfo.categoryCode
     });
 
-    // Calculate and update trending score
     const now = Math.floor(Date.now() / 1000);
-    const categoryTimestamp = parseInt(previousInfo[7]); // Existing timestamp field
+    const categoryTimestamp = parseInt(previousInfo[7]);
     const daysSinceCreation = (now - categoryTimestamp) / 86400;
     const averageePlaysPerDay = newPlayCount / Math.max(1, daysSinceCreation);
-    const recentActivityFactor = Math.min(15, averageePlaysPerDay); // Cap at 15 plays/day
-    const recencyBonus = Math.max(0, 30 - daysSinceCreation); // 30-day new bonus
-    const popularityScore = Math.log(1 + newPlayCount) * 3; // Logarithmic growth
+    const recentActivityFactor = Math.min(15, averageePlaysPerDay);
+    const recencyBonus = Math.max(0, 30 - daysSinceCreation);
+    const popularityScore = Math.log(1 + newPlayCount) * 3;
     const activityScore = (recentActivityFactor * 30) + popularityScore + recencyBonus;
     const trendingScore = parseFloat(`${now}.${Math.min(99999, Math.floor(activityScore))}`);
 
@@ -222,21 +176,17 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
       member: categoryInfo.categoryCode
     });
     
-    // Handle high score updates
     if (previousScore < newScoreValue) {
-      console.log(`🎯 SCORE_TRACKING_10_HIGH_SCORE_UPDATE: updating from ${previousScore} to ${newScoreValue} for user ${username}`);
       newInfo[3] = String(newScoreValue);
       newInfo[4] = username;
       newInfo[5] = userID;
       feedback = 'NEWHS';
 
-      // Update sorted set for high score
       await txn.zAdd('categoriesByScore', {
         score: newScoreValue,
         member: categoryInfo.categoryCode
       });
 
-      // Update previous high scorer's user info
       if (previousInfo[5] != userID) {
         let previousHSInfo = (await context.redis.hGet('userIDs', previousInfo[5])) ?? '';
         if (previousHSInfo.includes(':h:')) {
@@ -281,15 +231,9 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
       [categoryInfo.categoryCode]: newInfo.join(':')
     });
 
-    console.log(`🎯 SCORE_TRACKING_11_STORING_IN_REDIS: categoryCode=${categoryInfo.categoryCode}, storingValue=${newScoreValue}, redisString="${newInfo.join(':')}"`);
-
-    // 🛡️ CRITICAL: Execute Redis transaction atomically
     const txnResult = await txn.exec();
     transactionSucceeded = txnResult !== null;
     
-    console.log(`🎯 SCORE_TRACKING_12_REDIS_TRANSACTION: success=${transactionSucceeded}, result=${txnResult ? 'committed' : 'failed/null'}`);
-    
-    // 🛡️ PRODUCTION: ALWAYS send feedback immediately after Redis operation
     postMessage({
       type: 'updateCategoryFeedback',
       data: {
@@ -298,16 +242,11 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
       },
     });
 
-    // 🛡️ PRODUCTION: Mark execution as completed
-    await context.redis.set(`exec_${executionId}`, "completed", { expiration: new Date(Date.now() + 300000) }); // 5 min retention
+    await context.redis.set(`exec_${executionId}`, "completed", { expiration: new Date(Date.now() + 300000) });
 
-    // 🎯 SECONDARY PATH: Comment posting (best effort, non-blocking)
     if (transactionSucceeded) {
-      // Prepare comment in background - don't block user experience
       setImmediate(async () => {
         try {
-          console.log(`🎯 SCORE_TRACKING_13_COMMENT_PREP: preparing comment with score=${newScoreValue}, guessedAll=${categoryInfo.guessedAll}, previousScore=${previousScore}`);
-          
           if (categoryInfo.guessedAll) {
             commentText = `**GUESSED ALL ${newScoreValue} CORRECTLY**`;
           } else if (previousScore < newScoreValue) {
@@ -316,33 +255,22 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
             commentText = `Just scored ${newScoreValue}`;
           }
           
-          console.log(`🎯 SCORE_TRACKING_14_COMMENT_TEXT: "${commentText}"`);
-          
           const comment = await post.addComment({ text: commentText });
           
           if (comment != null) {
             await context.reddit.approve(comment.id);
-            console.log(`✅ SCORE_TRACKING_16_COMMENT_POSTED: commentID=${comment.id}, finalScore=${newScoreValue}`);
-          } else {
-            console.error(`❌ SCORE_TRACKING_ERROR: comment was null after posting!`);
           }
         } catch (commentError) {
-          // 🛡️ PRODUCTION: Suppress comment errors from user - log for monitoring
-          console.error(`🚨 SCORE_TRACKING_ERROR_COMMENT: Comment posting failed (score already saved): ${commentError}`);
-          // TODO: Could add to retry queue here if needed
+          console.error(`Comment posting failed: ${commentError}`);
         }
       });
     } else {
-      console.error(`🚨 SCORE_TRACKING_ERROR_TRANSACTION: Transaction failed, retrying...`);
       throw new Error('Redis transaction failed');
     }
-
-    console.log(`✅ SCORE_TRACKING_17_FUNCTION_COMPLETE: userID=${userID}, finalScore=${newScoreValue}, success=${transactionSucceeded}`);
     
   } catch (error) {
-    console.error(`🚨 SCORE_TRACKING_ERROR_FINAL: Operation failed for userID=${userID}, score=${categoryInfo.newScore}: ${error}`);
+    console.error(`Operation failed for userID=${userID}, score=${categoryInfo.newScore}: ${error}`);
     
-    // �️ PRODUCTION: Always provide user feedback, never leave UI hanging
     postMessage({
       type: 'updateCategoryFeedback',
       data: {
@@ -351,7 +279,6 @@ export async function updateCategoryInfo(context: Context, categoryInfo: Categor
       },
     });
     
-    // Mark execution as failed but don't throw to prevent Devvit retries
     await context.redis.set(`exec_${executionId}`, "failed", { expiration: new Date(Date.now() + 60000) });
   }
 }
@@ -403,12 +330,11 @@ export async function deleteCategory(context: Context, categoryCode: string, use
         await context.redis.hDel('postCategories', [postId]);
       }
       
-      // Send success message back to client
       postMessage({
         type: 'deleteCategoryResponse',
         data: { 
           success: true,
-          categoryCode: categoryCode // Add this line to include the category code in the response
+          categoryCode: categoryCode
         }
       });
       
@@ -416,17 +342,15 @@ export async function deleteCategory(context: Context, categoryCode: string, use
     } catch (error) {
       // Only try again if we haven't reached the retry limit
       if (attempt === retryLimit) {
-        // Instead of throwing, send a response to close the dialog
         postMessage({
           type: 'deleteCategoryResponse',
           data: { 
-            success: true, // Tell the UI it was successful even though there were errors
+            success: true,
             message: 'Category deleted with some warnings'
           }
         });
         return;
       }
-      // Otherwise continue to the next retry attempt
     }
   }
 }
@@ -510,7 +434,6 @@ export async function deleteAllUserData(context: Context, userID: string, postMe
         highScoreCategories.forEach((categoryCode, index) => {
           const categoryData = highScoreCategoryData[index];
           if (categoryData) {
-            // Preserve the timestamp (7th index) if it exists
             const parts = categoryData.split(':');
             const timestamp = parts.length > 7 ? parts[7] : '';
             const postID = parts[6];
@@ -518,7 +441,6 @@ export async function deleteAllUserData(context: Context, userID: string, postMe
             const title = parts[1];
             const plays = parts[2];
             
-            // Include timestamp in updated category data if it exists
             const updatedValue = timestamp ? 
               `${creator}:${title}:${plays}:0:::${postID}:${timestamp}` :
               `${creator}:${title}:${plays}:0:::${postID}`;
@@ -577,7 +499,6 @@ export async function deleteAllUserData(context: Context, userID: string, postMe
         await txn.hDel('categoriesWords', createdCategories);
         await txn.hDel('postCategories', postCategories);
         
-        // Remove all created categories from the sorted sets
         for (const categoryCode of createdCategories) {
           await txn.zRem('categoriesByTime', [categoryCode]);
           await txn.zRem('categoriesByPlays', [categoryCode]);

@@ -230,8 +230,6 @@ export const MainWebView = (context: any) => {
             await sendWords(context, message.data.categoryCode, postMessage);
             break;
           case 'updateCategoryInfo':
-            // 🔍 SCORE LOGGING: Log message reception at WebView level
-            console.log(`🎯 SCORE_TRACKING_3_WEBVIEW_RECEIVED: userID=${userID}, username=${username}, messageData=${JSON.stringify(message.data)}, timestamp=${Date.now()}`);
             await updateCategoryInfo(context, message.data, postMessage, username, userID);
             break;
           case 'deleteCategory':
@@ -249,10 +247,7 @@ export const MainWebView = (context: any) => {
       }
     },
     onUnmount: () => {
-      // Reset to default view when web view is closed
       setWebviewVisible(false);
-      
-      // Reset any form inputs if needed
       setFormInputs({ title: '', words: '' });
     },
   });
@@ -283,12 +278,9 @@ export const MainWebView = (context: any) => {
       } as const;
     },
     async (event) => {
-      // The boolean return value indicates whether form validation passed
       const success = await createCategory(context, userID, event.title, event.words, postMessage);
       
-      // If validation failed, reopen the form with the previously entered values
       if (!success) {
-        // Reopen the form with the same values so user can correct them
         context.ui.showForm(myForm, { 
           title: event.title, 
           words: event.words 
@@ -299,7 +291,6 @@ export const MainWebView = (context: any) => {
 
   const startForm = async () => {
     let correctly = 'false';
-    // Check category limit based on moderator status
     let maxCategories = isOnlyModerators && isUserModerator ? 999 : 10;
     if (userAllowedToCreate) {
       const userInfoArray = (await context.redis.hGet('userIDs', userID) ?? '').split(':');
@@ -321,7 +312,6 @@ export const MainWebView = (context: any) => {
   };
 
   const onShowWebview = () => {
-    // Only show webview if not in maintenance period
     if (!isItPeriodicRemoval) {
       mount();
       setWebviewVisible(true);

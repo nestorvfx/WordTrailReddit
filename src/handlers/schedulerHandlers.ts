@@ -21,7 +21,6 @@ export async function initialPost(event: any, context: JobContext): Promise<void
   await context.redis.set('mainPostID', post.id);
 
   const jobs = await context.scheduler.listJobs();
-  console.log('Scheduled jobs:', jobs);
 }
 
 export async function removeUserDataPeriodically(event: any, context: JobContext): Promise<void> {
@@ -156,7 +155,6 @@ export async function cleanupTrendingCategories(event: any, context: JobContext)
     
     if (expiredCategories.length > 0) {
       await context.redis.zRem('categoriesByTrending', expiredCategories);
-      console.log(`Cleaned up ${expiredCategories.length} expired trending categories`);
     }
   } catch (error) {
     console.error('Error cleaning up trending categories:', error);
