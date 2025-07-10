@@ -1,33 +1,29 @@
 import {
-	ShaderLib,
-	ShaderMaterial,
-	UniformsLib,
-	UniformsUtils,
-	Vector2,
-} from '../three.module.min.js';
+  ShaderLib,
+  ShaderMaterial,
+  UniformsLib,
+  UniformsUtils,
+  Vector2,
+} from "../three.module.min.js";
 
 UniformsLib.line = {
-
-	worldUnits: { value: 1 },
-	linewidth: { value: 1 },
-	resolution: { value: new Vector2( 1, 1 ) },
-	dashOffset: { value: 0 },
-	dashScale: { value: 1 },
-	dashSize: { value: 1 },
-	gapSize: { value: 1 } // todo FIX - maybe change to totalSize
-
+  worldUnits: { value: 1 },
+  linewidth: { value: 1 },
+  resolution: { value: new Vector2(1, 1) },
+  dashOffset: { value: 0 },
+  dashScale: { value: 1 },
+  dashSize: { value: 1 },
+  gapSize: { value: 1 }, // todo FIX - maybe change to totalSize
 };
 
-ShaderLib[ 'line' ] = {
+ShaderLib["line"] = {
+  uniforms: UniformsUtils.merge([
+    UniformsLib.common,
+    UniformsLib.fog,
+    UniformsLib.line,
+  ]),
 
-	uniforms: UniformsUtils.merge( [
-		UniformsLib.common,
-		UniformsLib.fog,
-		UniformsLib.line
-	] ),
-
-	vertexShader:
-	/* glsl */`
+  vertexShader: /* glsl */ `
 		#include <common>
 		#include <color_pars_vertex>
 		#include <fog_pars_vertex>
@@ -240,8 +236,7 @@ ShaderLib[ 'line' ] = {
 		}
 		`,
 
-	fragmentShader:
-	/* glsl */`
+  fragmentShader: /* glsl */ `
 		uniform vec3 diffuse;
 		uniform float opacity;
 		uniform float linewidth;
@@ -400,203 +395,137 @@ ShaderLib[ 'line' ] = {
 			#include <premultiplied_alpha_fragment>
 
 		}
-		`
+		`,
 };
 
 class LineMaterial extends ShaderMaterial {
-
-	constructor( parameters ) {
-
-		super( {
-
-			type: 'LineMaterial',
-			uniforms: UniformsUtils.clone( ShaderLib[ 'line' ].uniforms ),
-
-			vertexShader: ShaderLib[ 'line' ].vertexShader,
-			fragmentShader: ShaderLib[ 'line' ].fragmentShader,
-
-			clipping: true // required for clipping support
-
-		} );
-
-		this.isLineMaterial = true;
-
-		this.setValues( parameters );
-
-	}
-
-	get color() {
-
-		return this.uniforms.diffuse.value;
-
-	}
-
-	set color( value ) {
-
-		this.uniforms.diffuse.value = value;
-
-	}
-
-	get worldUnits() {
-
-		return 'WORLD_UNITS' in this.defines;
-
-	}
-
-	set worldUnits( value ) {
-
-		if ( value === true ) {
-
-			this.defines.WORLD_UNITS = '';
-
-		} else {
-
-			delete this.defines.WORLD_UNITS;
-
-		}
-
-	}
-
-	get linewidth() {
-
-		return this.uniforms.linewidth.value;
-
-	}
-
-	set linewidth( value ) {
-
-		if ( ! this.uniforms.linewidth ) return;
-		this.uniforms.linewidth.value = value;
-
-	}
-
-	get dashed() {
-
-		return 'USE_DASH' in this.defines;
-
-	}
-
-	set dashed( value ) {
-
-		if ( ( value === true ) !== this.dashed ) {
-
-			this.needsUpdate = true;
-
-		}
-
-		if ( value === true ) {
-
-			this.defines.USE_DASH = '';
-
-		} else {
-
-			delete this.defines.USE_DASH;
-
-		}
-
-	}
-
-	get dashScale() {
-
-		return this.uniforms.dashScale.value;
-
-	}
-
-	set dashScale( value ) {
-
-		this.uniforms.dashScale.value = value;
-
-	}
-
-	get dashSize() {
-
-		return this.uniforms.dashSize.value;
-
-	}
-
-	set dashSize( value ) {
-
-		this.uniforms.dashSize.value = value;
-
-	}
-
-	get dashOffset() {
-
-		return this.uniforms.dashOffset.value;
-
-	}
-
-	set dashOffset( value ) {
-
-		this.uniforms.dashOffset.value = value;
-
-	}
-
-	get gapSize() {
-
-		return this.uniforms.gapSize.value;
-
-	}
-
-	set gapSize( value ) {
-
-		this.uniforms.gapSize.value = value;
-
-	}
-
-	get opacity() {
-
-		return this.uniforms.opacity.value;
-
-	}
-
-	set opacity( value ) {
-
-		if ( ! this.uniforms ) return;
-		this.uniforms.opacity.value = value;
-
-	}
-
-	get resolution() {
-
-		return this.uniforms.resolution.value;
-
-	}
-
-	set resolution( value ) {
-
-		this.uniforms.resolution.value.copy( value );
-
-	}
-
-	get alphaToCoverage() {
-
-		return 'USE_ALPHA_TO_COVERAGE' in this.defines;
-
-	}
-
-	set alphaToCoverage( value ) {
-
-		if ( ! this.defines ) return;
-
-		if ( ( value === true ) !== this.alphaToCoverage ) {
-
-			this.needsUpdate = true;
-
-		}
-
-		if ( value === true ) {
-
-			this.defines.USE_ALPHA_TO_COVERAGE = '';
-
-		} else {
-
-			delete this.defines.USE_ALPHA_TO_COVERAGE;
-
-		}
-
-	}
-
+  constructor(parameters) {
+    super({
+      type: "LineMaterial",
+      uniforms: UniformsUtils.clone(ShaderLib["line"].uniforms),
+
+      vertexShader: ShaderLib["line"].vertexShader,
+      fragmentShader: ShaderLib["line"].fragmentShader,
+
+      clipping: true, // required for clipping support
+    });
+
+    this.isLineMaterial = true;
+
+    this.setValues(parameters);
+  }
+
+  get color() {
+    return this.uniforms.diffuse.value;
+  }
+
+  set color(value) {
+    this.uniforms.diffuse.value = value;
+  }
+
+  get worldUnits() {
+    return "WORLD_UNITS" in this.defines;
+  }
+
+  set worldUnits(value) {
+    if (value === true) {
+      this.defines.WORLD_UNITS = "";
+    } else {
+      delete this.defines.WORLD_UNITS;
+    }
+  }
+
+  get linewidth() {
+    return this.uniforms.linewidth.value;
+  }
+
+  set linewidth(value) {
+    if (!this.uniforms.linewidth) return;
+    this.uniforms.linewidth.value = value;
+  }
+
+  get dashed() {
+    return "USE_DASH" in this.defines;
+  }
+
+  set dashed(value) {
+    if ((value === true) !== this.dashed) {
+      this.needsUpdate = true;
+    }
+
+    if (value === true) {
+      this.defines.USE_DASH = "";
+    } else {
+      delete this.defines.USE_DASH;
+    }
+  }
+
+  get dashScale() {
+    return this.uniforms.dashScale.value;
+  }
+
+  set dashScale(value) {
+    this.uniforms.dashScale.value = value;
+  }
+
+  get dashSize() {
+    return this.uniforms.dashSize.value;
+  }
+
+  set dashSize(value) {
+    this.uniforms.dashSize.value = value;
+  }
+
+  get dashOffset() {
+    return this.uniforms.dashOffset.value;
+  }
+
+  set dashOffset(value) {
+    this.uniforms.dashOffset.value = value;
+  }
+
+  get gapSize() {
+    return this.uniforms.gapSize.value;
+  }
+
+  set gapSize(value) {
+    this.uniforms.gapSize.value = value;
+  }
+
+  get opacity() {
+    return this.uniforms.opacity.value;
+  }
+
+  set opacity(value) {
+    if (!this.uniforms) return;
+    this.uniforms.opacity.value = value;
+  }
+
+  get resolution() {
+    return this.uniforms.resolution.value;
+  }
+
+  set resolution(value) {
+    this.uniforms.resolution.value.copy(value);
+  }
+
+  get alphaToCoverage() {
+    return "USE_ALPHA_TO_COVERAGE" in this.defines;
+  }
+
+  set alphaToCoverage(value) {
+    if (!this.defines) return;
+
+    if ((value === true) !== this.alphaToCoverage) {
+      this.needsUpdate = true;
+    }
+
+    if (value === true) {
+      this.defines.USE_ALPHA_TO_COVERAGE = "";
+    } else {
+      delete this.defines.USE_ALPHA_TO_COVERAGE;
+    }
+  }
 }
 
 export { LineMaterial };

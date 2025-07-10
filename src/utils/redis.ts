@@ -1,8 +1,9 @@
-import { Context } from '@devvit/public-api';
+import { Context } from "@devvit/public-api";
 
 export function getNextCode(current: string): string {
-  const characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  let nextValue = current.split('');
+  const characters =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  let nextValue = current.split("");
 
   for (let i = nextValue.length - 1; i >= 0; i--) {
     const currentIndex = characters.indexOf(nextValue[i]);
@@ -14,55 +15,61 @@ export function getNextCode(current: string): string {
     }
   }
 
-  return nextValue.join('');
+  return nextValue.join("");
 }
 
-export async function getUserInfo(context: Context, userID: string): Promise<string> {
+export async function getUserInfo(
+  context: Context,
+  userID: string,
+): Promise<string> {
   const retryLimit = 1;
   for (let attempt = 1; attempt <= retryLimit; attempt++) {
     try {
-      const value = await context.redis.hGet('userIDs', userID);
+      const value = await context.redis.hGet("userIDs", userID);
       if (value == undefined || value == null) {
-        const username = await context.redis.hGet('userIDs', userID) ?? '';
-        await context.redis.hSet('userIDs', { [userID]: username });
+        const username = (await context.redis.hGet("userIDs", userID)) ?? "";
+        await context.redis.hSet("userIDs", { [userID]: username });
         return username;
       } else {
         return value;
       }
-    }
-    catch (error) {
-      console.error('Error fetching userInfo:', error);
+    } catch (error) {
+      console.error("Error fetching userInfo:", error);
       if (attempt == retryLimit) {
-        console.error(`Exceeded retry limit. Could not complete operation for user info.`);
-        return '';
+        console.error(
+          `Exceeded retry limit. Could not complete operation for user info.`,
+        );
+        return "";
       }
     }
   }
-  return '';
+  return "";
 }
 
 export async function getLatestCategoryCode(context: Context): Promise<string> {
   const retryLimit = 1;
   for (let attempt = 1; attempt <= retryLimit; attempt++) {
     try {
-      const value = await context.redis.get('latestCategoryCode');
+      const value = await context.redis.get("latestCategoryCode");
       if (value == undefined) {
-        await context.redis.set('latestCategoryCode', '0000000')
-        return '0000000';
+        await context.redis.set("latestCategoryCode", "0000000");
+        return "0000000";
       } else if (value == null) {
-        return '';
+        return "";
       } else {
         return value;
       }
     } catch (error) {
-      console.error('Error fetching latestCategoryCode:', error);
+      console.error("Error fetching latestCategoryCode:", error);
       if (attempt == retryLimit) {
-        console.error(`Exceeded retry limit. Could not complete operation for category code.`);
-        return '';
+        console.error(
+          `Exceeded retry limit. Could not complete operation for category code.`,
+        );
+        return "";
       }
     }
   }
-  return '';
+  return "";
 }
 
 /**
@@ -75,28 +82,28 @@ export async function addCategoryToSortedSets(
   title: string,
   plays: number = 0,
   highScore: number = 0,
-  timestamp: number = Math.floor(Date.now() / 1000)
+  timestamp: number = Math.floor(Date.now() / 1000),
 ): Promise<void> {
   try {
     // Add to time-based sorted set (newest first)
-    await context.redis.zAdd('categoriesByTime', {
+    await context.redis.zAdd("categoriesByTime", {
       score: timestamp,
-      member: categoryCode
+      member: categoryCode,
     });
-    
+
     // Add to plays-based sorted set (most plays first)
-    await context.redis.zAdd('categoriesByPlays', {
+    await context.redis.zAdd("categoriesByPlays", {
       score: plays,
-      member: categoryCode
+      member: categoryCode,
     });
-    
+
     // Add to high score-based sorted set (highest score first)
-    await context.redis.zAdd('categoriesByScore', {
+    await context.redis.zAdd("categoriesByScore", {
       score: highScore,
-      member: categoryCode
+      member: categoryCode,
     });
   } catch (error) {
-    console.error('Error adding category to sorted sets:', error);
+    console.error("Error adding category to sorted sets:", error);
   }
 }
 
@@ -105,14 +112,14 @@ export async function addCategoryToSortedSets(
  */
 export async function removeCategoryFromSortedSets(
   context: Context,
-  categoryCode: string
+  categoryCode: string,
 ): Promise<void> {
   try {
-    await context.redis.zRem('categoriesByTime', [categoryCode]);
-    await context.redis.zRem('categoriesByPlays', [categoryCode]);
-    await context.redis.zRem('categoriesByScore', [categoryCode]);
+    await context.redis.zRem("categoriesByTime", [categoryCode]);
+    await context.redis.zRem("categoriesByPlays", [categoryCode]);
+    await context.redis.zRem("categoriesByScore", [categoryCode]);
   } catch (error) {
-    console.error('Error removing category from sorted sets:', error);
+    console.error("Error removing category from sorted sets:", error);
   }
 }
 
@@ -125,23 +132,23 @@ export async function updateCategoryInSortedSets(
   updates: {
     plays?: number;
     highScore?: number;
-  }
+  },
 ): Promise<void> {
   try {
     if (updates.plays !== undefined) {
-      await context.redis.zAdd('categoriesByPlays', {
+      await context.redis.zAdd("categoriesByPlays", {
         score: updates.plays,
-        member: categoryCode
+        member: categoryCode,
       });
     }
-    
+
     if (updates.highScore !== undefined) {
-      await context.redis.zAdd('categoriesByScore', {
+      await context.redis.zAdd("categoriesByScore", {
         score: updates.highScore,
-        member: categoryCode
+        member: categoryCode,
       });
     }
   } catch (error) {
-    console.error('Error updating category in sorted sets:', error);
+    console.error("Error updating category in sorted sets:", error);
   }
 }

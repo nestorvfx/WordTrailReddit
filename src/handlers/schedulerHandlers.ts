@@ -1,15 +1,18 @@
-import { JobContext, Devvit } from '@devvit/public-api';
-import { LoadingPreview } from '../components/LoadingPreview.js';
+import { JobContext, Devvit } from "@devvit/public-api";
+import { LoadingPreview } from "../components/LoadingPreview.js";
 
-export async function initialPost(event: any, context: JobContext): Promise<void> {
+export async function initialPost(
+  event: any,
+  context: JobContext,
+): Promise<void> {
   const postOptions = {
-    title: 'Word Trail Game',
-    subredditName: context.subredditName ?? '',
+    title: "Word Trail Game",
+    subredditName: context.subredditName ?? "",
     preview: LoadingPreview(),
   };
-  
+
   const post = await context.reddit.submitPost(postOptions);
-  
+
   await context.reddit.approve(post.id);
   try {
     await post.sticky();
@@ -18,12 +21,15 @@ export async function initialPost(event: any, context: JobContext): Promise<void
     // Continue execution even if stickying fails
   }
 
-  await context.redis.set('mainPostID', post.id);
+  await context.redis.set("mainPostID", post.id);
 
   const jobs = await context.scheduler.listJobs();
 }
 
-export async function removeUserDataPeriodically(event: any, context: JobContext): Promise<void> {
+export async function removeUserDataPeriodically(
+  event: any,
+  context: JobContext,
+): Promise<void> {
   let retries = 0;
   while (retries < 5) {
     try {
@@ -34,15 +40,17 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
       let updatedCategoriesList: Record<string, string> = {};
 
       do {
-        const scanResponse = await context.redis.hScan('userIDs', cursor);
+        const scanResponse = await context.redis.hScan("userIDs", cursor);
         for (const iuser of scanResponse.fieldValues) {
           const cUser = await context.reddit.getUserById(iuser.field);
           if (cUser == undefined) {
             userIDsList.push(iuser.field);
 
-            const [beforeH, afterH] = iuser.value.split(':h:');
-            const cCategories = beforeH?.includes(':c:') ? beforeH.split(':').slice(2) : [];
-            const hCategories = afterH?.split(':') || [];
+            const [beforeH, afterH] = iuser.value.split(":h:");
+            const cCategories = beforeH?.includes(":c:")
+              ? beforeH.split(":").slice(2)
+              : [];
+            const hCategories = afterH?.split(":") || [];
 
             if (cCategories.length == 0 && hCategories.length == 0) {
               continue;
@@ -51,15 +59,19 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
             const promises = [];
 
             if (hCategories.length > 0) {
-              promises.push(context.redis.hMGet('usersCategories', hCategories));
+              promises.push(
+                context.redis.hMGet("usersCategories", hCategories),
+              );
             }
 
             if (cCategories.length > 0) {
-              promises.push(context.redis.hMGet('usersCategories', cCategories));
+              promises.push(
+                context.redis.hMGet("usersCategories", cCategories),
+              );
             }
 
-            let highScoreCategoryData = [''];
-            let createdCategoryData = [''];
+            let highScoreCategoryData = [""];
+            let createdCategoryData = [""];
 
             if (promises.length > 0) {
               const results = await Promise.all(promises);
@@ -67,12 +79,14 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
               let resultIndex = 0;
 
               if (hCategories.length > 0) {
-                highScoreCategoryData = results[resultIndex]?.map((data) => data ?? '') ?? [];
+                highScoreCategoryData =
+                  results[resultIndex]?.map((data) => data ?? "") ?? [];
                 resultIndex++;
               }
 
               if (cCategories.length > 0) {
-                createdCategoryData = results[resultIndex]?.map((data) => data ?? '') ?? [];
+                createdCategoryData =
+                  results[resultIndex]?.map((data) => data ?? "") ?? [];
               }
             }
 
@@ -82,7 +96,11 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
                 if (categoryCode in updatedCategoriesList) {
                   getCategoryInfo = updatedCategoriesList[categoryCode];
                 }
-                updatedCategoriesList[categoryCode] = getCategoryInfo.length > 0 ? ('[deleted]' + getCategoryInfo.slice(getCategoryInfo.indexOf(':'))) : '';
+                updatedCategoriesList[categoryCode] =
+                  getCategoryInfo.length > 0
+                    ? "[deleted]" +
+                      getCategoryInfo.slice(getCategoryInfo.indexOf(":"))
+                    : "";
               });
             }
 
@@ -92,24 +110,27 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
                 if (categoryCode in updatedCategoriesList) {
                   getCategoryInfo = updatedCategoriesList[categoryCode];
                 }
-                updatedCategoriesList[categoryCode] = getCategoryInfo.replace(/(:[^:]+:[^:]+)(:[^:]+)$/, ':[deleted]::$2');
+                updatedCategoriesList[categoryCode] = getCategoryInfo.replace(
+                  /(:[^:]+:[^:]+)(:[^:]+)$/,
+                  ":[deleted]::$2",
+                );
               });
             }
           }
         }
         cursor = scanResponse.cursor;
-      } while (cursor != 0)
-      
+      } while (cursor != 0);
+
       if (userIDsList.length > 0) {
-        const txn = await context.redis.watch('latestCategoryCode');
+        const txn = await context.redis.watch("latestCategoryCode");
         await txn.multi();
-        await txn.hDel('userIDs', userIDsList);
-        await txn.hSet('usersCategories', updatedCategoriesList);
-        
+        await txn.hDel("userIDs", userIDsList);
+        await txn.hSet("usersCategories", updatedCategoriesList);
+
         // If we're modifying categories whose creators are deleted, make sure we don't
         // need to remove any categories from sorted sets. If removing categories becomes
         // part of this function in the future, add sorted set removal here.
-        
+
         const tResult = await txn.exec();
 
         if (tResult == null) {
@@ -120,31 +141,41 @@ export async function removeUserDataPeriodically(event: any, context: JobContext
       }
 
       break;
-    }
-    catch (error) {
-      console.error('Error in transaction:', error);
+    } catch (error) {
+      console.error("Error in transaction:", error);
       retries++;
     }
   }
 }
 
-export async function cleanupTrendingCategories(event: any, context: JobContext): Promise<void> {
+export async function cleanupTrendingCategories(
+  event: any,
+  context: JobContext,
+): Promise<void> {
   try {
     const now = Math.floor(Date.now() / 1000);
-    const thirtyDaysAgo = now - (30 * 86400);
-    
+    const thirtyDaysAgo = now - 30 * 86400;
+
     // Get all trending categories with scores
-    const allTrending = await context.redis.zRange('categoriesByTrending', 0, -1, { 
-      by: 'rank',
-      reverse: false
-    });
-    
+    const allTrending = await context.redis.zRange(
+      "categoriesByTrending",
+      0,
+      -1,
+      {
+        by: "rank",
+        reverse: false,
+      },
+    );
+
     // Check each category's timestamp and remove if expired
     const expiredCategories: string[] = [];
-    
+
     for (const category of allTrending) {
       // Get the score to check timestamp
-      const score = await context.redis.zScore('categoriesByTrending', category.member);
+      const score = await context.redis.zScore(
+        "categoriesByTrending",
+        category.member,
+      );
       if (score !== null && score !== undefined) {
         const lastUpdateTime = Math.floor(parseFloat(score.toString()));
         if (lastUpdateTime < thirtyDaysAgo) {
@@ -152,11 +183,11 @@ export async function cleanupTrendingCategories(event: any, context: JobContext)
         }
       }
     }
-    
+
     if (expiredCategories.length > 0) {
-      await context.redis.zRem('categoriesByTrending', expiredCategories);
+      await context.redis.zRem("categoriesByTrending", expiredCategories);
     }
   } catch (error) {
-    console.error('Error cleaning up trending categories:', error);
+    console.error("Error cleaning up trending categories:", error);
   }
 }

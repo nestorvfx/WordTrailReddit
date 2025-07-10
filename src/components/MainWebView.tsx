@@ -332,7 +332,7 @@ export const MainWebView = (context: any) => {
 
   return (
     <blocks height="tall">
-      <vstack grow padding="small" width="100%" height="100%">
+      <vstack backgroundColor="#EC0B43" grow padding="small" width="100%" height="100%">
         {isItPeriodicRemoval && <vstack
           grow={true}
           height={'100%'}
@@ -349,47 +349,102 @@ export const MainWebView = (context: any) => {
         </vstack>}
 
         {!isItPeriodicRemoval && <zstack grow={!webviewVisible} alignment="center middle" width="100%" height={webviewVisible ? '0%' : '100%'}>
-          <image
-            url="Word Trail Image.jpg"
-            imageWidth={1500}
-            imageHeight={1024}
-            grow={!webviewVisible}
-            height={webviewVisible ? '0%' : '100%'}
+          {typeOfPost == 0 && (<vstack
+            height="50%"
             width="100%"
-            resizeMode="cover"
-            description="background image"
-          />
-          {typeOfPost == 0 && <vstack
+          >
+            <image
+              url="Word Trail.gif"
+              imageWidth={1104}
+              imageHeight={274}
+              grow={!webviewVisible}
+              height="180%"
+              width="100%"
+              resizeMode="fit"
+              description="background image"
+            />
+              <vstack
+                grow={!webviewVisible}
+                height={webviewVisible ? '0%' : '100%'}
+                alignment="middle center"
+              >
+                <image url="Enter.png" 
+                        height="75%"
+                        width="22%"
+                        imageWidth={700}
+                        imageHeight={256}
+                        resizeMode='scale-down'
+                        onPress={onShowWebview}/>
+              </vstack>
+          </vstack>
+          )}
+          {typeOfPost == 1 && 
+          <zstack
             grow={!webviewVisible}
             height={webviewVisible ? '0%' : '100%'}
             alignment="middle center"
-          >
-            <button icon='play' appearance="primary" onPress={onShowWebview}>ENTER</button>
-          </vstack>}
-          {typeOfPost == 1 && <vstack
-            grow={!webviewVisible}
-            height={webviewVisible ? '0%' : '100%'}
+            padding="small"
+            gap="small"
+              >
+            <vstack height={'100%'} width="100%"
             alignment="middle center"
           >
-            <spacer />
-            <text size="xxlarge" weight="bold" color='#f2fffd' outline='thin'>
-              {postCategory?.split(':')[2] || 'Unknown'} Category
-            </text>
-            <spacer />
-            <text size="xlarge" weight="bold" color='#f2fffd' outline='thin'>
-              High Score:
-            </text>
-            <spacer />
-            <text size="xlarge" weight="bold" color='#f2fffd' outline='thin'>
-              {postCategory?.split(':')[4] || '0'}
-            </text>
-            <spacer />
-            {(postCategory && parseInt(postCategory.split(':')[4]) > 0) && <text size="xxlarge" weight="bold" color='#f2fffd' outline='thin'>
-              By {postCategory.split(':')[5]}
-            </text>}
-            <spacer />
-            <button icon='play' appearance="primary" onPress={onShowWebview}>START</button>
-          </vstack>}
+            <image
+              url="Word Trail.gif"
+              imageWidth={1104}
+              imageHeight={274}
+              width="100%"
+              resizeMode="fit"
+              description="background image"
+            />
+            <spacer height="60%"/>
+           </vstack>
+            <zstack width="120%"  height="40%" alignment="middle center">
+              <image
+                url="category.png"
+                imageWidth={1326}
+                imageHeight={198}
+                width="80%"
+                resizeMode="fit"
+                description="background image"
+              />
+             <vstack width="100%" height="100%" grow={true} alignment="middle center">
+                <spacer height="20%"/>
+                <hstack width="100%" alignment="middle start" gap="small">
+                  <spacer width="12%"/>
+                  <text size="xlarge" color='#000000'>
+                    {postCategory?.split(':')[2] || 'Unknown'}
+                  </text>
+                  <spacer />
+                  {(postCategory && parseInt(postCategory.split(':')[4]) > 0) && <text size="xlarge" color='#000000'>
+                    {postCategory.split(':')[5]}
+                  </text>}
+                  <text size="xlarge" color='#000000'>
+                    {postCategory?.split(':')[4] || '0'}
+                  </text>
+                  <spacer />
+                  <text size="xlarge" color='#000000'>
+                    {postCategory?.split(':')[6] || '0'}
+                  </text>
+                  <spacer />
+                  <text size="xlarge" color='#000000'>
+                    {postCategory?.split(':')[7] || '0'}
+                  </text>
+                </hstack>
+              </vstack>
+              </zstack>
+              
+              <vstack height={'100%'} width="100%" alignment="middle center">
+                <spacer height="55%"/>
+                <image url="Play.png" 
+                            height="70%"
+                            width="20%"
+                            imageWidth={700}
+                            imageHeight={256}
+                            resizeMode='scale-down'
+                            onPress={onShowWebview}/>
+              </vstack>
+          </zstack>}
         </zstack>}
       </vstack>
     </blocks>
