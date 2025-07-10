@@ -1,4 +1,4 @@
-import { Devvit } from '@devvit/public-api';
+import { Devvit } from "@devvit/public-api";
 
 export const LoadingPreview = () => {
   return (
@@ -8,4 +8,4 @@ export const LoadingPreview = () => {
       </vstack>
     </blocks>
   );
-}; 
+};
