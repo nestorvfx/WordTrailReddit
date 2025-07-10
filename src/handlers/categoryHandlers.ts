@@ -295,7 +295,7 @@ export async function updateCategoryInfo(
     });
 
     if (transactionSucceeded) {
-      setImmediate(async () => {
+      setTimeout(async () => {
         try {
           if (categoryInfo.guessedAll) {
             commentText = `**GUESSED ALL ${newScoreValue} CORRECTLY**`;
@@ -313,7 +313,7 @@ export async function updateCategoryInfo(
         } catch (commentError) {
           console.error(`Comment posting failed: ${commentError}`);
         }
-      });
+      }, 0);
     } else {
       throw new Error("Redis transaction failed");
     }

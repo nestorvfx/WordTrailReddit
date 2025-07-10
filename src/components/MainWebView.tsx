@@ -414,8 +414,65 @@ export const MainWebView = (context: any) => {
     });
   };
 
+  const formatRelativeTime = (timestamp: string) => {
+    if (!timestamp || isNaN(parseInt(timestamp))) {
+      return "";
+    }
+
+    try {
+      const now = new Date();
+
+      const diffMs = now.getTime() - parseInt(timestamp) * 1000;
+
+      // Less than a minute ago
+      if (diffMs < 60000) {
+        return "now";
+      }
+
+      // Less than an hour ago
+      if (diffMs < 3600000) {
+        const diffMinutes = Math.floor(diffMs / 60000);
+        return `${diffMinutes}min`;
+      }
+
+      // Less than a day
+      if (diffMs < 86400000) {
+        const diffHours = Math.floor(diffMs / 3600000);
+        return `${diffHours}h`;
+      }
+
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) {
+        return "Today";
+      } else if (diffDays === 1) {
+        return "1d";
+      } else if (diffDays < 7) {
+        return `${diffDays}d`;
+      } else if (diffDays < 30) {
+        const weeks = Math.floor(diffDays / 7);
+        return `${weeks}w`;
+      } else if (diffDays < 365) {
+        const months = Math.floor(diffDays / 30);
+        return `${months}mo`;
+      } else {
+        const years = Math.floor(diffDays / 365);
+        return `${years}y`;
+      }
+    } catch (e) {
+      console.error("Error formatting timestamp:", e);
+      return "";
+    }
+  };
+
   const screenWidth = context.dimensions?.width;
-  const spaceTitleCreatedBy = `${((w) => (w < 288 ? 12.5 : w <= 512 ? 12.5 + ((20 - 12.5) * (w - 288)) / (512 - 288) : w <= 718 ? 20 + ((23 - 20) * (w - 512)) / (718 - 512) : 23))(context.dimensions?.width ?? 512)}%`;
+  const screenHeight = context.dimensions?.height;
+  const smallText = screenWidth / screenHeight < 0.65 ? "xsmall" : "medium";
+  const textSize = screenWidth / screenHeight < 0.8 ? smallText : "xlarge";
+  const textTimeSize = screenWidth / screenHeight < 0.8 ? "xsmall" : "large";
+  const textWeight = screenWidth / screenHeight < 0.8 ? "regular" : "bold";
+  const hsTextSize = screenWidth / screenHeight < 0.8 ? "medium" : "xlarge";
+  const additionalScaling = screenWidth / screenHeight < 0.65 ? 0.7 : 1;
 
   return (
     <blocks height="tall">
@@ -483,6 +540,7 @@ export const MainWebView = (context: any) => {
               <zstack
                 grow={!webviewVisible}
                 height={webviewVisible ? "0%" : "100%"}
+                width="100%"
                 alignment="middle center"
                 padding="small"
                 gap="small"
@@ -499,12 +557,15 @@ export const MainWebView = (context: any) => {
                   <spacer height="60%" />
                 </vstack>
 
-                <zstack width="120%" height="40%" alignment="middle center">
+                <zstack width="100%" height="20%" alignment="middle center">
                   <image
                     url="category.png"
-                    imageWidth={1326}
-                    imageHeight={198}
-                    width="80%"
+                    imageWidth={830}
+                    imageHeight={152}
+                    height={
+                      ((screenWidth / screenHeight) * 85 +
+                        "%") as Devvit.Blocks.SizeString
+                    }
                     resizeMode="fit"
                     description="background image"
                   />
@@ -514,42 +575,107 @@ export const MainWebView = (context: any) => {
                     grow={true}
                     alignment="middle center"
                   >
-                    <spacer height="20%" />
-                    <hstack width="100%" alignment="middle start" gap="small">
-                      <spacer width="12%" />
-                      <text size="xlarge" color="#000000">
-                        {postCategory?.split(":")[2] || "Unknown"}
-                      </text>
-                      <spacer
-                        width={spaceTitleCreatedBy as Devvit.Blocks.SizeString}
-                      />
-                      {postCategory &&
-                        parseInt(postCategory.split(":")[4]) > 0 && (
-                          <text size="xlarge" color="#000000">
-                            {postCategory.split(":")[5]}
-                          </text>
-                        )}
-                      <spacer width="19%" />
-                      <text size="xlarge" color="#000000">
-                        {postCategory?.split(":")[4] || "0"}
-                      </text>
-                      <spacer width="6%" />
-                      <text size="xlarge" color="#000000">
-                        {postCategory?.split(":")[6] || "0"}
-                      </text>
-                      <spacer width="4%" />
-                      <text size="xlarge" color="#000000">
-                        {postCategory?.split(":")[7] || "0"}
-                      </text>
-                    </hstack>
+                    <spacer
+                      height={
+                        ((screenWidth / screenHeight) * 31 +
+                          "%") as Devvit.Blocks.SizeString
+                      }
+                    />
+
+                    <zstack width="100%" alignment="start">
+                      <hstack width="100%" alignment="start">
+                        <spacer
+                          width={
+                            (7 * additionalScaling +
+                              "%") as Devvit.Blocks.SizeString
+                          }
+                        />
+                        <text
+                          size={textSize}
+                          color="#000000"
+                          weight={textWeight}
+                        >
+                          {postCategory?.split(":")[2] || "Unknown"}
+                        </text>
+                      </hstack>
+                      <hstack width="100%" alignment="middle start">
+                        <spacer
+                          width={(34 + "%") as Devvit.Blocks.SizeString}
+                        />
+                        {postCategory &&
+                          parseInt(postCategory.split(":")[4]) > 0 && (
+                            <text
+                              size={textSize}
+                              color="#000000"
+                              weight={textWeight}
+                            >
+                              {postCategory.split(":")[1]}
+                            </text>
+                          )}
+                      </hstack>
+                      <hstack width="100%" alignment="middle start">
+                        <spacer width="63.5%" />
+                        <text
+                          size={textSize}
+                          color="#000000"
+                          weight={textWeight}
+                        >
+                          {postCategory?.split(":")[3] || "0"}
+                        </text>
+                      </hstack>
+                      <hstack width="100%" alignment="middle start">
+                        <spacer width="77%" />
+                        <text
+                          size={textSize}
+                          color="#000000"
+                          weight={textWeight}
+                        >
+                          {postCategory?.split(":")[4] || "0"}
+                        </text>
+                      </hstack>
+                      <hstack width="100%" alignment="middle start">
+                        <spacer width="87.5%" />
+                        <text
+                          size={textTimeSize}
+                          color="#bb7900"
+                          weight={textWeight}
+                        >
+                          {formatRelativeTime(
+                            postCategory?.split(":")[8] || "0",
+                          )}
+                        </text>
+                      </hstack>
+                    </zstack>
                   </vstack>
                 </zstack>
 
+                <vstack width="100%" height="100%" alignment="middle center">
+                  <spacer height="32%" />
+                  {postCategory && parseInt(postCategory.split(":")[4]) > 0 && (
+                    <hstack
+                      height={
+                        ((screenWidth / screenHeight) * 6 +
+                          "%") as Devvit.Blocks.SizeString
+                      }
+                      alignment="middle center"
+                      cornerRadius="medium"
+                    >
+                      <text size={hsTextSize} color="#FFFFFF" weight="regular">
+                        High Score by
+                      </text>
+                      <spacer width="2%" />
+                      <text size={hsTextSize} color="#FFFFFF" weight="bold">
+                        {postCategory.split(":")[5]}
+                      </text>
+                    </hstack>
+                  )}
+                </vstack>
+
                 <vstack height={"100%"} width="100%" alignment="middle center">
-                  <spacer height="55%" />
+                  <spacer height="60%" />
                   <image
                     url="Play.png"
-                    height="70%"
+                    height="10%"
                     width="20%"
                     imageWidth={700}
                     imageHeight={256}
