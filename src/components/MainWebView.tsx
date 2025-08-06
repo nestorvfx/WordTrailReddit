@@ -86,6 +86,11 @@ export const MainWebView = (context: any) => {
         }
         return `${currUser?.username}:${moderatorPermissions.length > 0 ? "y" : "n"}`;
       } catch (error) {
+        // Check if it's the special ServerCallRequired error
+        if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+          throw error; // Re-throw this specific error
+        }
+        
         console.error(`Attempt ${attempt} failed: ${error}`);
         if (attempt == retryLimit) {
           console.error(
@@ -143,6 +148,11 @@ export const MainWebView = (context: any) => {
             return value;
           }
         } catch (error) {
+          // Check if it's the special ServerCallRequired error
+          if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+            throw error; // Re-throw this specific error
+          }
+          
           console.error("Error fetching userInfo:", error);
           if (attempt == retryLimit) {
             console.error(
@@ -177,6 +187,11 @@ export const MainWebView = (context: any) => {
             return value;
           }
         } catch (error) {
+          // Check if it's the special ServerCallRequired error
+          if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+            throw error; // Re-throw this specific error
+          }
+          
           console.error("Error fetching latestCategoryCode:", error);
           if (attempt == retryLimit) {
             console.error(
@@ -460,6 +475,11 @@ export const MainWebView = (context: any) => {
         return `${years}y`;
       }
     } catch (e) {
+      // Check if it's the special ServerCallRequired error
+      if (e && typeof e === 'object' && 'message' in e && e.message === 'ServerCallRequired') {
+        throw e; // Re-throw this specific error
+      }
+      
       console.error("Error formatting timestamp:", e);
       return "";
     }

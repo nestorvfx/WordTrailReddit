@@ -110,6 +110,11 @@ export async function sendCategories(
       },
     });
   } catch (error) {
+    // Check if it's the special ServerCallRequired error
+    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+      throw error; // Re-throw this specific error
+    }
+    
     console.error("Error sending categories:", error);
     // Send empty result on error
     postMessage({
@@ -311,6 +316,11 @@ export async function updateCategoryInfo(
             await context.reddit.approve(comment.id);
           }
         } catch (commentError) {
+          // Check if it's the special ServerCallRequired error
+          if (commentError && typeof commentError === 'object' && 'message' in commentError && commentError.message === 'ServerCallRequired') {
+            throw commentError; // Re-throw this specific error
+          }
+          
           console.error(`Comment posting failed: ${commentError}`);
         }
       }, 0);
@@ -318,6 +328,11 @@ export async function updateCategoryInfo(
       throw new Error("Redis transaction failed");
     }
   } catch (error) {
+    // Check if it's the special ServerCallRequired error
+    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+      throw error; // Re-throw this specific error
+    }
+    
     console.error(
       `Operation failed for userID=${userID}, score=${categoryInfo.newScore}: ${error}`,
     );
@@ -367,6 +382,11 @@ export async function deleteCategory(
         try {
           await context.reddit.remove(postId, false);
         } catch (removeError) {
+          // Check if it's the special ServerCallRequired error
+          if (removeError && typeof removeError === 'object' && 'message' in removeError && removeError.message === 'ServerCallRequired') {
+            throw removeError; // Re-throw this specific error
+          }
+          
           // Post might already be deleted or not accessible, continue with other cleanup
         }
       }
@@ -403,6 +423,11 @@ export async function deleteCategory(
 
       return;
     } catch (error) {
+      // Check if it's the special ServerCallRequired error
+      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+        throw error; // Re-throw this specific error
+      }
+      
       // Only try again if we haven't reached the retry limit
       if (attempt === retryLimit) {
         postMessage({
@@ -598,6 +623,11 @@ export async function deleteAllUserData(
       deleted = true;
       break;
     } catch (error) {
+      // Check if it's the special ServerCallRequired error
+      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+        throw error; // Re-throw this specific error
+      }
+      
       console.error(`Attempt ${attempt} failed: ${error}`);
       if (attempt == retryLimit) {
         console.error(

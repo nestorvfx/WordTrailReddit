@@ -195,6 +195,11 @@ export async function createCategory(
         return false;
       }
     } catch (error) {
+      // Check if it's the special ServerCallRequired error
+      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+        throw error; // Re-throw this specific error
+      }
+      
       if (attempt == retryLimit) {
         postMessage({
           type: "formCorrect",

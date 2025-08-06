@@ -80,6 +80,11 @@ export async function handlePostDelete(
         }
       }
     } catch (error) {
+      // Check if it's the special ServerCallRequired error
+      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+        throw error; // Re-throw this specific error
+      }
+      
       console.error(`Attempt ${attempt} failed: ${error}`);
       if (attempt == retryLimit) {
         console.error(
@@ -108,6 +113,11 @@ export async function handleAppInstall(
       cron: "0 0 20 * *", // Run at midnight (00:00) on the 20th of every month
     });
   } catch (error) {
+    // Check if it's the special ServerCallRequired error
+    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+      throw error; // Re-throw this specific error
+    }
+    
     console.error("Error during app installation:", error);
   }
 }
