@@ -812,6 +812,17 @@ export class UIManager {
     this.elements.deleteCategoryButton.style.display = "none";
     this.elements.deleteDataButton.style.display = "none"; // Ensure this is hidden in play mode
 
+    // Show sorting options in Play mode
+    const sortContainer = document.getElementById("sortContainer");
+    if (sortContainer) {
+      sortContainer.style.display = "flex";
+    }
+
+    // Show reverse sort button (flip button) in Play mode
+    if (this.elements.reverseSort) {
+      this.elements.reverseSort.style.display = "block";
+    }
+
     // Only reset sort method when entering Play mode via Play button, not on reverse/sort changes
     if (source === "playButton") {
       this.currentSortMethod = "time";
@@ -849,6 +860,17 @@ export class UIManager {
   _configureSettingsModeUI() {
     this.elements.startButton.style.display = "none";
     this.elements.deleteDataButton.style.display = "block"; // Ensure this is shown in settings mode
+
+    // Hide sorting options in Settings mode
+    const sortContainer = document.getElementById("sortContainer");
+    if (sortContainer) {
+      sortContainer.style.display = "none";
+    }
+
+    // Hide reverse sort button (flip button) in Settings mode
+    if (this.elements.reverseSort) {
+      this.elements.reverseSort.style.display = "none";
+    }
 
     // Show delete button only if user is the creator of the selected category
     if (

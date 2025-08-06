@@ -924,6 +924,11 @@ body {
     font-size: 2vw;
     color: white;
     transition: transform 0.3s ease;
+    margin: 0; /* Ensure no margin affects centering */
+    padding: 0; /* Ensure no padding affects centering */
+    text-align: center;
+    line-height: 1;
+    display: block; /* Ensure it's treated as a block element for centering */
 }
 
 #reverseSort:hover {
@@ -1085,6 +1090,14 @@ body {
         right: 33%;
         width: 4vw;
         height: 4vw;
+        padding: 0; /* Remove any padding that might affect centering */
+    }
+    
+    #reverseSort .sort-direction {
+        font-size: 1.8vw;
+        margin: 0; /* Ensure no margin affects centering */
+        text-align: center;
+        line-height: 1;
     }
     
     #searchContainer {
@@ -1106,6 +1119,14 @@ body {
         right: 31%;
         width: 3.8vw;
         height: 3.8vw;
+        padding: 0; /* Remove any padding that might affect centering */
+    }
+    
+    #reverseSort .sort-direction {
+        font-size: 1.6vw;
+        margin: 0; /* Ensure no margin affects centering */
+        text-align: center;
+        line-height: 1;
     }
     
     #searchContainer {
