@@ -487,12 +487,14 @@ export const MainWebView = (context: any) => {
 
   const screenWidth = context.dimensions?.width;
   const screenHeight = context.dimensions?.height;
-  const smallText = screenWidth / screenHeight < 0.65 ? "xsmall" : "medium";
-  const textSize = screenWidth / screenHeight < 0.8 ? smallText : "xlarge";
-  const textTimeSize = screenWidth / screenHeight < 0.8 ? "xsmall" : "large";
-  const textWeight = screenWidth / screenHeight < 0.8 ? "regular" : "bold";
-  const hsTextSize = screenWidth / screenHeight < 0.8 ? "medium" : "xlarge";
-  const additionalScaling = screenWidth / screenHeight < 0.65 ? 0.7 : 1;
+  const customSpacer = screenWidth / screenHeight < 0.9 ? "77%" : "75.5%";
+  const smallText = screenWidth / screenHeight < 0.95 ? "xsmall" : "medium";
+  const textSize = screenWidth / screenHeight < 1.1 ? smallText : "xlarge";
+  const textTimeSize = screenWidth / screenHeight < 0.9 ? "xsmall" : "large";
+  const textWeight = screenWidth / screenHeight < 0.9 ? "regular" : "bold";
+  const hsTextSize = screenWidth / screenHeight < 0.9 ? "medium" : "xlarge";
+  const additionalScalingSmall = screenWidth / screenHeight < 0.7 ? 0.53 : 0.65;
+  const additionalScaling = screenWidth / screenHeight < 1.1 ? additionalScalingSmall : 1;
 
   return (
     <blocks height="tall">
@@ -644,7 +646,7 @@ export const MainWebView = (context: any) => {
                         </text>
                       </hstack>
                       <hstack width="100%" alignment="middle start">
-                        <spacer width="77%" />
+                        <spacer width={customSpacer as Devvit.Blocks.SizeString} />
                         <text
                           size={textSize}
                           color="#000000"
