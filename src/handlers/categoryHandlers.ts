@@ -188,6 +188,9 @@ export async function updateCategoryInfo(
     );
     const originalRawScore = categoryInfo.newScore;
 
+    // DEBUG: Log score input processing
+    console.log(`SCORE INPUT DEBUG - User: ${userID}, Category: ${categoryInfo.categoryCode}, RawInput: ${originalRawScore}, ParsedScore: ${newScoreValue}, GuessedAll: ${categoryInfo.guessedAll}`);
+
     let transactionSucceeded = false;
 
     const txn = await context.redis.watch("latestCategoryCode");
@@ -305,6 +308,9 @@ export async function updateCategoryInfo(
         : previousScore < newScoreValue 
         ? `**HIGH SCORED** with **${newScoreValue}**`
         : `Just scored ${newScoreValue}`;
+
+      // DEBUG: Log score values for troubleshooting
+      console.log(`SCORE DEBUG - User: ${userID}, Category: ${categoryInfo.categoryCode}, OriginalScore: ${categoryInfo.newScore}, ProcessedScore: ${newScoreValue}, PreviousScore: ${previousScore}, GuessedAll: ${categoryInfo.guessedAll}, CommentText: "${finalCommentText}"`);
 
       // Fire and forget comment posting
       post.addComment({ text: finalCommentText })
