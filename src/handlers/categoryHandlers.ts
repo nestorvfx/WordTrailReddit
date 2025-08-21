@@ -189,7 +189,6 @@ export async function updateCategoryInfo(
     const originalRawScore = categoryInfo.newScore;
 
     let transactionSucceeded = false;
-    let commentText = "";
 
     const txn = await context.redis.watch("latestCategoryCode");
     await txn.multi();
@@ -300,30 +299,28 @@ export async function updateCategoryInfo(
     });
 
     if (transactionSucceeded) {
-      setTimeout(async () => {
-        try {
-          if (categoryInfo.guessedAll) {
-            commentText = `**GUESSED ALL ${newScoreValue} CORRECTLY**`;
-          } else if (previousScore < newScoreValue) {
-            commentText = `**HIGH SCORED** with **${newScoreValue}**`;
-          } else {
-            commentText = `Just scored ${newScoreValue}`;
-          }
+      // Capture the comment text immediately while values are still correct
+      const finalCommentText = categoryInfo.guessedAll 
+        ? `**GUESSED ALL ${newScoreValue} CORRECTLY**`
+        : previousScore < newScoreValue 
+        ? `**HIGH SCORED** with **${newScoreValue}**`
+        : `Just scored ${newScoreValue}`;
 
-          const comment = await post.addComment({ text: commentText });
-
+      // Fire and forget comment posting
+      post.addComment({ text: finalCommentText })
+        .then(comment => {
           if (comment != null) {
-            await context.reddit.approve(comment.id);
+            return context.reddit.approve(comment.id);
           }
-        } catch (commentError) {
+        })
+        .catch(commentError => {
           // Check if it's the special ServerCallRequired error
           if (commentError && typeof commentError === 'object' && 'message' in commentError && commentError.message === 'ServerCallRequired') {
             throw commentError; // Re-throw this specific error
           }
           
           console.error(`Comment posting failed: ${commentError}`);
-        }
-      }, 0);
+        });
     } else {
       throw new Error("Redis transaction failed");
     }

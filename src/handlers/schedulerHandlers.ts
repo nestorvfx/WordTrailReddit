@@ -47,7 +47,13 @@ export async function removeUserDataPeriodically(
       do {
         const scanResponse = await context.redis.hScan("userIDs", cursor);
         for (const iuser of scanResponse.fieldValues) {
-          const cUser = await context.reddit.getUserById(iuser.field);
+          let cUser;
+          try {
+            cUser = await context.reddit.getUserById(iuser.field);
+          } catch (error) {
+            // User not found (deleted account) - treat as undefined
+            cUser = undefined;
+          }
           if (cUser == undefined) {
             userIDsList.push(iuser.field);
 
