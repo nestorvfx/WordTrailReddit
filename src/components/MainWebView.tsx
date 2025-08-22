@@ -519,7 +519,7 @@ export const MainWebView = (context: any) => {
                   <image
                     url={generateCategoryImageSVG(postCategory)}
                     imageWidth={900}
-                    imageHeight={250}
+                    imageHeight={280}
                     width="93%"
                     resizeMode="fit"
                     description="Category information"

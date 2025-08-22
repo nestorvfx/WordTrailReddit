@@ -85,7 +85,7 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
   const categoryData = parseCategoryString(categoryString);
   
   const width = 900; 
-  const fixedHeight = 250; // Increased from 200 to prevent cutoff of high score text
+  const fixedHeight = 280; // Increased to accommodate the high score text positioning
   const headerHeight = 60; 
   const rowHeight = 60; 
   const highScoreHeight = 30; 
@@ -94,7 +94,8 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
   
   // Calculate content height and center it vertically
   const hasHighScore = parseInt(categoryData.played) > 0 && categoryData.highScoreUser;
-  const contentHeight = headerHeight + gap + rowHeight + (hasHighScore ? highScoreHeight + 8 : 0);
+  const highScoreSpacing = 99; // Distance below category row for high score text
+  const contentHeight = headerHeight + gap + rowHeight + (hasHighScore ? highScoreSpacing + 30 : 0); // Include actual high score positioning
   const yOffset = (fixedHeight - contentHeight) / 2; // Center the content vertically
   
   
@@ -166,19 +167,19 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
   
   
   if (hasHighScore) {
-    const highScoreY = yOffset + headerHeight + gap + rowHeight + 99; // 1.8 times further down (55 * 1.8 ≈ 99)
+    const highScoreY = yOffset + headerHeight + gap + rowHeight + highScoreSpacing; // Use the same spacing variable
     
     // Use two text elements to make username bold while keeping "High Score by" normal
-    svg += `<text x="${width / 2}" y="${highScoreY}" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="normal" fill="#FFFFFF">High Score by </text>`;
+    // Position "High Score by" to the left of center
+    svg += `<text x="${width / 2}" y="${highScoreY}" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="normal" fill="#FFFFFF">High Score by </text>`;
     
-    // Calculate approximate width of "High Score by " to position username correctly
-    const prefixWidth = 85; // Approximate width of "High Score by " at 24px
-    svg += `<text x="${width / 2 + prefixWidth / 2}" y="${highScoreY}" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">${categoryData.highScoreUser}</text>`;
+    // Position username to the right of center with more spacing
+    svg += `<text x="${width / 2 + 10}" y="${highScoreY}" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">${categoryData.highScoreUser}</text>`;
   }
   
   svg += '</svg>';
   
   
-  const base64 = btoa(unescape(encodeURIComponent(svg)));
+  const base64 = btoa(encodeURIComponent(svg).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode(parseInt(p1, 16))));
   return `data:image/svg+xml;base64,${base64}`;
 };
