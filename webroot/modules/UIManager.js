@@ -95,11 +95,11 @@ export class UIManager {
       "deleteConfirmationScreen",
     );
 
-    // Help modal elements
-    this.elements.helpModal = document.getElementById("helpModal");
-    this.elements.helpContent = document.getElementById("helpContent");
-    this.elements.helpCloseButton = document.getElementById("helpCloseButton");
-    this.elements.helpText = document.getElementById("helpText");
+    // Intro modal elements
+    this.elements.introModal = document.getElementById("introModal");
+    this.elements.introContent = document.getElementById("introContent");
+    this.elements.introCloseButton = document.getElementById("introCloseButton");
+    this.elements.introText = document.getElementById("introText");
 
     // Buttons
     this.elements.playButton = document.getElementById("play-button");
@@ -107,7 +107,7 @@ export class UIManager {
       "create-category-button",
     );
     this.elements.settingsButton = document.getElementById("settingsButton");
-    this.elements.helpButton = document.getElementById("help-button");
+    this.elements.introButton = document.getElementById("intro-button");
     this.elements.startButton = document.getElementById("startButton");
     this.elements.returnToStartButton = document.getElementById(
       "returnToStartButton",
@@ -223,12 +223,12 @@ export class UIManager {
           if (callbacks.onSettingsClick) callbacks.onSettingsClick();
           break;
 
-        case "help-button":
-          this.showHelpModal();
+        case "intro-button":
+          this.showIntroModal();
           break;
 
-        case "helpCloseButton":
-          this.hideHelpModal();
+        case "introCloseButton":
+          this.hideIntroModal();
           break;
 
         case "startButton":
@@ -476,12 +476,12 @@ export class UIManager {
       });
     }
 
-    // Add event listener to close help modal when clicking outside of it
-    if (this.elements.helpModal) {
-      this.elements.helpModal.addEventListener("click", (event) => {
+    // Add event listener to close intro modal when clicking outside of it
+    if (this.elements.introModal) {
+      this.elements.introModal.addEventListener("click", (event) => {
         // Only close if clicking on the modal backdrop, not the content
-        if (event.target === this.elements.helpModal) {
-          this.hideHelpModal();
+        if (event.target === this.elements.introModal) {
+          this.hideIntroModal();
         }
       });
     }
@@ -605,7 +605,7 @@ export class UIManager {
     // Hide all other potentially visible elements
     this.elements.categoriesScreen.style.display = "none";
     this.elements.deleteConfirmationScreen.style.display = "none";
-    this.elements.helpModal.style.display = "none";
+    this.elements.introModal.style.display = "none";
     this.elements.retryButton.style.display = "none";
     this.elements.finalScore.style.display = "none";
     this.elements.highScore.style.display = "none";
@@ -1202,23 +1202,23 @@ export class UIManager {
   }
 
   /**
-   * Show the help modal with appropriate text based on user permissions
+   * Show the intro modal with appropriate text based on user permissions
    */
-  showHelpModal() {
-    // Set the help text based on whether the user can create categories
-    const helpText = this.gameState.userAllowedToCreate
-      ? "Play categories, create your own (up to 10) and set high scores.\n\nEach category gameplay consists of particles and trails displaying certain word(s), which should be guessed using provided keyboard.\n\nEach correct guess gives you 10 extra seconds, where gameplay finishes when you guess incorrectly, timer reaches 60 or you guess everything correctly."
-      : "Play categories and set high scores.\n\nEach category gameplay consists of particles and trails displaying certain word(s), which should be guessed using provided keyboard.\n\nEach correct guess gives you 10 extra seconds, where gameplay finishes when you guess incorrectly, timer reaches 60 or you guess everything correctly.";
+  showIntroModal() {
+    // Set the intro text based on whether the user can create categories
+    const introText = this.gameState.userAllowedToCreate
+      ? "Play categories, create your own (up to 10) and set high scores.\n\nEach category gameplay consists of particles and trails displaying certain word(s), which should be guessed using provided keyboard.\n\nEach correct guess gives you 10 extra seconds, where gameplay finishes when you guess incorrectly, timer reaches 60 seconds or you guess everything correctly."
+      : "Play categories and set high scores.\n\nEach category gameplay consists of particles and trails displaying certain word(s), which should be guessed using provided keyboard.\n\nEach correct guess gives you 10 extra seconds, where gameplay finishes when you guess incorrectly, timer reaches 60 seconds or you guess everything correctly.";
     
-    this.elements.helpText.textContent = helpText;
-    this.elements.helpModal.style.display = "flex";
+    this.elements.introText.textContent = introText;
+    this.elements.introModal.style.display = "flex";
   }
 
   /**
-   * Hide the help modal
+   * Hide the intro modal
    */
-  hideHelpModal() {
-    this.elements.helpModal.style.display = "none";
+  hideIntroModal() {
+    this.elements.introModal.style.display = "none";
   }
 
   /**

@@ -11,7 +11,7 @@
     <div id="centeringScreen">
         <!-- Main menu screen -->
         <div id="starting-screen">
-            <button id="help-button">?</button>
+            <button id="intro-button">?</button>
             <button id="play-button">Play</button>
             <button id="create-category-button">Create Category</button>
             <button id="settingsButton">Settings</button>
@@ -33,12 +33,19 @@
             </div>
         </div>
 
-        <!-- Help popup modal -->
-        <div id="helpModal">
-            <div id="helpContent">
-                <button id="helpCloseButton">✕</button>
+        <!-- Intro popup modal -->
+        <div id="introModal">
+            <div id="introContent">
+                <button id="introCloseButton">✕</button>
                 <h2>Quick Intro</h2>
-                <p id="helpText"></p>
+                <div id="introMainContent">
+                    <div id="introTextContainer">
+                        <p id="introText"></p>
+                    </div>
+                    <div id="introGifContainer">
+                        <img id="introGif" src="../assets/Instructions.gif" alt="Word Trail gameplay demonstration">
+                    </div>
+                </div>
             </div>
         </div>
 
