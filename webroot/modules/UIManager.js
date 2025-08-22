@@ -621,8 +621,8 @@ export class UIManager {
     // Always display the main start screen container
     this.elements.startingScreen.style.display = "flex";
 
-    // Always show the help button
-    this.elements.helpButton.style.display = "flex";
+    // Always show the intro button
+    this.elements.introButton.style.display = "flex";
 
     // Set visibility and position based on gameState.userAllowedToCreate
     if (this.gameState.userAllowedToCreate) {
