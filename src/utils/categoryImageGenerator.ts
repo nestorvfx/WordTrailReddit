@@ -85,20 +85,20 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
   const categoryData = parseCategoryString(categoryString);
   
   const width = 900; 
-  const fixedHeight = 280; // Increased to accommodate the high score text positioning
   const headerHeight = 60; 
   const rowHeight = 60; 
-  const highScoreHeight = 30; 
   const cornerRadius = 20; 
   const gap = 12; 
   
-  // Calculate content height and center it vertically
+  // Calculate exact content height with no extra padding
   const hasHighScore = parseInt(categoryData.played) > 0 && categoryData.highScoreUser;
-  const highScoreSpacing = 99; // Distance below category row for high score text
-  const contentHeight = headerHeight + gap + rowHeight + (hasHighScore ? highScoreSpacing + 30 : 0); // Include actual high score positioning
-  const yOffset = (fixedHeight - contentHeight) / 2; // Center the content vertically
+  const highScoreSpacing = 70; 
+  const highScoreTextHeight = 30;
   
-  
+  // Calculate tight height - exactly what's needed for content
+  const contentHeight = headerHeight + gap + rowHeight + (hasHighScore ? highScoreSpacing + highScoreTextHeight : 0);
+  const tightHeight = contentHeight + 20; // Minimal padding top/bottom (10px each)
+  const yOffset = 10; // Small top margin
   
   const totalFr = 3 + 2.5 + 1 + 1 + 0.8;
   const padding = 20; 
@@ -108,7 +108,6 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
   const col3Width = (1 / totalFr) * availableWidth;
   const col4Width = (1 / totalFr) * availableWidth;
   const col5Width = (0.8 / totalFr) * availableWidth;
-  
   
   const headerCells = ['Title', 'Created By', 'Played', 'HS', 'Ago'];
   const categoryCells = [
@@ -121,16 +120,16 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
   
   const colWidths = [col1Width, col2Width, col3Width, col4Width, col5Width];
   
+  // Start SVG with exact content dimensions
+  let svg = `<svg width="${width}" height="${tightHeight}" xmlns="http://www.w3.org/2000/svg" style="margin:0;padding:0;display:block;">`;
   
-  let svg = `<svg width="${width}" height="${fixedHeight}" xmlns="http://www.w3.org/2000/svg">`;
+  // Header row positioned near the top with minimal margin
+  svg += `<rect x="${padding/2}" y="${yOffset}" width="${width - padding}" height="${headerHeight}" fill="#a4e2fc" rx="${cornerRadius}" ry="${cornerRadius}"/>`;
   
+  // Category row immediately after the header with minimal gap
+  svg += `<rect x="${padding/2}" y="${yOffset + headerHeight + gap}" width="${width - padding}" height="${rowHeight}" fill="#ffcc80" rx="${cornerRadius}" ry="${cornerRadius}"/>`;
   
-  svg += `<rect x="${padding/2}" y="${yOffset + padding/2}" width="${width - padding}" height="${headerHeight}" fill="#a4e2fc" rx="${cornerRadius}" ry="${cornerRadius}"/>`;
-  
-  
-  svg += `<rect x="${padding/2}" y="${yOffset + headerHeight + padding/2 + gap}" width="${width - padding}" height="${rowHeight}" fill="#ffcc80" rx="${cornerRadius}" ry="${cornerRadius}"/>`;
-  
-  
+  // Header text
   let currentX = padding; 
   headerCells.forEach((text, index) => {
     const textAnchor = index === 0 ? 'start' : 'middle';
@@ -141,11 +140,11 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
       x = currentX + colWidths[index] / 2;
     }
     
-    svg += `<text x="${x}" y="${yOffset + padding/2 + headerHeight / 2 + 6}" text-anchor="${textAnchor}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="bold" fill="#000000">${text}</text>`;
+    svg += `<text x="${x}" y="${yOffset + headerHeight / 2 + 6}" text-anchor="${textAnchor}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="bold" fill="#000000">${text}</text>`;
     currentX += colWidths[index];
   });
   
-  
+  // Category row text
   currentX = padding; 
   categoryCells.forEach((text, index) => {
     const textAnchor = index === 0 ? 'start' : index === 4 ? 'end' : 'middle'; 
@@ -161,25 +160,22 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
     const fill = index === 4 ? '#bb7900' : '#000000'; 
     const fontWeight = index < 4 ? 'bold' : 'normal'; 
     
-    svg += `<text x="${x}" y="${yOffset + headerHeight + padding/2 + gap + rowHeight / 2 + 6}" text-anchor="${textAnchor}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="${fontWeight}" fill="${fill}">${text}</text>`;
+    svg += `<text x="${x}" y="${yOffset + headerHeight + gap + rowHeight / 2 + 6}" text-anchor="${textAnchor}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="${fontWeight}" fill="${fill}">${text}</text>`;
     currentX += colWidths[index];
   });
   
-  
+  // High score text if needed - positioned close to bottom
   if (hasHighScore) {
-    const highScoreY = yOffset + headerHeight + gap + rowHeight + highScoreSpacing; // Use the same spacing variable
+    const highScoreY = yOffset + headerHeight + gap + rowHeight + highScoreSpacing;
     
     // Use two text elements to make username bold while keeping "High Score by" normal
-    // Position "High Score by" to the left of center
-    svg += `<text x="${width / 2}" y="${highScoreY}" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="normal" fill="#FFFFFF">High Score by </text>`;
-    
-    // Position username to the right of center with more spacing
-    svg += `<text x="${width / 2 + 10}" y="${highScoreY}" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">${categoryData.highScoreUser}</text>`;
+    svg += `<text x="${width / 2+5}" y="${highScoreY}" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="normal" fill="#FFFFFF">High Score by </text>`;
+    svg += `<text x="${width / 2 + 15}" y="${highScoreY}" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">${categoryData.highScoreUser}</text>`;
   }
   
   svg += '</svg>';
   
-  
+  // Encode SVG with minimal whitespace
   const base64 = btoa(encodeURIComponent(svg).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode(parseInt(p1, 16))));
   return `data:image/svg+xml;base64,${base64}`;
 };

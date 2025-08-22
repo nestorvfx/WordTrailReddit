@@ -438,7 +438,7 @@ export const MainWebView = (context: any) => {
       <vstack
         backgroundColor="#EC0B43"
         grow
-        padding="small"
+        padding="none"
         width="100%"
         height="100%"
       >
@@ -496,47 +496,54 @@ export const MainWebView = (context: any) => {
               </vstack>
             )}
             {typeOfPost == 1 && (
-              <vstack
+              <zstack
                 grow={!webviewVisible}
                 height={webviewVisible ? "0%" : "100%"}
                 width="100%"
                 alignment="middle center"
-                gap="none"
                 padding="none"
+                gap="none"
               >
-                {/* Word Trail GIF at the top */}
-                <image
-                  url="Word Trail.gif"
-                  imageWidth={1104}
-                  imageHeight={274}
-                  width="90%"
-                  resizeMode="fit"
-                  description="Word Trail game logo"
-                />
-
-                {/* Generated category image in the center */}
-                {postCategory && (
+                {/* Word Trail GIF layer - positioned at top */}
+                <vstack height={"100%"} width="100%" alignment="center top">
                   <image
-                    url={generateCategoryImageSVG(postCategory)}
-                    imageWidth={900}
-                    imageHeight={280}
-                    width="93%"
+                    url="Word Trail.gif"
+                    imageWidth={1104}
+                    imageHeight={274}
+                    width="90%"
                     resizeMode="fit"
-                    description="Category information"
+                    description="Word Trail game logo"
                   />
-                )}
+                </vstack>
 
-                {/* Play button at the bottom */}
-                <image
-                  url="Play.png"
-                  height="60px"
-                  width="120px"
-                  imageWidth={700}
-                  imageHeight={256}
-                  resizeMode="scale-down"
-                  onPress={onShowWebview}
-                />
-              </vstack>
+                {/* Generated category image layer - positioned at center */}
+                <vstack height={"100%"} width="100%" alignment="middle center">
+                  <spacer height="20%"/>
+                  {postCategory && (
+                    <image
+                      url={generateCategoryImageSVG(postCategory)}
+                      imageWidth={900}
+                      imageHeight={220}
+                      width="93%"
+                      resizeMode="fit"
+                      description="Category information"
+                    />
+                  )}
+                </vstack>
+
+                {/* Play button layer - positioned at bottom */}
+                <vstack height={"100%"} width="100%" alignment="middle center">
+                  <spacer height="70%"/>
+                  <image
+                    url="Play.png"
+                    height="60px"
+                    width="140px"
+                    imageWidth={700}
+                    imageHeight={256}
+                    onPress={onShowWebview}
+                  />
+                </vstack>
+              </zstack>
             )}
           </zstack>
         )}
