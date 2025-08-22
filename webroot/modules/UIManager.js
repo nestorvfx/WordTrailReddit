@@ -95,12 +95,19 @@ export class UIManager {
       "deleteConfirmationScreen",
     );
 
+    // Help modal elements
+    this.elements.helpModal = document.getElementById("helpModal");
+    this.elements.helpContent = document.getElementById("helpContent");
+    this.elements.helpCloseButton = document.getElementById("helpCloseButton");
+    this.elements.helpText = document.getElementById("helpText");
+
     // Buttons
     this.elements.playButton = document.getElementById("play-button");
     this.elements.createCategoryButton = document.getElementById(
       "create-category-button",
     );
     this.elements.settingsButton = document.getElementById("settingsButton");
+    this.elements.helpButton = document.getElementById("help-button");
     this.elements.startButton = document.getElementById("startButton");
     this.elements.returnToStartButton = document.getElementById(
       "returnToStartButton",
@@ -214,6 +221,14 @@ export class UIManager {
           this.gameState.categoriesList = [];
 
           if (callbacks.onSettingsClick) callbacks.onSettingsClick();
+          break;
+
+        case "help-button":
+          this.showHelpModal();
+          break;
+
+        case "helpCloseButton":
+          this.hideHelpModal();
           break;
 
         case "startButton":
@@ -460,6 +475,16 @@ export class UIManager {
         }
       });
     }
+
+    // Add event listener to close help modal when clicking outside of it
+    if (this.elements.helpModal) {
+      this.elements.helpModal.addEventListener("click", (event) => {
+        // Only close if clicking on the modal backdrop, not the content
+        if (event.target === this.elements.helpModal) {
+          this.hideHelpModal();
+        }
+      });
+    }
   }
 
   /**
@@ -580,6 +605,7 @@ export class UIManager {
     // Hide all other potentially visible elements
     this.elements.categoriesScreen.style.display = "none";
     this.elements.deleteConfirmationScreen.style.display = "none";
+    this.elements.helpModal.style.display = "none";
     this.elements.retryButton.style.display = "none";
     this.elements.finalScore.style.display = "none";
     this.elements.highScore.style.display = "none";
@@ -594,6 +620,9 @@ export class UIManager {
 
     // Always display the main start screen container
     this.elements.startingScreen.style.display = "flex";
+
+    // Always show the help button
+    this.elements.helpButton.style.display = "flex";
 
     // Set visibility and position based on gameState.userAllowedToCreate
     if (this.gameState.userAllowedToCreate) {
@@ -1170,6 +1199,26 @@ export class UIManager {
   showMaintenanceOverlay() {
     this.elements.centeringScreen.style.display = "none";
     this.elements.maintenanceOverlay.style.display = "flex";
+  }
+
+  /**
+   * Show the help modal with appropriate text based on user permissions
+   */
+  showHelpModal() {
+    // Set the help text based on whether the user can create categories
+    const helpText = this.gameState.userAllowedToCreate
+      ? "Play categories, create your own (up to 10) and set high scores.\n\nEach category gameplay consists of particles and trails displaying certain word(s), which should be guessed using provided keyboard.\n\nEach correct guess gives you 10 extra seconds, where gameplay finishes when you guess incorrectly, timer reaches 60 or you guess everything correctly."
+      : "Play categories and set high scores.\n\nEach category gameplay consists of particles and trails displaying certain word(s), which should be guessed using provided keyboard.\n\nEach correct guess gives you 10 extra seconds, where gameplay finishes when you guess incorrectly, timer reaches 60 or you guess everything correctly.";
+    
+    this.elements.helpText.textContent = helpText;
+    this.elements.helpModal.style.display = "flex";
+  }
+
+  /**
+   * Hide the help modal
+   */
+  hideHelpModal() {
+    this.elements.helpModal.style.display = "none";
   }
 
   /**

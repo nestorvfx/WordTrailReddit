@@ -73,6 +73,26 @@ body {
     margin: 10px 0;
 }
 
+#help-button {
+    position: absolute;
+    top: 6%;
+    left: 6%;
+    width: 8vw;
+    height: 8vw;
+    border-radius: 50%;
+    background-color: transparent;
+    border: 2px solid white;
+    color: white;
+    font-size: 4vw;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
 #play-button, #create-category-button, #settingsButton {
     font-size: 3.7vw;
     width: 38vw;
@@ -1138,3 +1158,89 @@ body {
         height: 3.5vw;
     }
 }
+
+/* Help Modal Styles */
+ #helpModal {
+     position: fixed;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+     background-color: rgba(0, 0, 0, 0.8);
+     display: none;
+     align-items: center;
+     justify-content: center;
+     z-index: 1000;
+     backdrop-filter: blur(4px);
+ }
+
+ #helpContent {
+     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+     border-radius: 3vw;
+     padding: 3.5vw 3vw 3vw 3vw;
+     width: 70vw;
+     max-width: 420px;
+     max-height: 80vh;
+     position: relative;
+     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 16px rgba(0, 0, 0, 0.1);
+     border: 1px solid rgba(255, 255, 255, 0.2);
+     animation: helpModalSlideIn 0.3s ease-out;
+ }
+
+ @keyframes helpModalSlideIn {
+     from {
+         opacity: 0;
+         transform: scale(0.9) translateY(-20px);
+     }
+     to {
+         opacity: 1;
+         transform: scale(1) translateY(0);
+     }
+ }
+
+ #helpCloseButton {
+     position: absolute;
+     top: 1.5vw;
+     right: 1.5vw;
+     width: min(6vw, 5vh, 32px);
+     height: min(6vw, 5vh, 32px);
+     border-radius: 50%;
+     background-color: rgba(108, 117, 125, 0.1);
+     border: 2px solid rgba(108, 117, 125, 0.3);
+     color: #6c757d;
+     font-size: min(2.5vw, 2vh, 16px);
+     font-weight: bold;
+     cursor: pointer;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+     transition: all 0.2s ease;
+ }
+
+ #helpCloseButton:hover {
+     background-color: rgba(108, 117, 125, 0.2);
+     color: #495057;
+     transform: scale(1.05);
+ }
+
+ #helpContent h2 {
+     margin: 0 0 2.5vh 0;
+     color: #2c3e50;
+     font-size: min(5vw, 4vh, 24px);
+     text-align: center;
+     font-weight: 700;
+     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+     letter-spacing: 0.02em;
+ }
+
+ #helpContent p {
+     margin: 0;
+     color: #34495e;
+     font-size: min(2.8vw, 2.2vh, 16px);
+     line-height: 1.5;
+     text-align: left;
+     white-space: pre-line;
+     font-weight: 400;
+     text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.05);
+ }
