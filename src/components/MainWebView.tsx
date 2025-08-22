@@ -16,6 +16,7 @@ import {
 } from "../handlers/categoryHandlers.js";
 import { sendUserData, createCategory } from "../handlers/userHandlers.js";
 import { LoadingPreview } from "./LoadingPreview.js";
+import { generateCategoryImageSVG } from "../utils/categoryImageGenerator.js";
 
 export const MainWebView = (context: any) => {
   const isInMaintenanceWindow = () => {
@@ -429,72 +430,8 @@ export const MainWebView = (context: any) => {
     });
   };
 
-  const formatRelativeTime = (timestamp: string) => {
-    if (!timestamp || isNaN(parseInt(timestamp))) {
-      return "";
-    }
-
-    try {
-      const now = new Date();
-
-      const diffMs = now.getTime() - parseInt(timestamp) * 1000;
-
-      // Less than a minute ago
-      if (diffMs < 60000) {
-        return "now";
-      }
-
-      // Less than an hour ago
-      if (diffMs < 3600000) {
-        const diffMinutes = Math.floor(diffMs / 60000);
-        return `${diffMinutes}min`;
-      }
-
-      // Less than a day
-      if (diffMs < 86400000) {
-        const diffHours = Math.floor(diffMs / 3600000);
-        return `${diffHours}h`;
-      }
-
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-      if (diffDays === 0) {
-        return "Today";
-      } else if (diffDays === 1) {
-        return "1d";
-      } else if (diffDays < 7) {
-        return `${diffDays}d`;
-      } else if (diffDays < 30) {
-        const weeks = Math.floor(diffDays / 7);
-        return `${weeks}w`;
-      } else if (diffDays < 365) {
-        const months = Math.floor(diffDays / 30);
-        return `${months}mo`;
-      } else {
-        const years = Math.floor(diffDays / 365);
-        return `${years}y`;
-      }
-    } catch (e) {
-      // Check if it's the special ServerCallRequired error
-      if (e && typeof e === 'object' && 'message' in e && e.message === 'ServerCallRequired') {
-        throw e; // Re-throw this specific error
-      }
-      
-      console.error("Error formatting timestamp:", e);
-      return "";
-    }
-  };
-
   const screenWidth = context.dimensions?.width;
   const screenHeight = context.dimensions?.height;
-  const customSpacer = screenWidth / screenHeight < 0.9 ? "77%" : "75.5%";
-  const smallText = screenWidth / screenHeight < 0.95 ? "xsmall" : "medium";
-  const textSize = screenWidth / screenHeight < 1.1 ? smallText : "xlarge";
-  const textTimeSize = screenWidth / screenHeight < 0.9 ? "xsmall" : "large";
-  const textWeight = screenWidth / screenHeight < 0.9 ? "regular" : "bold";
-  const hsTextSize = screenWidth / screenHeight < 0.9 ? "medium" : "xlarge";
-  const additionalScalingSmall = screenWidth / screenHeight < 0.7 ? 0.53 : 0.65;
-  const additionalScaling = screenWidth / screenHeight < 1.1 ? additionalScalingSmall : 1;
 
   return (
     <blocks height="tall">
@@ -559,153 +496,47 @@ export const MainWebView = (context: any) => {
               </vstack>
             )}
             {typeOfPost == 1 && (
-              <zstack
+              <vstack
                 grow={!webviewVisible}
                 height={webviewVisible ? "0%" : "100%"}
                 width="100%"
                 alignment="middle center"
-                padding="small"
-                gap="small"
+                gap="none"
+                padding="none"
               >
-                <vstack height={"100%"} width="100%" alignment="middle center">
+                {/* Word Trail GIF at the top */}
+                <image
+                  url="Word Trail.gif"
+                  imageWidth={1104}
+                  imageHeight={274}
+                  width="90%"
+                  resizeMode="fit"
+                  description="Word Trail game logo"
+                />
+
+                {/* Generated category image in the center */}
+                {postCategory && (
                   <image
-                    url="Word Trail.gif"
-                    imageWidth={1104}
-                    imageHeight={274}
-                    width="100%"
+                    url={generateCategoryImageSVG(postCategory)}
+                    imageWidth={900}
+                    imageHeight={250}
+                    width="93%"
                     resizeMode="fit"
-                    description="background image"
+                    description="Category information"
                   />
-                  <spacer height="60%" />
-                </vstack>
+                )}
 
-                <zstack width="100%" height="20%" alignment="middle center">
-                  <image
-                    url="category.png"
-                    imageWidth={830}
-                    imageHeight={152}
-                    height={
-                      ((screenWidth / screenHeight) * 85 +
-                        "%") as Devvit.Blocks.SizeString
-                    }
-                    resizeMode="fit"
-                    description="background image"
-                  />
-                  <vstack
-                    width="100%"
-                    height="100%"
-                    grow={true}
-                    alignment="middle center"
-                  >
-                    <spacer
-                      height={
-                        ((screenWidth / screenHeight) * 31 +
-                          "%") as Devvit.Blocks.SizeString
-                      }
-                    />
-
-                    <zstack width="100%" alignment="start">
-                      <hstack width="100%" alignment="start">
-                        <spacer
-                          width={
-                            (7 * additionalScaling +
-                              "%") as Devvit.Blocks.SizeString
-                          }
-                        />
-                        <text
-                          size={textSize}
-                          color="#000000"
-                          weight={textWeight}
-                        >
-                          {postCategory?.split(":")[2] || "Unknown"}
-                        </text>
-                      </hstack>
-                      <hstack width="100%" alignment="middle start">
-                        <spacer
-                          width={(34 + "%") as Devvit.Blocks.SizeString}
-                        />
-                        {postCategory &&
-                          parseInt(postCategory.split(":")[4]) > 0 && (
-                            <text
-                              size={textSize}
-                              color="#000000"
-                              weight={textWeight}
-                            >
-                              {postCategory.split(":")[1]}
-                            </text>
-                          )}
-                      </hstack>
-                      <hstack width="100%" alignment="middle start">
-                        <spacer width="63.5%" />
-                        <text
-                          size={textSize}
-                          color="#000000"
-                          weight={textWeight}
-                        >
-                          {postCategory?.split(":")[3] || "0"}
-                        </text>
-                      </hstack>
-                      <hstack width="100%" alignment="middle start">
-                        <spacer width={customSpacer as Devvit.Blocks.SizeString} />
-                        <text
-                          size={textSize}
-                          color="#000000"
-                          weight={textWeight}
-                        >
-                          {postCategory?.split(":")[4] || "0"}
-                        </text>
-                      </hstack>
-                      <hstack width="100%" alignment="middle start">
-                        <spacer width="87.5%" />
-                        <text
-                          size={textTimeSize}
-                          color="#bb7900"
-                          weight={textWeight}
-                        >
-                          {formatRelativeTime(
-                            postCategory?.split(":")[8] || "0",
-                          )}
-                        </text>
-                      </hstack>
-                    </zstack>
-                  </vstack>
-                </zstack>
-
-                <vstack width="100%" height="100%" alignment="middle center">
-                  <spacer height="32%" />
-                  {postCategory && parseInt(postCategory.split(":")[4]) > 0 && (
-                    <hstack
-                      height={
-                        ((screenWidth / screenHeight) * 6 +
-                          "%") as Devvit.Blocks.SizeString
-                      }
-                      alignment="middle center"
-                      cornerRadius="medium"
-                    >
-                      <text size={hsTextSize} color="#FFFFFF" weight="regular">
-                        High Score by
-                      </text>
-                      <spacer width="2%" />
-                      <text size={hsTextSize} color="#FFFFFF" weight="bold">
-                        {postCategory.split(":")[5]}
-                      </text>
-                    </hstack>
-                  )}
-                </vstack>
-
-                <vstack height={"100%"} width="100%" alignment="middle center">
-                  <spacer height="60%" />
-                  <image
-                    url="Play.png"
-                    height="10%"
-                    width="20%"
-                    imageWidth={700}
-                    imageHeight={256}
-                    resizeMode="scale-down"
-                    onPress={onShowWebview}
-                  />
-                </vstack>
-              </zstack>
+                {/* Play button at the bottom */}
+                <image
+                  url="Play.png"
+                  height="60px"
+                  width="120px"
+                  imageWidth={700}
+                  imageHeight={256}
+                  resizeMode="scale-down"
+                  onPress={onShowWebview}
+                />
+              </vstack>
             )}
           </zstack>
         )}
