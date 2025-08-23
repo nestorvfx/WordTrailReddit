@@ -473,7 +473,7 @@ export const MainWebView = (context: any) => {
                   imageWidth={1104}
                   imageHeight={274}
                   grow={!webviewVisible}
-                  height="180%"
+                  height="55%"
                   width="100%"
                   resizeMode="fit"
                   description="background image"
@@ -510,7 +510,8 @@ export const MainWebView = (context: any) => {
                     url="Word Trail.gif"
                     imageWidth={1104}
                     imageHeight={274}
-                    width="90%"
+                    height="55%"
+                    width="100%"
                     resizeMode="fit"
                     description="Word Trail game logo"
                   />
@@ -525,6 +526,7 @@ export const MainWebView = (context: any) => {
                       imageWidth={900}
                       imageHeight={340}
                       width="93%"
+                      height="60%"
                       resizeMode="fit"
                       description="Category information"
                     />
