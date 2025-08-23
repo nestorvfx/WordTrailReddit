@@ -81,33 +81,45 @@ export const formatRelativeTime = (timestamp: string) => {
   };
 
 
-export const generateCategoryImageSVG = (categoryString: string): string => {
+export const generateCategoryImageSVG = (categoryString: string, screenWidth?: number, screenHeight?: number): string => {
   const categoryData = parseCategoryString(categoryString);
   
-  const width = 900; 
-  const headerHeight = 60; 
-  const rowHeight = 60; 
-  const cornerRadius = 20; 
-  const gap = 12; 
+  // Hard threshold scaling based on aspect ratio
+  const aspectRatio = screenWidth && screenHeight ? screenWidth / screenHeight : 1.0;
+  const isMobile = aspectRatio < 0.75; // Hard threshold at 0.75 (more appropriate for phones)
   
-  // Calculate exact content height with no extra padding
+  // Two distinct scaling modes
+  const scaleFactor = isMobile ? 1.5 : 1.0; // Mobile gets 1.5x scaling, desktop stays 1.0x
+  
+  const width = 900; 
+  const headerHeight = 60 * scaleFactor; 
+  const rowHeight = 60 * scaleFactor; 
+  const cornerRadius = 20; 
+  const gap = 12 * scaleFactor; 
+  
+  // Calculate exact content height with scaling
   const hasHighScore = parseInt(categoryData.played) > 0 && categoryData.highScoreUser;
-  const highScoreSpacing = 70; 
-  const highScoreTextHeight = 30;
+  const highScoreSpacing = 70 * scaleFactor; 
+  const highScoreTextHeight = 30 * scaleFactor;
   
   // Calculate tight height - exactly what's needed for content
   const contentHeight = headerHeight + gap + rowHeight + (hasHighScore ? highScoreSpacing + highScoreTextHeight : 0);
-  const tightHeight = contentHeight + 20; // Minimal padding top/bottom (10px each)
-  const yOffset = 10; // Small top margin
+  const tightHeight = contentHeight + (20 * scaleFactor); // Scaled padding
+  const yOffset = 10 * scaleFactor; // Scaled top margin
   
   const totalFr = 3 + 2.5 + 1 + 1 + 0.8;
-  const padding = 20; 
+  const padding = 20 * scaleFactor; 
   const availableWidth = width - (padding * 2); 
   const col1Width = (3 / totalFr) * availableWidth;
   const col2Width = (2.5 / totalFr) * availableWidth;
   const col3Width = (1 / totalFr) * availableWidth;
   const col4Width = (1 / totalFr) * availableWidth;
   const col5Width = (0.8 / totalFr) * availableWidth;
+  
+  // Scaled font sizes
+  const headerFontSize = 18 * scaleFactor;
+  const rowFontSize = 22 * scaleFactor;
+  const highScoreFontSize = 24 * scaleFactor;
   
   const headerCells = ['Title', 'Created By', 'Played', 'HS', 'Ago'];
   const categoryCells = [
@@ -129,30 +141,30 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
   // Category row immediately after the header with minimal gap
   svg += `<rect x="${padding/2}" y="${yOffset + headerHeight + gap}" width="${width - padding}" height="${rowHeight}" fill="#ffcc80" rx="${cornerRadius}" ry="${cornerRadius}"/>`;
   
-  // Header text
+  // Header text with scaled font size
   let currentX = padding; 
   headerCells.forEach((text, index) => {
     const textAnchor = index === 0 ? 'start' : 'middle';
     let x;
     if (index === 0) {
-      x = currentX + 5; 
+      x = currentX + (5 * scaleFactor); 
     } else {
       x = currentX + colWidths[index] / 2;
     }
     
-    svg += `<text x="${x}" y="${yOffset + headerHeight / 2 + 6}" text-anchor="${textAnchor}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="bold" fill="#000000">${text}</text>`;
+    svg += `<text x="${x}" y="${yOffset + headerHeight / 2 + (6 * scaleFactor)}" text-anchor="${textAnchor}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${headerFontSize}" font-weight="bold" fill="#000000">${text}</text>`;
     currentX += colWidths[index];
   });
   
-  // Category row text
+  // Category row text with scaled font size
   currentX = padding; 
   categoryCells.forEach((text, index) => {
     const textAnchor = index === 0 ? 'start' : index === 4 ? 'end' : 'middle'; 
     let x;
     if (index === 0) {
-      x = currentX + 5; 
+      x = currentX + (5 * scaleFactor); 
     } else if (index === 4) {
-      x = currentX + colWidths[index] /2+10; 
+      x = currentX + colWidths[index] /2 + (10 * scaleFactor); 
     } else {
       x = currentX + colWidths[index] / 2;
     }
@@ -160,17 +172,17 @@ export const generateCategoryImageSVG = (categoryString: string): string => {
     const fill = index === 4 ? '#bb7900' : '#000000'; 
     const fontWeight = index < 4 ? 'bold' : 'normal'; 
     
-    svg += `<text x="${x}" y="${yOffset + headerHeight + gap + rowHeight / 2 + 6}" text-anchor="${textAnchor}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="${fontWeight}" fill="${fill}">${text}</text>`;
+    svg += `<text x="${x}" y="${yOffset + headerHeight + gap + rowHeight / 2 + (6 * scaleFactor)}" text-anchor="${textAnchor}" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${rowFontSize}" font-weight="${fontWeight}" fill="${fill}">${text}</text>`;
     currentX += colWidths[index];
   });
   
-  // High score text if needed - positioned close to bottom
+  // High score text if needed - positioned close to bottom with scaled font
   if (hasHighScore) {
     const highScoreY = yOffset + headerHeight + gap + rowHeight + highScoreSpacing;
     
     // Use two text elements to make username bold while keeping "High Score by" normal
-    svg += `<text x="${width / 2+5}" y="${highScoreY}" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="normal" fill="#FFFFFF">High Score by </text>`;
-    svg += `<text x="${width / 2 + 15}" y="${highScoreY}" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="bold" fill="#FFFFFF">${categoryData.highScoreUser}</text>`;
+    svg += `<text x="${width / 2 + (5 * scaleFactor)}" y="${highScoreY}" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${highScoreFontSize}" font-weight="normal" fill="#FFFFFF">High Score by </text>`;
+    svg += `<text x="${width / 2 + (15 * scaleFactor)}" y="${highScoreY}" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${highScoreFontSize}" font-weight="bold" fill="#FFFFFF">${categoryData.highScoreUser}</text>`;
   }
   
   svg += '</svg>';

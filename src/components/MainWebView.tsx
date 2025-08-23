@@ -521,9 +521,9 @@ export const MainWebView = (context: any) => {
                   <spacer height="20%"/>
                   {postCategory && (
                     <image
-                      url={generateCategoryImageSVG(postCategory)}
+                      url={generateCategoryImageSVG(postCategory, screenWidth, screenHeight)}
                       imageWidth={900}
-                      imageHeight={220}
+                      imageHeight={340}
                       width="93%"
                       resizeMode="fit"
                       description="Category information"
