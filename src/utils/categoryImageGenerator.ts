@@ -108,12 +108,9 @@ export const generateCategoryImageSVG = (
   const highScoreSpacing = 70 * scaleFactor;
   const highScoreTextHeight = 30 * scaleFactor;
 
-  // Calculate tight height - exactly what's needed for content
+  // Calculate tight height - always include high score area for consistent proportions
   const contentHeight =
-    headerHeight +
-    gap +
-    rowHeight +
-    (hasHighScore ? highScoreSpacing + highScoreTextHeight : 0);
+    headerHeight + gap + rowHeight + highScoreSpacing + highScoreTextHeight; // Always include this space
   const tightHeight = contentHeight + 20 * scaleFactor; // Scaled padding
   const yOffset = 10 * scaleFactor; // Scaled top margin
 
@@ -134,7 +131,7 @@ export const generateCategoryImageSVG = (
   const headerCells = ["Title", "Created By", "Played", "HS", "Ago"];
   const categoryCells = [
     categoryData.title,
-    parseInt(categoryData.played) > 0 ? categoryData.creator : "",
+    categoryData.creator,
     categoryData.played,
     parseInt(categoryData.played) > 0 ? categoryData.highScore : "0",
     formatRelativeTime(categoryData.timestamp),
@@ -158,8 +155,6 @@ export const generateCategoryImageSVG = (
     let x;
     if (index === 0) {
       x = currentX + 5 * scaleFactor;
-    } else if (index == 4) {
-      x = currentX + colWidths[index] / 2 + 10 * scaleFactor;
     } else {
       x = currentX + colWidths[index] / 2;
     }
@@ -171,12 +166,10 @@ export const generateCategoryImageSVG = (
   // Category row text with scaled font size
   currentX = padding;
   categoryCells.forEach((text, index) => {
-    const textAnchor = index === 0 ? "start" : index === 4 ? "end" : "middle";
+    const textAnchor = index === 0 ? "start" : "middle";
     let x;
     if (index === 0) {
       x = currentX + 5 * scaleFactor;
-    } else if (index === 4) {
-      x = currentX + colWidths[index] / 2 + scaleFactor * 20;
     } else {
       x = currentX + colWidths[index] / 2;
     }
@@ -189,14 +182,17 @@ export const generateCategoryImageSVG = (
     currentX += colWidths[index];
   });
 
-  // High score text if needed - positioned close to bottom with scaled font
-  if (hasHighScore) {
-    const highScoreY =
-      yOffset + headerHeight + gap + rowHeight + highScoreSpacing;
+  // High score text area - always reserve space for consistent layout
+  const highScoreY =
+    yOffset + headerHeight + gap + rowHeight + highScoreSpacing;
 
+  if (hasHighScore) {
     // Use two text elements to make username bold while keeping "High Score by" normal
     svg += `<text x="${width / 2 + 5 * scaleFactor}" y="${highScoreY}" text-anchor="end" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${highScoreFontSize}" font-weight="normal" fill="#FFFFFF">High Score by </text>`;
     svg += `<text x="${width / 2 + 15 * scaleFactor}" y="${highScoreY}" text-anchor="start" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${highScoreFontSize}" font-weight="bold" fill="#FFFFFF">${categoryData.highScoreUser}</text>`;
+  } else {
+    // Add invisible placeholder text to maintain consistent spacing
+    svg += `<text x="${width / 2}" y="${highScoreY}" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="${highScoreFontSize}" font-weight="normal" fill="transparent"> </text>`;
   }
 
   svg += "</svg>";
