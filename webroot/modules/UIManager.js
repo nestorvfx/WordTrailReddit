@@ -98,7 +98,8 @@ export class UIManager {
     // Intro modal elements
     this.elements.introModal = document.getElementById("introModal");
     this.elements.introContent = document.getElementById("introContent");
-    this.elements.introCloseButton = document.getElementById("introCloseButton");
+    this.elements.introCloseButton =
+      document.getElementById("introCloseButton");
     this.elements.introText = document.getElementById("introText");
 
     // Buttons
@@ -1209,7 +1210,7 @@ export class UIManager {
     const introText = this.gameState.userAllowedToCreate
       ? "Play categories, create your own (up to 10) and set high scores.\n\nEach category gameplay consists of particles and trails displaying certain word(s), which should be guessed using provided keyboard.\n\nEach correct guess gives you 10 extra seconds, where gameplay finishes when you guess incorrectly, timer reaches 60 seconds or you guess everything correctly."
       : "Play categories and set high scores.\n\nEach category gameplay consists of particles and trails displaying certain word(s), which should be guessed using provided keyboard.\n\nEach correct guess gives you 10 extra seconds, where gameplay finishes when you guess incorrectly, timer reaches 60 seconds or you guess everything correctly.";
-    
+
     this.elements.introText.textContent = introText;
     this.elements.introModal.style.display = "flex";
   }

@@ -18,10 +18,15 @@ export async function initialPost(
     await post.sticky();
   } catch (error) {
     // Check if it's the special ServerCallRequired error
-    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      error.message === "ServerCallRequired"
+    ) {
       throw error; // Re-throw this specific error
     }
-    
+
     console.error(`Failed to sticky post: ${error}`);
     // Continue execution even if stickying fails
   }
@@ -154,10 +159,15 @@ export async function removeUserDataPeriodically(
       break;
     } catch (error) {
       // Check if it's the special ServerCallRequired error
-      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        error.message === "ServerCallRequired"
+      ) {
         throw error; // Re-throw this specific error
       }
-      
+
       console.error("Error in transaction:", error);
       retries++;
     }
@@ -205,10 +215,15 @@ export async function cleanupTrendingCategories(
     }
   } catch (error) {
     // Check if it's the special ServerCallRequired error
-    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      error.message === "ServerCallRequired"
+    ) {
       throw error; // Re-throw this specific error
     }
-    
+
     console.error("Error cleaning up trending categories:", error);
   }
 }

@@ -111,10 +111,15 @@ export async function sendCategories(
     });
   } catch (error) {
     // Check if it's the special ServerCallRequired error
-    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      error.message === "ServerCallRequired"
+    ) {
       throw error; // Re-throw this specific error
     }
-    
+
     console.error("Error sending categories:", error);
     // Send empty result on error
     postMessage({
@@ -189,7 +194,9 @@ export async function updateCategoryInfo(
     const originalRawScore = categoryInfo.newScore;
 
     // DEBUG: Log score input processing
-    console.log(`SCORE INPUT DEBUG - User: ${userID}, Category: ${categoryInfo.categoryCode}, RawInput: ${originalRawScore}, ParsedScore: ${newScoreValue}, GuessedAll: ${categoryInfo.guessedAll}`);
+    console.log(
+      `SCORE INPUT DEBUG - User: ${userID}, Category: ${categoryInfo.categoryCode}, RawInput: ${originalRawScore}, ParsedScore: ${newScoreValue}, GuessedAll: ${categoryInfo.guessedAll}`,
+    );
 
     let transactionSucceeded = false;
 
@@ -303,28 +310,36 @@ export async function updateCategoryInfo(
 
     if (transactionSucceeded) {
       // Capture the comment text immediately while values are still correct
-      const finalCommentText = categoryInfo.guessedAll 
+      const finalCommentText = categoryInfo.guessedAll
         ? `**GUESSED ALL ${newScoreValue} CORRECTLY**`
-        : previousScore < newScoreValue 
-        ? `**HIGH SCORED** with **${newScoreValue}**`
-        : `Just scored ${newScoreValue}`;
+        : previousScore < newScoreValue
+          ? `**HIGH SCORED** with **${newScoreValue}**`
+          : `Just scored ${newScoreValue}`;
 
       // DEBUG: Log score values for troubleshooting
-      console.log(`SCORE DEBUG - User: ${userID}, Category: ${categoryInfo.categoryCode}, OriginalScore: ${categoryInfo.newScore}, ProcessedScore: ${newScoreValue}, PreviousScore: ${previousScore}, GuessedAll: ${categoryInfo.guessedAll}, CommentText: "${finalCommentText}"`);
+      console.log(
+        `SCORE DEBUG - User: ${userID}, Category: ${categoryInfo.categoryCode}, OriginalScore: ${categoryInfo.newScore}, ProcessedScore: ${newScoreValue}, PreviousScore: ${previousScore}, GuessedAll: ${categoryInfo.guessedAll}, CommentText: "${finalCommentText}"`,
+      );
 
       // Fire and forget comment posting
-      post.addComment({ text: finalCommentText })
-        .then(comment => {
+      post
+        .addComment({ text: finalCommentText })
+        .then((comment) => {
           if (comment != null) {
             return context.reddit.approve(comment.id);
           }
         })
-        .catch(commentError => {
+        .catch((commentError) => {
           // Check if it's the special ServerCallRequired error
-          if (commentError && typeof commentError === 'object' && 'message' in commentError && commentError.message === 'ServerCallRequired') {
+          if (
+            commentError &&
+            typeof commentError === "object" &&
+            "message" in commentError &&
+            commentError.message === "ServerCallRequired"
+          ) {
             throw commentError; // Re-throw this specific error
           }
-          
+
           console.error(`Comment posting failed: ${commentError}`);
         });
     } else {
@@ -332,10 +347,15 @@ export async function updateCategoryInfo(
     }
   } catch (error) {
     // Check if it's the special ServerCallRequired error
-    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      error.message === "ServerCallRequired"
+    ) {
       throw error; // Re-throw this specific error
     }
-    
+
     console.error(
       `Operation failed for userID=${userID}, score=${categoryInfo.newScore}: ${error}`,
     );
@@ -386,10 +406,15 @@ export async function deleteCategory(
           await context.reddit.remove(postId, false);
         } catch (removeError) {
           // Check if it's the special ServerCallRequired error
-          if (removeError && typeof removeError === 'object' && 'message' in removeError && removeError.message === 'ServerCallRequired') {
+          if (
+            removeError &&
+            typeof removeError === "object" &&
+            "message" in removeError &&
+            removeError.message === "ServerCallRequired"
+          ) {
             throw removeError; // Re-throw this specific error
           }
-          
+
           // Post might already be deleted or not accessible, continue with other cleanup
         }
       }
@@ -427,10 +452,15 @@ export async function deleteCategory(
       return;
     } catch (error) {
       // Check if it's the special ServerCallRequired error
-      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        error.message === "ServerCallRequired"
+      ) {
         throw error; // Re-throw this specific error
       }
-      
+
       // Only try again if we haven't reached the retry limit
       if (attempt === retryLimit) {
         postMessage({
@@ -627,10 +657,15 @@ export async function deleteAllUserData(
       break;
     } catch (error) {
       // Check if it's the special ServerCallRequired error
-      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        error.message === "ServerCallRequired"
+      ) {
         throw error; // Re-throw this specific error
       }
-      
+
       console.error(`Attempt ${attempt} failed: ${error}`);
       if (attempt == retryLimit) {
         console.error(

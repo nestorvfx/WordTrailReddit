@@ -1,162 +1,181 @@
 <!doctype html>
 <html lang="en">
-<head>
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <head>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <meta charset="UTF-8" />
     <title>Word Trail</title>
     <link rel="stylesheet" href="style.css" />
-</head>
-<body>
+  </head>
+  <body>
     <div id="centeringScreen">
-        <!-- Main menu screen -->
-        <div id="starting-screen">
-            <button id="intro-button">?</button>
-            <button id="play-button">Play</button>
-            <button id="create-category-button">Create Category</button>
-            <button id="settingsButton">Settings</button>
+      <!-- Main menu screen -->
+      <div id="starting-screen">
+        <button id="intro-button">?</button>
+        <button id="play-button">Play</button>
+        <button id="create-category-button">Create Category</button>
+        <button id="settingsButton">Settings</button>
+      </div>
+
+      <!-- Navigation buttons -->
+      <button id="returnToStartButton">Main Screen</button>
+      <button id="retryButton">Try again</button>
+      <button id="deleteDataButton">Remove Data</button>
+
+      <!-- Delete confirmation modal -->
+      <div id="deleteConfirmationScreen">
+        <div id="banner">
+          <h3 id="deleteText">
+            Confirm deleting all of your Reddit data related to Word Trail Game?
+          </h3>
+          <div id="banner-buttons">
+            <button id="confirmButton">Confirm</button>
+            <button id="cancelButton">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Intro popup modal -->
+      <div id="introModal">
+        <div id="introContent">
+          <button id="introCloseButton">✕</button>
+          <h2>Quick Intro</h2>
+          <div id="introMainContent">
+            <div id="introTextContainer">
+              <p id="introText"></p>
+            </div>
+            <div id="introGifContainer">
+              <img
+                id="introGif"
+                src="assets/Instructions.gif"
+                alt="Word Trail gameplay demonstration"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game HUD elements -->
+      <div id="top-left-container">
+        <div id="timeDisplay"></div>
+        <div id="wordCount"></div>
+      </div>
+
+      <!-- Categories browser -->
+      <div id="categoriesScreen">
+        <div id="categoriesText">Pick a Category</div>
+        <button id="scrollButtonUp">▲</button>
+
+        <div id="searchContainer">
+          <div class="search-inner">
+            <div class="search-icon">🔍</div>
+            <input
+              type="text"
+              id="categorySearch"
+              placeholder="Search categories..."
+            />
+            <div class="search-clear" id="clearSearch">✕</div>
+          </div>
         </div>
 
-        <!-- Navigation buttons -->
-        <button id="returnToStartButton">Main Screen</button>
-        <button id="retryButton">Try again</button>
-        <button id="deleteDataButton">Remove Data</button>
+        <button id="reverseSort" title="Reverse sort order">
+          <span class="sort-direction">⇅</span>
+        </button>
 
-        <!-- Delete confirmation modal -->
-        <div id="deleteConfirmationScreen">
-            <div id="banner">
-                <h3 id="deleteText">Confirm deleting all of your Reddit data related to Word Trail Game?</h3>
-                <div id="banner-buttons">
-                    <button id="confirmButton">Confirm</button>
-                    <button id="cancelButton">Cancel</button>
-                </div>
-            </div>
+        <div id="sortContainer">
+          <button id="sortButton">
+            Sort: <span id="currentSort">Newest</span>
+            <span class="sort-arrow">▼</span>
+          </button>
+          <div id="sortDropdown">
+            <div class="sort-option active" data-sort="time">Newest</div>
+            <div class="sort-option" data-sort="trending">Trending</div>
+            <div class="sort-option" data-sort="plays">Plays</div>
+            <div class="sort-option" data-sort="score">High Score</div>
+          </div>
         </div>
 
-        <!-- Intro popup modal -->
-        <div id="introModal">
-            <div id="introContent">
-                <button id="introCloseButton">✕</button>
-                <h2>Quick Intro</h2>
-                <div id="introMainContent">
-                    <div id="introTextContainer">
-                        <p id="introText"></p>
-                    </div>
-                    <div id="introGifContainer">
-                        <img id="introGif" src="assets/Instructions.gif" alt="Word Trail gameplay demonstration">
-                    </div>
-                </div>
-            </div>
+        <div id="categories">
+          <div class="list-header">
+            <div class="col-title">Title</div>
+            <div class="col-created">Created By</div>
+            <div class="col-played">Played</div>
+            <div class="col-hs">HS</div>
+            <div class="col-timestamp">Ago</div>
+          </div>
+          <div id="rows-wrapper">
+            <!-- Rows populated dynamically -->
+          </div>
         </div>
 
-        <!-- Game HUD elements -->
-        <div id="top-left-container">
-            <div id="timeDisplay"></div>
-            <div id="wordCount"></div>
+        <button id="scrollButtonDown">▼</button>
+
+        <!-- Repositioned loading spinner -->
+        <div id="categoriesLoading">
+          <div class="spinner"></div>
         </div>
 
-        <!-- Categories browser -->
-        <div id="categoriesScreen">
-            <div id="categoriesText">Pick a Category</div>
-            <button id="scrollButtonUp">▲</button>
-            
-            <div id="searchContainer">
-                <div class="search-inner">
-                    <div class="search-icon">🔍</div>
-                    <input type="text" id="categorySearch" placeholder="Search categories...">
-                    <div class="search-clear" id="clearSearch">✕</div>
-                </div>
-            </div>
-            
-            <button id="reverseSort" title="Reverse sort order">
-                <span class="sort-direction">⇅</span>
-            </button>
-            
-            <div id="sortContainer">
-                <button id="sortButton">Sort: <span id="currentSort">Newest</span> <span class="sort-arrow">▼</span></button>
-                <div id="sortDropdown">
-                    <div class="sort-option active" data-sort="time">Newest</div>
-                    <div class="sort-option" data-sort="trending">Trending</div>
-                    <div class="sort-option" data-sort="plays">Plays</div>
-                    <div class="sort-option" data-sort="score">High Score</div>
-                </div>
-            </div>
-            
-            <div id="categories">
-                <div class="list-header">
-                    <div class="col-title">Title</div>
-                    <div class="col-created">Created By</div>
-                    <div class="col-played">Played</div>
-                    <div class="col-hs">HS</div>
-                    <div class="col-timestamp">Ago</div>
-                </div>
-                <div id="rows-wrapper">
-                    <!-- Rows populated dynamically -->
-                </div>
-            </div>
+        <button id="startButton">Start</button>
+        <button id="deleteCategoryButton">Delete Category</button>
+      </div>
 
-            <button id="scrollButtonDown">▼</button>
-            
-            <!-- Repositioned loading spinner -->
-            <div id="categoriesLoading">
-                <div class="spinner"></div>
-            </div>
-            
-            <button id="startButton">Start</button>
-            <button id="deleteCategoryButton">Delete Category</button>
+      <!-- Game results elements -->
+      <div id="final-score"></div>
+      <div id="highScore"></div>
+      <div id="formMessage"></div>
+
+      <!-- Virtual keyboard -->
+      <div id="keyboard-holder">
+        <div id="output"></div>
+        <div id="keyboard">
+          <button class="key">Q</button>
+          <button class="key">W</button>
+          <button class="key">E</button>
+          <button class="key">R</button>
+          <button class="key">T</button>
+          <button class="key">Y</button>
+          <button class="key">U</button>
+          <button class="key">I</button>
+          <button class="key">O</button>
+          <button class="key">P</button>
+          <button class="key backspace">⌫</button>
+
+          <button class="key">A</button>
+          <button class="key">S</button>
+          <button class="key">D</button>
+          <button class="key">F</button>
+          <button class="key">G</button>
+          <button class="key">H</button>
+          <button class="key">J</button>
+          <button class="key">K</button>
+          <button class="key">L</button>
+          <img
+            src="assets/Keyboard Image.png"
+            alt="Keyboard Image"
+            class="keyboardImage"
+          />
+          <button class="key submit">✔</button>
+
+          <button class="key">Z</button>
+          <button class="key">X</button>
+          <button class="key">C</button>
+          <button class="key">V</button>
+          <button class="key">B</button>
+          <button class="key">N</button>
+          <button class="key">M</button>
+          <button class="key space"></button>
         </div>
-
-        <!-- Game results elements -->
-        <div id="final-score"></div>
-        <div id="highScore"></div>
-        <div id="formMessage"></div>
-
-        <!-- Virtual keyboard -->
-        <div id="keyboard-holder">
-            <div id="output"></div>
-            <div id="keyboard">
-                <button class="key">Q</button>
-                <button class="key">W</button>
-                <button class="key">E</button>
-                <button class="key">R</button>
-                <button class="key">T</button>
-                <button class="key">Y</button>
-                <button class="key">U</button>
-                <button class="key">I</button>
-                <button class="key">O</button>
-                <button class="key">P</button>
-                <button class="key backspace">⌫</button>
-
-                <button class="key">A</button>
-                <button class="key">S</button>
-                <button class="key">D</button>
-                <button class="key">F</button>
-                <button class="key">G</button>
-                <button class="key">H</button>
-                <button class="key">J</button>
-                <button class="key">K</button>
-                <button class="key">L</button>
-                <img src="assets/Keyboard Image.png" alt="Keyboard Image" class="keyboardImage">
-                <button class="key submit">✔</button>
-
-                <button class="key">Z</button>
-                <button class="key">X</button>
-                <button class="key">C</button>
-                <button class="key">V</button>
-                <button class="key">B</button>
-                <button class="key">N</button>
-                <button class="key">M</button>
-                <button class="key space"></button>
-            </div>
-        </div>
+      </div>
     </div>
-    
+
     <!-- Maintenance message -->
     <div id="maintenanceOverlay">
-        Maintenance in progress.<br>
-        Try again in a few minutes.
+      Maintenance in progress.<br />
+      Try again in a few minutes.
     </div>
-    
+
     <script type="module" src="script.js"></script>
-</body>
+  </body>
 </html>

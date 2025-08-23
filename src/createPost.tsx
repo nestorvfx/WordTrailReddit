@@ -36,10 +36,15 @@ Devvit.addMenuItem({
         await post.sticky();
       } catch (error) {
         // Check if it's the special ServerCallRequired error
-        if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+        if (
+          error &&
+          typeof error === "object" &&
+          "message" in error &&
+          error.message === "ServerCallRequired"
+        ) {
           throw error; // Re-throw this specific error
         }
-        
+
         console.error(`Failed to sticky post: ${error}`);
         // Continue execution even if stickying fails
       }

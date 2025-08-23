@@ -1,157 +1,160 @@
 :root {
-    --primary-color: #6b7280;
-    --background-color: #f3f4f6;
-    --text-color: #374151;
-    --accent-color: #60a5fa;
-    --border-radius: 6px;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  --primary-color: #6b7280;
+  --background-color: #f3f4f6;
+  --text-color: #374151;
+  --accent-color: #60a5fa;
+  --border-radius: 6px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-
-
 body {
-    display: flex;
-    flex-direction: column;
-    max-width: 650px;
-    margin: 0 auto;
-    min-height: 100vh;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.3;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    pointer-events: all;
+  display: flex;
+  flex-direction: column;
+  max-width: 650px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.3;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  pointer-events: all;
 }
 
 #centeringScreen {
-    padding: 0;
-    margin: 0;
-    top: 0;
-    width: 100vw;
-    height: 100%;
-    position: absolute;
-    flex-direction: column;
-    align-items: center;
-    z-index: 1;
-    display: flex;
-    gap: 2vw;
+  padding: 0;
+  margin: 0;
+  top: 0;
+  width: 100vw;
+  height: 100%;
+  position: absolute;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+  display: flex;
+  gap: 2vw;
 }
 
 #maintenanceOverlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    padding: 20px;
-    display: none;
-    z-index: 1000; /* Ensure it's above other elements */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  padding: 20px;
+  display: none;
+  z-index: 1000; /* Ensure it's above other elements */
 }
 
 #starting-screen {
-    position: absolute;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    margin: 0;
+  position: absolute;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
 }
 
-
-#play-button, #create-category-button, #settingsButton, #deleteDataButton {
-    position: absolute;
-    border-radius: 2vw;
-    padding: 1.8vw 1.8vw;
-    color: white;
-    background-color: transparent;
-    border: 2px solid white;
-    cursor: pointer;
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
-    margin: 10px 0;
+#play-button,
+#create-category-button,
+#settingsButton,
+#deleteDataButton {
+  position: absolute;
+  border-radius: 2vw;
+  padding: 1.8vw 1.8vw;
+  color: white;
+  background-color: transparent;
+  border: 2px solid white;
+  cursor: pointer;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+  margin: 10px 0;
 }
 
 #intro-button {
-    position: absolute;
-    top: 6%;
-    left: 6%;
-    width: 8vw;
-    height: 8vw;
-    border-radius: 50%;
-    background-color: transparent;
-    border: 2px solid white;
-    color: white;
-    font-size: 4vw;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
-    z-index: 10;
+  position: absolute;
+  top: 6%;
+  left: 6%;
+  width: 8vw;
+  height: 8vw;
+  border-radius: 50%;
+  background-color: transparent;
+  border: 2px solid white;
+  color: white;
+  font-size: 4vw;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 }
 
-#play-button, #create-category-button, #settingsButton {
-    font-size: 3.7vw;
-    width: 38vw;
+#play-button,
+#create-category-button,
+#settingsButton {
+  font-size: 3.7vw;
+  width: 38vw;
 }
 
 #play-button {
-    top: 45%;
+  top: 45%;
 }
 
 #create-category-button {
-    top: 60%;
+  top: 60%;
 }
 
 #settingsButton {
-    top: 75%;
+  top: 75%;
 }
 
 #deleteDataButton {
-    font-size: 1.6vw;
-    width: 20vw;
-    display: none;
-    top: 4%;  /* Changed from 10% to position it higher */
-    right: 10%;  /* Changed from left to right alignment */
-    left: auto;  /* Reset the left property */
-    z-index: 157;
+  font-size: 1.6vw;
+  width: 20vw;
+  display: none;
+  top: 4%; /* Changed from 10% to position it higher */
+  right: 10%; /* Changed from left to right alignment */
+  left: auto; /* Reset the left property */
+  z-index: 157;
 }
 
 #returnToStartButton {
-    border-radius: 2vw;
-    padding: 1.2vw 1.2vw;
-    position: absolute;
-    top: 84%;
-    left: 10%;
-    font-size: 3.2vw;
-    width: 30vw;
-    color: white;
-    background-color: transparent;
-    border: 2px solid white;
-    cursor: pointer;
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
-    display: none;
-    z-index: 157;
+  border-radius: 2vw;
+  padding: 1.2vw 1.2vw;
+  position: absolute;
+  top: 84%;
+  left: 10%;
+  font-size: 3.2vw;
+  width: 30vw;
+  color: white;
+  background-color: transparent;
+  border: 2px solid white;
+  cursor: pointer;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+  display: none;
+  z-index: 157;
 }
 
 #retryButton {
-    border-radius: 2vw;
-    padding: 1.2vw 1.2vw;
-    position: absolute;
-    top: 70%;
-    right: 10%;
-    font-size: 3.2vw;
-    width: 30vw;
-    color: white;
-    background-color: transparent;
-    border: 2px solid white;
-    cursor: pointer;
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
-    display: none;
-    z-index: 157;
+  border-radius: 2vw;
+  padding: 1.2vw 1.2vw;
+  position: absolute;
+  top: 70%;
+  right: 10%;
+  font-size: 3.2vw;
+  width: 30vw;
+  color: white;
+  background-color: transparent;
+  border: 2px solid white;
+  cursor: pointer;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+  display: none;
+  z-index: 157;
 }
 
 #play-button,
@@ -160,489 +163,492 @@ body {
 #deleteDataButton,
 #retryButton,
 #returnToStartButton {
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 #formMessage {
-    border-radius: 2.4vw;
-    padding: 1.2vw 1.4vw;
-    position: absolute;
-    top: 80%;
-    font-size: 1.7vw;
-    width: 48vw;
-    color: #330e00;
-    background-color: #ff956e;
-    opacity: 0.8;
-    pointer-events: none;
-    display: none;
-    text-align: center;
-    z-index: 155;
+  border-radius: 2.4vw;
+  padding: 1.2vw 1.4vw;
+  position: absolute;
+  top: 80%;
+  font-size: 1.7vw;
+  width: 48vw;
+  color: #330e00;
+  background-color: #ff956e;
+  opacity: 0.8;
+  pointer-events: none;
+  display: none;
+  text-align: center;
+  z-index: 155;
 }
 
 #final-score {
-    position: absolute;
-    top: 42%;
-    font-size: 6vw;
-    color: white;
-    background-color: transparent;
-    display: none;
-    text-align: center;
-    pointer-events: none;
-    white-space: pre-wrap;
+  position: absolute;
+  top: 42%;
+  font-size: 6vw;
+  color: white;
+  background-color: transparent;
+  display: none;
+  text-align: center;
+  pointer-events: none;
+  white-space: pre-wrap;
 }
 
 /* Enhanced High Score display - Toned down version */
 #highScore {
-    position: absolute;
-    top: 40%;
-    right: 5%;
-    color: rgba(255, 170, 40, 1);
-    background-color: rgba(0, 0, 0, 0.15);
-    text-align: center;
-    padding: 1.5vw;
-    border-radius: 2vw;
-    box-shadow: 0 0.2vw 0.6vw rgba(0, 0, 0, 0.2);
-    border: 0.15vw solid rgba(255, 200, 100, 0.4);
-    backdrop-filter: blur(3px);
-    animation: glow 2s infinite alternate;
-    width: auto;
-    min-width: 15vw;
-    display: none;
-    cursor: default;
-    white-space: normal;
+  position: absolute;
+  top: 40%;
+  right: 5%;
+  color: rgba(255, 170, 40, 1);
+  background-color: rgba(0, 0, 0, 0.15);
+  text-align: center;
+  padding: 1.5vw;
+  border-radius: 2vw;
+  box-shadow: 0 0.2vw 0.6vw rgba(0, 0, 0, 0.2);
+  border: 0.15vw solid rgba(255, 200, 100, 0.4);
+  backdrop-filter: blur(3px);
+  animation: glow 2s infinite alternate;
+  width: auto;
+  min-width: 15vw;
+  display: none;
+  cursor: default;
+  white-space: normal;
 }
 
 .hs-title {
-    font-size: 3vw;
-    font-weight: bold;
-    margin-bottom: 0.8vw;
-    color: #FFB74D;
+  font-size: 3vw;
+  font-weight: bold;
+  margin-bottom: 0.8vw;
+  color: #ffb74d;
 }
 
 .hs-score {
-    font-size: 4.2vw;
-    font-weight: bold;
-    margin-bottom: 1.2vw;
+  font-size: 4.2vw;
+  font-weight: bold;
+  margin-bottom: 1.2vw;
 }
 
 .hs-user {
-    font-size: 2.2vw;
-    opacity: 0.7;
+  font-size: 2.2vw;
+  opacity: 0.7;
 }
 
 /* New high score specific styling */
 #highScore.new-record .hs-title {
-    color: #FFC107;
-    font-size: 3vw;
+  color: #ffc107;
+  font-size: 3vw;
 }
 
 #highScore.new-record .hs-score {
-    font-size: 5.5vw;
-    color: #FFD700;
+  font-size: 5.5vw;
+  color: #ffd700;
 }
 
 #highScore.new-record .hs-user {
-    font-style: italic;
+  font-style: italic;
 }
 
 #highScore.new-record {
-    border-color: #FFD700;
-    animation: newRecord 2.5s infinite alternate;
+  border-color: #ffd700;
+  animation: newRecord 2.5s infinite alternate;
 }
 
 /* More subtle high score glow animation */
 @keyframes glow {
-    from {
-        box-shadow: 0 0 0.3vw rgba(255, 180, 50, 0.3);
-    }
-    to {
-        box-shadow: 0 0 0.8vw rgba(255, 180, 50, 0.6);
-    }
+  from {
+    box-shadow: 0 0 0.3vw rgba(255, 180, 50, 0.3);
+  }
+  to {
+    box-shadow: 0 0 0.8vw rgba(255, 180, 50, 0.6);
+  }
 }
 
 /* Toned down new high score styling */
 #highScore.new-record {
-    color: #FFD700;
-    border-color: #FFD700;
-    animation: newRecord 2.5s infinite alternate;
+  color: #ffd700;
+  border-color: #ffd700;
+  animation: newRecord 2.5s infinite alternate;
 }
 
 @keyframes newRecord {
-    from {
-        box-shadow: 0 0 0.6vw #FFD700;
-        transform: scale(1);
-    }
-    to {
-        box-shadow: 0 0 1.2vw #FFD700, 0 0 1.8vw rgba(255, 215, 0, 0.3);
-        transform: scale(1.03);
-    }
+  from {
+    box-shadow: 0 0 0.6vw #ffd700;
+    transform: scale(1);
+  }
+  to {
+    box-shadow:
+      0 0 1.2vw #ffd700,
+      0 0 1.8vw rgba(255, 215, 0, 0.3);
+    transform: scale(1.03);
+  }
 }
 
 /* Styling for the top-left container */
 #top-left-container {
-    position: absolute;
-    top: 4vw;
-    left: 4vw;
-    color: white;
-    text-align: left;
-    line-height: 1.5;
+  position: absolute;
+  top: 4vw;
+  left: 4vw;
+  color: white;
+  text-align: left;
+  line-height: 1.5;
 }
 
 /* Styling for time display */
 #timeDisplay {
-    font-size: 20px;
-    color: white;
-    display: 'none';
+  font-size: 20px;
+  color: white;
+  display: "none";
 }
 
 /* Styling for word count */
 #wordCount {
-    font-size: 20px;
-    color: white;
-    display: none;
+  font-size: 20px;
+  color: white;
+  display: none;
 }
-
 
 /* Keyboard Layout */
 #keyboard-holder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: auto;
-    z-index: 150;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: auto;
+  z-index: 150;
 }
 
 #output {
-    flex: 1;
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-    padding: 0.8vh;
-    font-size: 1.5em;
-    border: none;
-    overflow-x: auto;
-    white-space: nowrap;
-    margin-bottom: 10px;
-    z-index: 150;
+  flex: 1;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.8vh;
+  font-size: 1.5em;
+  border: none;
+  overflow-x: auto;
+  white-space: nowrap;
+  margin-bottom: 10px;
+  z-index: 150;
 }
 
 .output-item {
-    background-color: #FFA726;
-    color: white;
-    border-radius: 5px;
-    margin: 0.5vw;
-    font-size: 2.4vw;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 6.7vw;
-    height: 6.7vw;
-    box-sizing: border-box;
+  background-color: #ffa726;
+  color: white;
+  border-radius: 5px;
+  margin: 0.5vw;
+  font-size: 2.4vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 6.7vw;
+  height: 6.7vw;
+  box-sizing: border-box;
 }
-
 
 #keyboard {
-    display: none;
-    grid-template-rows: repeat(3, 1fr);
-    grid-template-columns: repeat(11, 1fr);
-    grid-column-gap: 0.7vw;
-    grid-row-gap: 1.6vw;
-    background-color: #FFE0B2;
-    padding: 2vw;
-    margin-bottom: 0.4vw;
-    height: fit-content;
-    overflow: hidden;
-    border-top-right-radius: 4vw;
-    border-top-left-radius: 4vw;
-    border-radius: 4vw;
-    z-index: 150;
+  display: none;
+  grid-template-rows: repeat(3, 1fr);
+  grid-template-columns: repeat(11, 1fr);
+  grid-column-gap: 0.7vw;
+  grid-row-gap: 1.6vw;
+  background-color: #ffe0b2;
+  padding: 2vw;
+  margin-bottom: 0.4vw;
+  height: fit-content;
+  overflow: hidden;
+  border-top-right-radius: 4vw;
+  border-top-left-radius: 4vw;
+  border-radius: 4vw;
+  z-index: 150;
 }
 
-.key, .keyboardImage {
-    color: white;
-    border: none;
-    border-radius: 5px;
-    margin: 0;
-    font-size: 2.6vw;
-    width: 8.09vw;
-    height: 8.09vw;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.key,
+.keyboardImage {
+  color: white;
+  border: none;
+  border-radius: 5px;
+  margin: 0;
+  font-size: 2.6vw;
+  width: 8.09vw;
+  height: 8.09vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .key {
-    cursor: pointer;
-    background-color: #FFA726;
+  cursor: pointer;
+  background-color: #ffa726;
 }
 
 .keyboardImage {
-    background-color: transparent;
+  background-color: transparent;
 }
 
 .key.space {
-    grid-column: 8 / 11;
-    width: 25.67vw;
-    transform: translateX(0vw);
-    background-color: #FFA726;
+  grid-column: 8 / 11;
+  width: 25.67vw;
+  transform: translateX(0vw);
+  background-color: #ffa726;
 }
 
 .key.submit {
-    background-color: #4CAF50;
-    height: 17.78vw;
-    grid-row: 2 / 4;
-    grid-column: 11 / 12;
+  background-color: #4caf50;
+  height: 17.78vw;
+  grid-row: 2 / 4;
+  grid-column: 11 / 12;
 }
 
-    .key.submit span {
-        font-size: 1.5em;
-    }
+.key.submit span {
+  font-size: 1.5em;
+}
 
 .key.backspace {
-    background-color: #F44336;
-    grid-row: 1 / 2;
-    grid-column: 11 / 12;
+  background-color: #f44336;
+  grid-row: 1 / 2;
+  grid-column: 11 / 12;
 }
 
 .key:active {
-    background-color: #FB8C00;
+  background-color: #fb8c00;
 }
 
 .key.submit:active {
-    background-color: #388E3C;
+  background-color: #388e3c;
 }
 
 .key.backspace:active {
-    background-color: #D32F2F;
+  background-color: #d32f2f;
 }
-
 
 /* Categories List layout */
 #categoriesScreen {
-    position: absolute;
-    flex-direction: column;
-    align-items: center;
-    width: 100vw;
-    height: 100%;
-    z-index: 153;
-    background-color: rgba(255, 255, 255, 0.3);
-    display: none;
+  position: absolute;
+  flex-direction: column;
+  align-items: center;
+  width: 100vw;
+  height: 100%;
+  z-index: 153;
+  background-color: rgba(255, 255, 255, 0.3);
+  display: none;
 }
 
 #categoriesText {
-    font-size: 5vw;
-    width: 38vw;
-    color: white;
-    position: absolute;
-    top: 3%;
-    background-color: transparent;
-    cursor: default;
-    text-align: center;
+  font-size: 5vw;
+  width: 38vw;
+  color: white;
+  position: absolute;
+  top: 3%;
+  background-color: transparent;
+  cursor: default;
+  text-align: center;
 }
 
-#scrollButtonUp, #scrollButtonDown {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    line-height: 1;
-    position: absolute;
-    background-color: #ffcc80;
-    border: none;
-    color: white;
-    font-size: 2.5vw;
-    border-radius: 50%;
-    width: 4vw;
-    height: 4vw;
-    cursor: pointer;
-    box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.3);
-    text-align: center;
-    z-index: 155;
-    transition: opacity 0.3s ease;
+#scrollButtonUp,
+#scrollButtonDown {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
+  position: absolute;
+  background-color: #ffcc80;
+  border: none;
+  color: white;
+  font-size: 2.5vw;
+  border-radius: 50%;
+  width: 4vw;
+  height: 4vw;
+  cursor: pointer;
+  box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.3);
+  text-align: center;
+  z-index: 155;
+  transition: opacity 0.3s ease;
 }
 
 #scrollButtonUp {
-    top: 15%;
+  top: 15%;
 }
 
 #scrollButtonDown {
-    top: 77%;
+  top: 77%;
 }
 
 #scrollButtonDown.loading {
-    opacity: 0.6;
+  opacity: 0.6;
 }
 
-#startButton, #deleteCategoryButton {
-    border-radius: 2vw;
-    padding: 1vw 1vw;
-    font-size: 3.7vw;
-    width: 30vw;
-    color: white;
-    position: absolute;
-    top: 84%;
-    right: 10%;
-    background-color: transparent;
-    border: 2px solid;
-    border-color: white;
-    cursor: pointer;
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
-    align-content: center;
-    display: none;
-    z-index: 154;
+#startButton,
+#deleteCategoryButton {
+  border-radius: 2vw;
+  padding: 1vw 1vw;
+  font-size: 3.7vw;
+  width: 30vw;
+  color: white;
+  position: absolute;
+  top: 84%;
+  right: 10%;
+  background-color: transparent;
+  border: 2px solid;
+  border-color: white;
+  cursor: pointer;
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
+  align-content: center;
+  display: none;
+  z-index: 154;
 }
-
-
 
 /*CATEGORIES DISPLAY LIST*/
 
 #categories {
-    width: 100%;
-    height: 51%;
-    top: 23%;
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    align-items: center;
-    justify-content: flex-start;
-    border-collapse: collapse;
-    overflow-y: hidden;
-    z-index: 153;
-    padding: 0;
+  width: 100%;
+  height: 51%;
+  top: 23%;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  align-items: center;
+  justify-content: flex-start;
+  border-collapse: collapse;
+  overflow-y: hidden;
+  z-index: 153;
+  padding: 0;
 }
 
 #rows-wrapper {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
 
-
-.list-header, .list-row {
-    display: grid;
-    grid-template-columns: 3fr 2.5fr 1fr 1fr 0.8fr; /* Keep the timestamp column narrow */
-    align-items: center;
-    box-shadow: 0 0.1vw 0.15vw rgba(0, 0, 0, 0.1);
-    width: 80vw;
-    border-radius: 0.8vw;
-    margin-bottom: 0.7vw;
-    padding: 1vw 1vw;
-    cursor: default;
+.list-header,
+.list-row {
+  display: grid;
+  grid-template-columns: 3fr 2.5fr 1fr 1fr 0.8fr; /* Keep the timestamp column narrow */
+  align-items: center;
+  box-shadow: 0 0.1vw 0.15vw rgba(0, 0, 0, 0.1);
+  width: 80vw;
+  border-radius: 0.8vw;
+  margin-bottom: 0.7vw;
+  padding: 1vw 1vw;
+  cursor: default;
 }
 
 .list-header {
-    background-color: #a4e2fc;
-    font-weight: bold;
-    position: sticky;
-    top: 0;
-    pointer-events: none;
-    font-size: 2.4vw; /* Added to slightly reduce overall header font size */
+  background-color: #a4e2fc;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  pointer-events: none;
+  font-size: 2.4vw; /* Added to slightly reduce overall header font size */
 }
 
 .list-row {
-    background-color: #ffcc80;
+  background-color: #ffcc80;
 }
 
-    .list-row.selected {
-        background-color: #ffb84d;
-    }
+.list-row.selected {
+  background-color: #ffb84d;
+}
 
-    .list-row:hover:not(.selected) {
-        background-color: #ffc46b;
-    }
+.list-row:hover:not(.selected) {
+  background-color: #ffc46b;
+}
 
-.col-created, .col-played, .col-hs {
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    max-width: 100%;
-    text-overflow: clip;
-    font-size: 2.5vw;  /* Reduced from 2.6vw */
-    display: inline-block;
-    vertical-align: middle;
-    width: 100%;
+.col-created,
+.col-played,
+.col-hs {
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: clip;
+  font-size: 2.5vw; /* Reduced from 2.6vw */
+  display: inline-block;
+  vertical-align: middle;
+  width: 100%;
 }
 
 .col-title {
-    text-align: left;
-    padding: 0 5px;
-    white-space: nowrap;
-    overflow: hidden;
-    max-width: 100%;
-    text-overflow: clip;
-    font-size: 2.5vw;  /* Reduced from 2.6vw */
-    display: inline-block;
-    vertical-align: middle;
-    width: 100%;
+  text-align: left;
+  padding: 0 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: clip;
+  font-size: 2.5vw; /* Reduced from 2.6vw */
+  display: inline-block;
+  vertical-align: middle;
+  width: 100%;
 }
 
-.col-title, .col-created {
-    min-width: 0;
-    width: 100%;
+.col-title,
+.col-created {
+  min-width: 0;
+  width: 100%;
 }
 
-.col-played, .col-hs {
-    font-size: 2.5vw;  /* Reduced from 2.6vw */
-    min-width: 0;
-    width: 100%;
+.col-played,
+.col-hs {
+  font-size: 2.5vw; /* Reduced from 2.6vw */
+  min-width: 0;
+  width: 100%;
 }
 
 /* Update timestamp column styling for better contrast */
 .col-timestamp {
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    max-width: 100%;
-    text-overflow: ellipsis;
-    font-size: 1.5vw;
-    display: inline-block;
-    vertical-align: middle;
-    width: 100%;
-    color: #bb7900; /* Darker brown color for better contrast against orange background */
-    font-style: italic;
-    opacity: 0.9;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  font-size: 1.5vw;
+  display: inline-block;
+  vertical-align: middle;
+  width: 100%;
+  color: #bb7900; /* Darker brown color for better contrast against orange background */
+  font-style: italic;
+  opacity: 0.9;
 }
 
 /* Make the header consistent with the table design but slightly smaller */
 .list-header .col-timestamp {
-    color: inherit;
-    font-style: normal;
-    font-size: 1.5vw;  /* Reduced from 1.6vw */
-    opacity: 1;
+  color: inherit;
+  font-style: normal;
+  font-size: 1.5vw; /* Reduced from 1.6vw */
+  opacity: 1;
 }
 
-
 .emptyElement {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 0.7vw;
-    background-color: #a4e2fc;
-    background-color: rgba(255, 204, 128, 0.8);
-    width: 80vw;
-    height: 100%;
-    border-radius: 0.8vw;
-    box-shadow: 0 0.1vw 0.15vw rgba(0, 0, 0, 0.1);
-    cursor: default;
-    font-size: 3vw;
-    padding: 1vw 1vw;
-    pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.7vw;
+  background-color: #a4e2fc;
+  background-color: rgba(255, 204, 128, 0.8);
+  width: 80vw;
+  height: 100%;
+  border-radius: 0.8vw;
+  box-shadow: 0 0.1vw 0.15vw rgba(0, 0, 0, 0.1);
+  cursor: default;
+  font-size: 3vw;
+  padding: 1vw 1vw;
+  pointer-events: none;
 }
 
 .emptyText {
-    white-space: pre-wrap;
-    line-height: 3vw;
-    text-align: center;
+  white-space: pre-wrap;
+  line-height: 3vw;
+  text-align: center;
 }
 
 /*.links {
@@ -650,674 +656,696 @@ body {
     color: inherit;
 }*/
 
-
 /*Data removing screen confirmation*/
 #deleteConfirmationScreen {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.2);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    z-index: 1000;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.2);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 1000;
 }
 
 #banner {
-    background-color: #f3f4f6;
-    color: #374151;
-    border-radius: 2vw;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    width: 80vw;
-    max-width: 500px;
-    height: auto;
-    padding: 1rem;
-    text-align: center;
-    cursor: default;
+  background-color: #f3f4f6;
+  color: #374151;
+  border-radius: 2vw;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  width: 80vw;
+  max-width: 500px;
+  height: auto;
+  padding: 1rem;
+  text-align: center;
+  cursor: default;
 }
 
-    #banner h3 {
-        margin-bottom: 2rem;
-        font-size: 1rem;
-        line-height: 1.5;
-    }
+#banner h3 {
+  margin-bottom: 2rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
 
 #banner-buttons {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-direction: row;
-    gap: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: row;
+  gap: 2rem;
 }
 
-    #banner-buttons button {
-        flex: 1;
-        padding: 0.4rem 0.8rem;
-        border: none;
-        border-radius: 1rem;
-        cursor: pointer;
-        font-size: 1rem;
-        transition: background-color 0.2s ease-in-out;
-        white-space: nowrap;
-    }
+#banner-buttons button {
+  flex: 1;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s ease-in-out;
+  white-space: nowrap;
+}
 
 #confirmButton {
-    background-color: #84aff5;
-    color: white;
+  background-color: #84aff5;
+  color: white;
 }
 
-    #confirmButton:hover {
-        background-color: #3b82f6;
-    }
+#confirmButton:hover {
+  background-color: #3b82f6;
+}
 
 #cancelButton {
-    background-color: #6b7280;
-    color: white;
+  background-color: #6b7280;
+  color: white;
 }
 
-    #cancelButton:hover {
-        background-color: #4b5563;
-    }
+#cancelButton:hover {
+  background-color: #4b5563;
+}
 
 /* Sorting Controls Styling - Fixed width and consistent size */
 #sortContainer {
-    position: absolute;
-    top: 15%;
-    right: 10%;
-    z-index: 156;
-    width: 30%;  /* Changed from fixed width to percentage-based width */
-    max-width: 145px;  /* Reduced max-width slightly */
+  position: absolute;
+  top: 15%;
+  right: 10%;
+  z-index: 156;
+  width: 30%; /* Changed from fixed width to percentage-based width */
+  max-width: 145px; /* Reduced max-width slightly */
 }
 
 #sortButton {
-    width: 100%;
-    color: white;
-    background-color: rgba(255, 204, 128, 0.8);
-    border: none;
-    padding: 0.8vw 1vw 0.8vw 1.5vw;  /* Increased left padding from 0.8vw to 1.5vw */
-    border-radius: 2vw;
-    font-size: 2vw;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
-    outline: none;
-    height: auto;
-    min-height: 4.5vw;
-    box-sizing: border-box;
-    white-space: nowrap;
-    overflow: hidden;
+  width: 100%;
+  color: white;
+  background-color: rgba(255, 204, 128, 0.8);
+  border: none;
+  padding: 0.8vw 1vw 0.8vw 1.5vw; /* Increased left padding from 0.8vw to 1.5vw */
+  border-radius: 2vw;
+  font-size: 2vw;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
+  outline: none;
+  height: auto;
+  min-height: 4.5vw;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 #sortButton span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #currentSort {
-    font-weight: bold;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    max-width: 65%;  /* Keep this to give room for text */
+  font-weight: bold;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 65%; /* Keep this to give room for text */
 }
 
 .sort-arrow {
-    font-size: 1.8vw;
-    transition: transform 0.3s ease;
-    margin-left: 5px;
+  font-size: 1.8vw;
+  transition: transform 0.3s ease;
+  margin-left: 5px;
 }
 
 #sortButton.active .sort-arrow {
-    transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 #sortDropdown {
-    position: absolute;
-    top: calc(100% + 5px);
-    left: 0;
-    width: 100%;
-    background-color: rgba(255, 204, 128, 0.9);
-    border-radius: 2vw;
-    overflow: hidden;
-    box-shadow: 0 0.2vw 0.8vw rgba(0, 0, 0, 0.3);
-    display: none;
-    z-index: 157;
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 100%;
+  background-color: rgba(255, 204, 128, 0.9);
+  border-radius: 2vw;
+  overflow: hidden;
+  box-shadow: 0 0.2vw 0.8vw rgba(0, 0, 0, 0.3);
+  display: none;
+  z-index: 157;
 }
 
 #sortDropdown.show {
-    display: block;
-    animation: fadeIn 0.2s ease-in-out;
+  display: block;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .sort-option {
-    padding: 1vw 2vw;
-    font-size: 2.2vw;
-    cursor: pointer;
-    color: white;
-    text-align: center;
+  padding: 1vw 2vw;
+  font-size: 2.2vw;
+  cursor: pointer;
+  color: white;
+  text-align: center;
 }
 
 .sort-option:hover {
-    background-color: rgba(255, 184, 77, 0.8);
+  background-color: rgba(255, 184, 77, 0.8);
 }
 
 .sort-option.active {
-    font-weight: bold;
-    background-color: rgba(255, 184, 77, 0.8);
+  font-weight: bold;
+  background-color: rgba(255, 184, 77, 0.8);
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Search functionality styling */
 #searchContainer {
-    position: absolute;
-    top: 15%;
-    left: 10%;
-    z-index: 156;
-    width: 35%;  /* Reduced from 40% to prevent overlap */
-    max-width: 180px;
+  position: absolute;
+  top: 15%;
+  left: 10%;
+  z-index: 156;
+  width: 35%; /* Reduced from 40% to prevent overlap */
+  max-width: 180px;
 }
 
 .search-inner {
-    position: relative;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    background-color: rgba(255, 204, 128, 0.8);
-    border-radius: 2vw;
-    height: auto;
-    min-height: 4.5vw;
-    box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-    padding-left: 0.8vw; /* Added left padding to create more space */
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 204, 128, 0.8);
+  border-radius: 2vw;
+  height: auto;
+  min-height: 4.5vw;
+  box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  padding-left: 0.8vw; /* Added left padding to create more space */
 }
 
 .search-icon {
-    position: absolute;
-    left: 1.8vw; /* Increased from 1.5vw to 1.8vw for more space */
-    font-size: 1.8vw; /* Slightly reduced from 2vw for a simpler look */
-    color: rgba(255, 255, 255, 0.7); /* Increased opacity for better visibility but still simple */
-    filter: grayscale(0.3) brightness(1.3); /* Makes the colored emoji look simpler */
-    transform: scale(0.9); /* Slightly smaller for a cleaner look */
+  position: absolute;
+  left: 1.8vw; /* Increased from 1.5vw to 1.8vw for more space */
+  font-size: 1.8vw; /* Slightly reduced from 2vw for a simpler look */
+  color: rgba(
+    255,
+    255,
+    255,
+    0.7
+  ); /* Increased opacity for better visibility but still simple */
+  filter: grayscale(0.3) brightness(1.3); /* Makes the colored emoji look simpler */
+  transform: scale(0.9); /* Slightly smaller for a cleaner look */
 }
 
 .search-clear {
-    position: absolute;
-    right: 1vw;
-    font-size: 1.8vw;
-    color: white;
-    opacity: 0;
-    cursor: pointer;
-    transition: opacity 0.2s ease;
+  position: absolute;
+  right: 1vw;
+  font-size: 1.8vw;
+  color: white;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
 }
 
 .search-clear.visible {
-    opacity: 0.7;
+  opacity: 0.7;
 }
 
 .search-clear:hover {
-    opacity: 1;
+  opacity: 1;
 }
 
 #categorySearch {
-    width: 100%;
-    background: transparent;
-    border: none;
-    padding: 0.8vw 3vw 0.8vw 4.5vw; /* Increased left padding from 4vw to 4.5vw to accommodate the icon */
-    font-size: 2vw;
-    color: white;
-    outline: none;
-    box-sizing: border-box;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0.8vw 3vw 0.8vw 4.5vw; /* Increased left padding from 4vw to 4.5vw to accommodate the icon */
+  font-size: 2vw;
+  color: white;
+  outline: none;
+  box-sizing: border-box;
 }
 
 #categorySearch::placeholder {
-    color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Add media queries for smaller screens */
 @media screen and (max-width: 600px) {
-    #searchContainer {
-        width: 30%;
-        max-width: 140px;
-    }
-    
-    .search-icon {
-        font-size: 1.5vw;
-    }
-    
-    #categorySearch {
-        font-size: 1.8vw;
-        padding: 0.6vw 2vw 0.6vw 4vw;
-    }
-    
-    /* Adjust scroll button position to avoid overlap */
-    #scrollButtonUp {
-        top: 15.5%;
-    }
+  #searchContainer {
+    width: 30%;
+    max-width: 140px;
+  }
+
+  .search-icon {
+    font-size: 1.5vw;
+  }
+
+  #categorySearch {
+    font-size: 1.8vw;
+    padding: 0.6vw 2vw 0.6vw 4vw;
+  }
+
+  /* Adjust scroll button position to avoid overlap */
+  #scrollButtonUp {
+    top: 15.5%;
+  }
 }
 
 @media screen and (max-width: 400px) {
-    #searchContainer {
-        width: 25%;
-        max-width: 120px;
-    }
+  #searchContainer {
+    width: 25%;
+    max-width: 120px;
+  }
 }
 
 /* Adjust the categories position to make room for search */
 #categories {
-    width: 100%;
-    height: 51%;
-    top: 23%;
-    /* ...existing code... */
+  width: 100%;
+  height: 51%;
+  top: 23%;
+  /* ...existing code... */
 }
 
 /* Reverse sort button styling - updated position to be left of sort box */
 #reverseSort {
-    position: absolute;
-    top: 15%;
-    right: calc(10% + 31%); /* Position to the left of sort button */
-    width: 4.5vw;
-    height: 4.5vw;
-    background-color: rgba(255, 204, 128, 0.8);
-    border: none;
-    border-radius: 2vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
-    z-index: 156;
-    transition: background-color 0.2s ease;
-    margin-right: 0.5vw; /* Add small gap between buttons */
+  position: absolute;
+  top: 15%;
+  right: calc(10% + 31%); /* Position to the left of sort button */
+  width: 4.5vw;
+  height: 4.5vw;
+  background-color: rgba(255, 204, 128, 0.8);
+  border: none;
+  border-radius: 2vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
+  z-index: 156;
+  transition: background-color 0.2s ease;
+  margin-right: 0.5vw; /* Add small gap between buttons */
 }
 
 #reverseSort .sort-direction {
-    font-size: 2vw;
-    color: white;
-    transition: transform 0.3s ease;
-    margin: 0; /* Ensure no margin affects centering */
-    padding: 0; /* Ensure no padding affects centering */
-    text-align: center;
-    line-height: 1;
-    display: block; /* Ensure it's treated as a block element for centering */
+  font-size: 2vw;
+  color: white;
+  transition: transform 0.3s ease;
+  margin: 0; /* Ensure no margin affects centering */
+  padding: 0; /* Ensure no padding affects centering */
+  text-align: center;
+  line-height: 1;
+  display: block; /* Ensure it's treated as a block element for centering */
 }
 
 #reverseSort:hover {
-    background-color: rgba(255, 184, 77, 0.9);
+  background-color: rgba(255, 184, 77, 0.9);
 }
 
 #reverseSort.reversed {
-    background-color: rgba(255, 184, 77, 0.9);
+  background-color: rgba(255, 184, 77, 0.9);
 }
 
 /* Responsive adjustments */
 @media screen and (max-width: 600px) {
-    #reverseSort {
-        width: 4.5vw;
-        height: 4.5vw;
-        right: calc(10% + 31%);
-    }
+  #reverseSort {
+    width: 4.5vw;
+    height: 4.5vw;
+    right: calc(10% + 31%);
+  }
 }
 
 /* Adjust other sort elements to account for the new button */
 #sortContainer {
-    position: absolute;
-    top: 15%;
-    right: 10%;
-    z-index: 156;
-    width: 30%;
-    max-width: 145px;
+  position: absolute;
+  top: 15%;
+  right: 10%;
+  z-index: 156;
+  width: 30%;
+  max-width: 145px;
 }
 
 /* Responsive adjustments */
 @media screen and (max-width: 600px) {
-    #reverseSort {
-        width: 4vw;
-        height: 4vw;
-    }
-    
-    #reverseSort .sort-direction {
-        font-size: 1.8vw;
-    }
+  #reverseSort {
+    width: 4vw;
+    height: 4vw;
+  }
+
+  #reverseSort .sort-direction {
+    font-size: 1.8vw;
+  }
 }
 
 /* Improved centered loading spinner */
 #categoriesLoading {
-    position: absolute;
-    top: 77%; /* Align with scroll down button position */
-    right: 4%;
-    width: 4vw;
-    height: 4vw;
-    display: none;
-    z-index: 157; /* Higher than scroll button to overlay it */
-    background-color: rgba(0, 0, 0, 0.3); /* Darker background for better visibility */
-    border-radius: 50%;
-    
-    /* Use flexbox for perfect centering */
-    display: none; /* Will be changed to flex when visible */
-    justify-content: center;
-    align-items: center;
+  position: absolute;
+  top: 77%; /* Align with scroll down button position */
+  right: 4%;
+  width: 4vw;
+  height: 4vw;
+  display: none;
+  z-index: 157; /* Higher than scroll button to overlay it */
+  background-color: rgba(
+    0,
+    0,
+    0,
+    0.3
+  ); /* Darker background for better visibility */
+  border-radius: 50%;
+
+  /* Use flexbox for perfect centering */
+  display: none; /* Will be changed to flex when visible */
+  justify-content: center;
+  align-items: center;
 }
 
 .spinner {
-    width: 80%; /* Slightly smaller than container for better visual balance */
-    height: 80%;
-    border: 0.35vw solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: #ffcc80;
-    animation: spin 0.8s linear infinite;
+  width: 80%; /* Slightly smaller than container for better visual balance */
+  height: 80%;
+  border: 0.35vw solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #ffcc80;
+  animation: spin 0.8s linear infinite;
 }
 
 /* More compact and subtle loading indicator for small screens */
 @media screen and (max-width: 600px) {
-    #categoriesLoading {
-        width: 4vw;
-        height: 4vw;
-        bottom: 23.5%;
-    }
-    
-    .spinner {
-        border-width: 0.35vw;
-    }
+  #categoriesLoading {
+    width: 4vw;
+    height: 4vw;
+    bottom: 23.5%;
+  }
+
+  .spinner {
+    border-width: 0.35vw;
+  }
 }
 
 @media screen and (max-width: 400px) {
-    #categoriesLoading {
-        width: 3.5vw;
-        height: 3.5vw;
-    }
+  #categoriesLoading {
+    width: 3.5vw;
+    height: 3.5vw;
+  }
 }
 
 /* Improve the visual relationship between scroll button and loading */
 #scrollButtonDown {
-    top: 77%;
-    transition: opacity 0.3s ease;
+  top: 77%;
+  transition: opacity 0.3s ease;
 }
 
 /* Make the scroll button slightly dimmed when loading */
 #scrollButtonDown.loading {
-    opacity: 0.6;
+  opacity: 0.6;
 }
 
 /* Improved sorting controls using percentage-based positioning */
 #sortContainer {
-    position: absolute;
-    top: 15%;
-    right: 10%;
-    z-index: 156;
-    width: 25%; /* Adjust size to be purely percentage-based */
+  position: absolute;
+  top: 15%;
+  right: 10%;
+  z-index: 156;
+  width: 25%; /* Adjust size to be purely percentage-based */
 }
 
 /* Place reverse sort button directly adjacent to the sort box */
 #reverseSort {
-    position: absolute;
-    top: 15%;
-    right: 36%; /* Position it immediately to the left of sort container */
-    width: 4.5vw;
-    height: 4.5vw;
-    background-color: rgba(255, 204, 128, 0.8);
-    border: none;
-    border-radius: 2vw;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
-    z-index: 156;
-    transition: background-color 0.2s ease;
-    margin-right: 1vw; /* Add small gap between buttons */
+  position: absolute;
+  top: 15%;
+  right: 36%; /* Position it immediately to the left of sort container */
+  width: 4.5vw;
+  height: 4.5vw;
+  background-color: rgba(255, 204, 128, 0.8);
+  border: none;
+  border-radius: 2vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 0.2vw 0.5vw rgba(0, 0, 0, 0.2);
+  z-index: 156;
+  transition: background-color 0.2s ease;
+  margin-right: 1vw; /* Add small gap between buttons */
 }
 
 /* Ensure search container uses percentage-based width */
 #searchContainer {
-    position: absolute;
-    top: 15%;
-    left: 10%;
-    z-index: 156;
-    width: 30%; /* Set to percentage */
+  position: absolute;
+  top: 15%;
+  left: 10%;
+  z-index: 156;
+  width: 30%; /* Set to percentage */
 }
 
 /* Reposition loading spinner directly over scroll down button */
 #categoriesLoading {
-    position: absolute;
-    top: 77%; /* Align with scroll down button position */
-    right: 4%;
-    width: 4vw;
-    height: 4vw;
-    display: none;
-    z-index: 157; /* Higher than scroll button to overlay it */
-    background-color: rgba(0, 0, 0, 0.5); /* Darker background for better visibility */
-    border-radius: 50%;
-    padding: 0.5vw;
+  position: absolute;
+  top: 77%; /* Align with scroll down button position */
+  right: 4%;
+  width: 4vw;
+  height: 4vw;
+  display: none;
+  z-index: 157; /* Higher than scroll button to overlay it */
+  background-color: rgba(
+    0,
+    0,
+    0,
+    0.5
+  ); /* Darker background for better visibility */
+  border-radius: 50%;
+  padding: 0.5vw;
 }
 
 /* Media queries for responsive design */
 @media screen and (max-width: 600px) {
-    #sortContainer {
-        width: 22%;
-    }
-    
-    #reverseSort {
-        right: 33%;
-        width: 4vw;
-        height: 4vw;
-        padding: 0; /* Remove any padding that might affect centering */
-    }
-    
-    #reverseSort .sort-direction {
-        font-size: 1.8vw;
-        margin: 0; /* Ensure no margin affects centering */
-        text-align: center;
-        line-height: 1;
-    }
-    
-    #searchContainer {
-        width: 25%;
-    }
-    
-    #categoriesLoading {
-        width: 4vw;
-        height: 4vw;
-    }
+  #sortContainer {
+    width: 22%;
+  }
+
+  #reverseSort {
+    right: 33%;
+    width: 4vw;
+    height: 4vw;
+    padding: 0; /* Remove any padding that might affect centering */
+  }
+
+  #reverseSort .sort-direction {
+    font-size: 1.8vw;
+    margin: 0; /* Ensure no margin affects centering */
+    text-align: center;
+    line-height: 1;
+  }
+
+  #searchContainer {
+    width: 25%;
+  }
+
+  #categoriesLoading {
+    width: 4vw;
+    height: 4vw;
+  }
 }
 
 @media screen and (max-width: 400px) {
-    #sortContainer {
-        width: 20%;
-    }
-    
-    #reverseSort {
-        right: 31%;
-        width: 3.8vw;
-        height: 3.8vw;
-        padding: 0; /* Remove any padding that might affect centering */
-    }
-    
-    #reverseSort .sort-direction {
-        font-size: 1.6vw;
-        margin: 0; /* Ensure no margin affects centering */
-        text-align: center;
-        line-height: 1;
-    }
-    
-    #searchContainer {
-        width: 23%;
-    }
-    
-    #categoriesLoading {
-        width: 3.5vw;
-        height: 3.5vw;
-    }
+  #sortContainer {
+    width: 20%;
+  }
+
+  #reverseSort {
+    right: 31%;
+    width: 3.8vw;
+    height: 3.8vw;
+    padding: 0; /* Remove any padding that might affect centering */
+  }
+
+  #reverseSort .sort-direction {
+    font-size: 1.6vw;
+    margin: 0; /* Ensure no margin affects centering */
+    text-align: center;
+    line-height: 1;
+  }
+
+  #searchContainer {
+    width: 23%;
+  }
+
+  #categoriesLoading {
+    width: 3.5vw;
+    height: 3.5vw;
+  }
 }
 
 /* Intro Modal Styles */
- #introModal {
-     position: fixed;
-     top: 0;
-     left: 0;
-     width: 100%;
-     height: 100%;
-     background-color: rgba(0, 0, 0, 0.8);
-     display: none;
-     align-items: center;
-     justify-content: center;
-     z-index: 1000;
-     backdrop-filter: blur(4px);
- }
+#introModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
 
- #introContent {
-     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-     border-radius: 3vw;
-     padding: 3.5vw 3vw 3vw 3vw;
-     width: 70vw;
-     max-width: 420px;
-     max-height: 80vh;
-     position: relative;
-     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 16px rgba(0, 0, 0, 0.1);
-     border: 1px solid rgba(255, 255, 255, 0.2);
-     animation: introModalSlideIn 0.3s ease-out;
- }
+#introContent {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 3vw;
+  padding: 3.5vw 3vw 3vw 3vw;
+  width: 70vw;
+  max-width: 420px;
+  max-height: 80vh;
+  position: relative;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 2px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: introModalSlideIn 0.3s ease-out;
+}
 
- @keyframes introModalSlideIn {
-     from {
-         opacity: 0;
-         transform: scale(0.9) translateY(-20px);
-     }
-     to {
-         opacity: 1;
-         transform: scale(1) translateY(0);
-     }
- }
+@keyframes introModalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
 
- #introCloseButton {
-     position: absolute;
-     top: 1.5vw;
-     right: 1.5vw;
-     width: min(6vw, 5vh, 32px);
-     height: min(6vw, 5vh, 32px);
-     border-radius: 50%;
-     background-color: rgba(108, 117, 125, 0.1);
-     border: 2px solid rgba(108, 117, 125, 0.3);
-     color: #6c757d;
-     font-size: min(2.5vw, 2vh, 16px);
-     font-weight: bold;
-     cursor: pointer;
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-     transition: all 0.2s ease;
- }
+#introCloseButton {
+  position: absolute;
+  top: 1.5vw;
+  right: 1.5vw;
+  width: min(6vw, 5vh, 32px);
+  height: min(6vw, 5vh, 32px);
+  border-radius: 50%;
+  background-color: rgba(108, 117, 125, 0.1);
+  border: 2px solid rgba(108, 117, 125, 0.3);
+  color: #6c757d;
+  font-size: min(2.5vw, 2vh, 16px);
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
 
- #introCloseButton:hover {
-     background-color: rgba(108, 117, 125, 0.2);
-     color: #495057;
-     transform: scale(1.05);
- }
+#introCloseButton:hover {
+  background-color: rgba(108, 117, 125, 0.2);
+  color: #495057;
+  transform: scale(1.05);
+}
 
- #introContent h2 {
-     margin: 0 0 2.5vh 0;
-     color: #2c3e50;
-     font-size: min(5vw, 4vh, 24px);
-     text-align: center;
-     font-weight: 700;
-     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-     letter-spacing: 0.02em;
- }
+#introContent h2 {
+  margin: 0 0 2.5vh 0;
+  color: #2c3e50;
+  font-size: min(5vw, 4vh, 24px);
+  text-align: center;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.02em;
+}
 
- #introContent p {
-     margin: 0;
-     color: #34495e;
-     font-size: min(2.8vw, 2.2vh, 16px);
-     line-height: 1.5;
-     text-align: left;
-     white-space: pre-line;
-     font-weight: 400;
-     text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.05);
- }
+#introContent p {
+  margin: 0;
+  color: #34495e;
+  font-size: min(2.8vw, 2.2vh, 16px);
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-line;
+  font-weight: 400;
+  text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.05);
+}
 
- /* Responsive layout for intro modal */
- #introMainContent {
-     display: flex;
-     gap: 2vw;
-     align-items: flex-start;
- }
+/* Responsive layout for intro modal */
+#introMainContent {
+  display: flex;
+  gap: 2vw;
+  align-items: flex-start;
+}
 
- #introTextContainer {
-     flex: 1;
-     min-width: 0;
- }
+#introTextContainer {
+  flex: 1;
+  min-width: 0;
+}
 
- #introGifContainer {
-     flex: 0 0 auto;
-     max-width: 40%;
- }
+#introGifContainer {
+  flex: 0 0 auto;
+  max-width: 40%;
+}
 
- #introGif {
-     width: 100%;
-     height: auto;
-     border-radius: 1vw;
-     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
- }
+#introGif {
+  width: 100%;
+  height: auto;
+  border-radius: 1vw;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
 
- /* Wide screens - GIF on the right */
- @media (min-aspect-ratio: 1.2/1) and (min-width: 600px) {
-     #introContent {
-         width: 80vw;
-         max-width: 600px;
-     }
-     
-     #introMainContent {
-         flex-direction: row;
-     }
-     
-     #introGifContainer {
-         max-width: 45%;
-     }
- }
+/* Wide screens - GIF on the right */
+@media (min-aspect-ratio: 1.2/1) and (min-width: 600px) {
+  #introContent {
+    width: 80vw;
+    max-width: 600px;
+  }
 
- /* Tall screens - GIF below text */
- @media (max-aspect-ratio: 0.8/1) {
-     #introContent {
-         width: 85vw;
-         max-width: 400px;
-         max-height: 85vh;
-     }
-     
-     #introMainContent {
-         flex-direction: column;
-         gap: 2vh;
-     }
-     
-     #introGifContainer {
-         max-width: 100%;
-     }
- }
+  #introMainContent {
+    flex-direction: row;
+  }
 
- /* Square-ish screens - scrollable content */
- @media (min-aspect-ratio: 0.8/1) and (max-aspect-ratio: 1.2/1) {
-     #introContent {
-         width: 75vw;
-         max-width: 500px;
-         max-height: 75vh;
-         overflow-y: auto;
-     }
-     
-     #introMainContent {
-         flex-direction: column;
-         gap: 2vh;
-     }
-     
-     #introGifContainer {
-         max-width: 100%;
-     }
- }
+  #introGifContainer {
+    max-width: 45%;
+  }
+}
+
+/* Tall screens - GIF below text */
+@media (max-aspect-ratio: 0.8/1) {
+  #introContent {
+    width: 85vw;
+    max-width: 400px;
+    max-height: 85vh;
+  }
+
+  #introMainContent {
+    flex-direction: column;
+    gap: 2vh;
+  }
+
+  #introGifContainer {
+    max-width: 100%;
+  }
+}
+
+/* Square-ish screens - scrollable content */
+@media (min-aspect-ratio: 0.8/1) and (max-aspect-ratio: 1.2/1) {
+  #introContent {
+    width: 75vw;
+    max-width: 500px;
+    max-height: 75vh;
+    overflow-y: auto;
+  }
+
+  #introMainContent {
+    flex-direction: column;
+    gap: 2vh;
+  }
+
+  #introGifContainer {
+    max-width: 100%;
+  }
+}

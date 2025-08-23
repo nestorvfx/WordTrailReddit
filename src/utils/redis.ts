@@ -35,10 +35,15 @@ export async function getUserInfo(
       }
     } catch (error) {
       // Check if it's the special ServerCallRequired error
-      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        error.message === "ServerCallRequired"
+      ) {
         throw error; // Re-throw this specific error
       }
-      
+
       console.error("Error fetching userInfo:", error);
       if (attempt == retryLimit) {
         console.error(
@@ -66,10 +71,15 @@ export async function getLatestCategoryCode(context: Context): Promise<string> {
       }
     } catch (error) {
       // Check if it's the special ServerCallRequired error
-      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        error.message === "ServerCallRequired"
+      ) {
         throw error; // Re-throw this specific error
       }
-      
+
       console.error("Error fetching latestCategoryCode:", error);
       if (attempt == retryLimit) {
         console.error(
@@ -114,10 +124,15 @@ export async function addCategoryToSortedSets(
     });
   } catch (error) {
     // Check if it's the special ServerCallRequired error
-    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      error.message === "ServerCallRequired"
+    ) {
       throw error; // Re-throw this specific error
     }
-    
+
     console.error("Error adding category to sorted sets:", error);
   }
 }
@@ -135,10 +150,15 @@ export async function removeCategoryFromSortedSets(
     await context.redis.zRem("categoriesByScore", [categoryCode]);
   } catch (error) {
     // Check if it's the special ServerCallRequired error
-    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      error.message === "ServerCallRequired"
+    ) {
       throw error; // Re-throw this specific error
     }
-    
+
     console.error("Error removing category from sorted sets:", error);
   }
 }
@@ -170,10 +190,15 @@ export async function updateCategoryInSortedSets(
     }
   } catch (error) {
     // Check if it's the special ServerCallRequired error
-    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      error.message === "ServerCallRequired"
+    ) {
       throw error; // Re-throw this specific error
     }
-    
+
     console.error("Error updating category in sorted sets:", error);
   }
 }

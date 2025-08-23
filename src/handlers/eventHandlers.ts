@@ -81,10 +81,15 @@ export async function handlePostDelete(
       }
     } catch (error) {
       // Check if it's the special ServerCallRequired error
-      if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error &&
+        error.message === "ServerCallRequired"
+      ) {
         throw error; // Re-throw this specific error
       }
-      
+
       console.error(`Attempt ${attempt} failed: ${error}`);
       if (attempt == retryLimit) {
         console.error(
@@ -114,10 +119,15 @@ export async function handleAppInstall(
     });
   } catch (error) {
     // Check if it's the special ServerCallRequired error
-    if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+    if (
+      error &&
+      typeof error === "object" &&
+      "message" in error &&
+      error.message === "ServerCallRequired"
+    ) {
       throw error; // Re-throw this specific error
     }
-    
+
     console.error("Error during app installation:", error);
   }
 }

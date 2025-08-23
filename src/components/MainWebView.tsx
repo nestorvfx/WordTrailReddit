@@ -88,10 +88,15 @@ export const MainWebView = (context: any) => {
         return `${currUser?.username}:${moderatorPermissions.length > 0 ? "y" : "n"}`;
       } catch (error) {
         // Check if it's the special ServerCallRequired error
-        if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+        if (
+          error &&
+          typeof error === "object" &&
+          "message" in error &&
+          error.message === "ServerCallRequired"
+        ) {
           throw error; // Re-throw this specific error
         }
-        
+
         console.error(`Attempt ${attempt} failed: ${error}`);
         if (attempt == retryLimit) {
           console.error(
@@ -150,10 +155,15 @@ export const MainWebView = (context: any) => {
           }
         } catch (error) {
           // Check if it's the special ServerCallRequired error
-          if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+          if (
+            error &&
+            typeof error === "object" &&
+            "message" in error &&
+            error.message === "ServerCallRequired"
+          ) {
             throw error; // Re-throw this specific error
           }
-          
+
           console.error("Error fetching userInfo:", error);
           if (attempt == retryLimit) {
             console.error(
@@ -189,10 +199,15 @@ export const MainWebView = (context: any) => {
           }
         } catch (error) {
           // Check if it's the special ServerCallRequired error
-          if (error && typeof error === 'object' && 'message' in error && error.message=== 'ServerCallRequired') {
+          if (
+            error &&
+            typeof error === "object" &&
+            "message" in error &&
+            error.message === "ServerCallRequired"
+          ) {
             throw error; // Re-throw this specific error
           }
-          
+
           console.error("Error fetching latestCategoryCode:", error);
           if (attempt == retryLimit) {
             console.error(
@@ -473,7 +488,7 @@ export const MainWebView = (context: any) => {
                   imageWidth={1104}
                   imageHeight={274}
                   grow={!webviewVisible}
-                  height="55%"
+                  height="180%"
                   width="100%"
                   resizeMode="fit"
                   description="background image"
@@ -519,10 +534,14 @@ export const MainWebView = (context: any) => {
 
                 {/* Generated category image layer - positioned at center */}
                 <vstack height={"100%"} width="100%" alignment="middle center">
-                  <spacer height="20%"/>
+                  <spacer height="20%" />
                   {postCategory && (
                     <image
-                      url={generateCategoryImageSVG(postCategory, screenWidth, screenHeight)}
+                      url={generateCategoryImageSVG(
+                        postCategory,
+                        screenWidth,
+                        screenHeight,
+                      )}
                       imageWidth={900}
                       imageHeight={340}
                       width="93%"
@@ -535,7 +554,7 @@ export const MainWebView = (context: any) => {
 
                 {/* Play button layer - positioned at bottom */}
                 <vstack height={"100%"} width="100%" alignment="middle center">
-                  <spacer height="70%"/>
+                  <spacer height="70%" />
                   <image
                     url="Play.png"
                     height="60px"
